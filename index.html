@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fiche Personnage</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+  <script src="api.js" defer></script>
+</head>
+<body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    await TentiaAPI.initApp();
+  });
+</script>
+
+<a href="stats.html" class="nav-btn">STATS</a>
+
+  <!-- POPUP BADGE SELECTION -->
+  <div id="badge-modal" class="badge-modal-overlay" style="display:none;">
+    <div class="badge-modal-box">
+      <div class="badge-modal-title" id="badge-modal-title">ÉQUIPER UN BADGE</div>
+      <div class="badge-modal-grid" id="badge-modal-grid"></div>
+      <button class="badge-modal-close" id="badge-modal-close">✕ FERMER</button>
+    </div>
+  </div>
+
+  <!-- POPUP Info Arbre de Compétences -->
+  <div id="skill-info-modal" class="badge-modal-overlay" style="display:none;">
+    <div class="badge-modal-box info-modal-box">
+      <div class="badge-modal-title">🌟 COMPÉTENCES</div>
+      <div class="info-modal-body">
+        <div class="info-skill-block">
+          <div class="info-skill-title">⚙️ MÉCANIQUE</div>
+          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ta progression réelle en mécanique.</div>
+        </div>
+        <div class="info-skill-block">
+          <div class="info-skill-title">🇬🇧 ANGLAIS</div>
+          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ton niveau d'anglais.</div>
+        </div>
+        <div class="info-skill-block">
+          <div class="info-skill-title">💻 DEV</div>
+          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ta progression en développement.</div>
+        </div>
+        <div class="info-skill-block">
+          <div class="info-skill-title">♟️ ÉCHECS</div>
+          <div class="info-skill-desc">Mise à jour automatique via l'API Chess.com. Maximum : 1000 ELO affiché.</div>
+        </div>
+        <div class="info-skill-block">
+          <div class="info-skill-title">💰 ARGENT</div>
+          <div class="info-skill-desc">Clique ＋ pour progresser (pas d'incrément basé sur les stats). Représente tes économies.</div>
+        </div>
+      </div>
+      <button class="badge-modal-close" id="close-skill-info">✕ FERMER</button>
+    </div>
+  </div>
+
+  <!-- POPUP Ligues Échecs (index) -->
+  <div id="chess-info-modal" class="badge-modal-overlay" style="display:none;">
+    <div class="badge-modal-box info-modal-box">
+      <div class="badge-modal-title">♟ LIGUES ÉCHECS</div>
+      <div class="info-modal-body">
+        <div class="info-league-row bronze-row">🥉 BRONZE — 0 à 299 ELO</div>
+        <div class="info-league-row argent-row">🥈 ARGENT — 300 à 599 ELO</div>
+        <div class="info-league-row or-row">🥇 OR — 600 à 899 ELO</div>
+        <div class="info-league-row platine-row">💎 PLATINE — 900+ ELO</div>
+        <div class="info-note">La ligue est calculée depuis ton ELO live Chess.com. Le peak ELO est sauvegardé pour les Hauts Faits Échecs.</div>
+      </div>
+      <button class="badge-modal-close" id="close-chess-info">✕ FERMER</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <h1 class="title">⚔ FICHE PERSONNAGE ⚔</h1>
+
+    <div class="equipment-zone">
+
+      <!-- Personnage central avec boutons intégrés -->
+      <div class="character-box">
+        <div class="char-name-tag">Dafz</div>
+
+        <!-- Zone sprite + slots badges + boutons flanquants -->
+        <div class="char-frame-row">
+
+          <!-- Colonne gauche : slots Force (haut) + Discipline (bas) -->
+          <div class="badge-col">
+            <div class="badge-slot" data-slot="Force" title="Slot Force">
+              <img class="badge-slot-img" id="badge-img-Force" src="" alt="" style="display:none;">
+              <span class="badge-slot-empty" id="badge-empty-Force">⚔</span>
+              <span class="badge-slot-label">FOR</span>
+            </div>
+            <button class="action-btn positive" id="btn-sport">💪</button>
+            <div class="badge-slot" data-slot="Discipline" title="Slot Discipline">
+              <img class="badge-slot-img" id="badge-img-Discipline" src="" alt="" style="display:none;">
+              <span class="badge-slot-empty" id="badge-empty-Discipline">🛡</span>
+              <span class="badge-slot-label">DIS</span>
+            </div>
+          </div>
+
+          <div class="character-frame">
+            <img id="char-sprite" src="assets/character/moove1.png" alt="Personnage" draggable="false">
+            <div class="scanlines"></div>
+          </div>
+
+          <!-- Colonne droite : slots Intelligence (haut) + Focus (bas) -->
+          <div class="badge-col">
+            <div class="badge-slot" data-slot="Intelligence" title="Slot Intelligence">
+              <img class="badge-slot-img" id="badge-img-Intelligence" src="" alt="" style="display:none;">
+              <span class="badge-slot-empty" id="badge-empty-Intelligence">✨</span>
+              <span class="badge-slot-label">INT</span>
+            </div>
+            <button class="action-btn negative" id="btn-smoke">🚬</button>
+            <div class="badge-slot" data-slot="Focus" title="Slot Focus">
+              <img class="badge-slot-img" id="badge-img-Focus" src="" alt="" style="display:none;">
+              <span class="badge-slot-empty" id="badge-empty-Focus">🎯</span>
+              <span class="badge-slot-label">FOC</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="char-stats">
+          <span>❤ <span id="hp">50</span></span>
+          <span>✨ <span id="mp">50</span></span>
+        </div>
+
+        <!-- Changer de Skin -->
+        <div class="skin-selector">
+          <button class="skin-toggle" onclick="toggleSkinMenu()">SKINS ▼</button>
+          <div class="skin-thumbs-wrap hidden">
+            <div class="skin-thumb" data-skin="Skin_T1" style="background-image:url('assets/character/Skin_T1/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_Eminem" style="background-image:url('assets/character/Skin_Eminem/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_Pokemon" style="background-image:url('assets/character/Skin_Pokemon/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_JJK" style="background-image:url('assets/character/Skin_JJK/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_OP" style="background-image:url('assets/character/Skin_OP/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_Snk" style="background-image:url('assets/character/Skin_Snk/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_RM" style="background-image:url('assets/character/Skin_RM/moove1.png')"></div>
+            <div class="skin-thumb" data-skin="Skin_ronin" style="background-image:url('assets/character/Skin_ronin/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_got" style="background-image:url('assets/character/Skin_got/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_backpacker" style="background-image:url('assets/character/Skin_backpacker/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_quilby" style="background-image:url('assets/character/Skin_quilby/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_zoro" style="background-image:url('assets/character/Skin_zoro/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_liche" style="background-image:url('assets/character/Skin_liche/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_imu" style="background-image:url('assets/character/Skin_imu/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_carlsen" style="background-image:url('assets/character/Skin_carlsen/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_IOP" style="background-image:url('assets/character/Skin_iop/moove1.png')"></div>
+			<div class="skin-thumb" data-skin="Skin_Xelor" style="background-image:url('assets/character/Skin_xelor/moove1.png')"></div>
+          </div>
+        </div>
+
+        <!-- Menu de fonds -->
+        <div class="bg-selector">
+          <button class="bg-toggle-btn" onclick="toggleBGMenu()">Background ▼</button>
+          <div class="bg-thumbs-wrap hidden">
+            <div class="bg-thumb" data-bg1="assets/background/bg1_frame1.png" data-bg2="assets/background/bg1_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg2_frame1.png" data-bg2="assets/background/bg2_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg3_frame1.png" data-bg2="assets/background/bg3_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg4_frame1.png" data-bg2="assets/background/bg4_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg5_frame1.png" data-bg2="assets/background/bg5_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg6_frame1.png" data-bg2="assets/background/bg6_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg7_frame1.png" data-bg2="assets/background/bg7_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg8_frame1.png" data-bg2="assets/background/bg8_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg9_frame1.png" data-bg2="assets/background/bg9_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg10_frame1.png" data-bg2="assets/background/bg10_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg11_frame1.png" data-bg2="assets/background/bg11_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg12_frame1.png" data-bg2="assets/background/bg12_frame2.png"></div>
+            <div class="bg-thumb" data-bg1="assets/background/bg13_frame1.png" data-bg2="assets/background/bg13_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg14_frame1.png" data-bg2="assets/background/bg14_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg15_frame1.png" data-bg2="assets/background/bg15_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg16_frame1.png" data-bg2="assets/background/bg16_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg17_frame1.png" data-bg2="assets/background/bg17_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg18_frame1.png" data-bg2="assets/background/bg18_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg19_frame1.png" data-bg2="assets/background/bg19_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg20_frame1.png" data-bg2="assets/background/bg20_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg21_frame1.png" data-bg2="assets/background/bg21_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg22_frame1.png" data-bg2="assets/background/bg22_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg23_frame1.png" data-bg2="assets/background/bg23_frame2.png"></div>
+			<div class="bg-thumb" data-bg1="assets/background/bg24_frame1.png" data-bg2="assets/background/bg24_frame2.png"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ARBRE DE COMPÉTENCES -->
+    <div class="skill-section">
+      <h2 class="skill-title">
+        🌟 ARBRE DE COMPÉTENCES
+        <button class="skill-info-btn" id="open-skill-info" title="Comment fonctionnent les compétences ?">?</button>
+      </h2>
+      <div class="skill-tree">
+
+        <div class="skill-node" id="skill-mecanique">
+          <div class="skill-icon">⚙️</div>
+          <div class="skill-name">Mécanique</div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar" id="bar-mecanique" style="width:0%"></div>
+            <span class="skill-val" id="val-mecanique">0/100</span>
+          </div>
+          <div class="skill-buttons">
+            <button class="skill-btn" onclick="increment('mecanique')">＋</button>
+            <button class="skill-btn reset-btn" onclick="resetSkill('mecanique')">↺</button>
+          </div>
+        </div>
+
+        <div class="skill-node" id="skill-anglais">
+          <div class="skill-icon">🇬🇧</div>
+          <div class="skill-name">Anglais</div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar" id="bar-anglais" style="width:0%"></div>
+            <span class="skill-val" id="val-anglais">0/100</span>
+          </div>
+          <div class="skill-buttons">
+            <button class="skill-btn" onclick="increment('anglais')">＋</button>
+            <button class="skill-btn reset-btn" onclick="resetSkill('anglais')">↺</button>
+          </div>
+        </div>
+
+        <div class="skill-node" id="skill-dev">
+          <div class="skill-icon">💻</div>
+          <div class="skill-name">Dev</div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar" id="bar-dev" style="width:0%"></div>
+            <span class="skill-val" id="val-dev">0/100</span>
+          </div>
+          <div class="skill-buttons">
+            <button class="skill-btn" onclick="increment('dev')">＋</button>
+            <button class="skill-btn reset-btn" onclick="resetSkill('dev')">↺</button>
+          </div>
+        </div>
+
+        <div class="skill-node" id="skill-echec">
+          <div class="skill-icon">♟️</div>
+          <div class="skill-name">
+            Échecs
+            <button class="skill-info-btn" id="open-chess-info" title="Voir les ligues">?</button>
+          </div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar" id="bar-echec" style="width:0%"></div>
+            <span class="skill-val" id="val-echec">0/1000</span>
+          </div>
+        </div>
+
+        <div class="skill-node" id="skill-argent">
+          <div class="skill-icon">💰</div>
+          <div class="skill-name">Argent</div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar" id="bar-argent" style="width:0%"></div>
+            <span class="skill-val" id="val-argent">0/3000</span>
+          </div>
+          <div class="skill-buttons">
+            <button class="skill-btn" onclick="increment('argent')">＋</button>
+            <button class="skill-btn reset-btn" onclick="resetSkill('argent')">↺</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

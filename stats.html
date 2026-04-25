@@ -1,0 +1,297 @@
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="stats.css">
+  <link rel="stylesheet" href="login.css">
+  <script src="api.js" defer></script>
+  <title>Stats</title>
+</head>
+<body>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    await TentiaAPI.initApp();
+  });
+</script>
+
+<a href="index.html" class="back-btn">RETOUR</a>
+
+<!-- Barre XP -->
+<div class="xp-container">
+  <div class="xp-box">
+    <div class="level">LEVEL 1</div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar"></div>
+      <span class="xp-text">50 / 100</span>
+    </div>
+  </div>
+</div>
+
+<!-- PROFIL PANEL -->
+<div class="profile-box">
+  <div class="profile-header">
+  <img src="assets/avatars/avatar1.png" alt="Avatar" class="profile-avatar" id="profile-avatar">
+<div class="profile-info">
+  <div class="profile-level">LEVEL <span id="profile-level">1</span></div>
+  <div class="profile-title-line">
+    Titre : <span id="profile-title">Novice</span>
+  </div>
+</div>
+
+
+  <img src="placeholder-ligue.png" alt="Ligue Echecs" class="profile-league">
+</div>
+
+
+  <div class="profile-buttons">
+  <button class="profile-btn" id="open-journal">📖 Journal</button>
+  <button class="profile-btn" id="open-pet">🐾 Familier</button>
+  <button class="profile-btn" id="open-titles">🏅 Titres</button>
+  <button class="profile-btn" id="open-badges">🎖 Badges</button>
+</div>
+</div>
+
+
+
+
+<!-- POPUP Journal -->
+<div class="popup-overlay" id="journal-popup">
+  <div class="popup-content">
+    <h3>Journal de bord</h3>
+
+    <!-- NAVIGATION DATE -->
+    <div class="journal-nav">
+      <button id="prev-day" class="journal-nav-btn">&larr;</button>
+      <span id="journal-date"></span>
+      <button id="next-day" class="journal-nav-btn">&rarr;</button>
+    </div>
+
+    <!-- TEXTE -->
+    <textarea id="journal-text" placeholder="Écris tes notes ici..."></textarea>
+
+    <!-- PARTIES -->
+    <div class="journal-games-row">
+      ♟️ Parties jouées :
+      <input type="number" id="journal-games-input" min="0" value="0">
+    </div>
+
+    <!-- ELO -->
+    <div class="journal-elo">
+      📈 Elo : <span id="journal-elo"></span>
+    </div>
+
+    <button class="popup-close" id="close-journal">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Familier -->
+<div class="popup-overlay" id="pet-popup">
+  <div class="popup-content">
+    <h3>Familier</h3>
+
+    <div class="pet-display" id="pet-display">
+  <img id="pet-sprite" src="" alt="Familier">
+  <div id="pet-placeholder" class="pet-placeholder">🔒</div>
+</div>
+
+
+    <div>
+      <p>Nom : <span id="pet-name">Cerveau</span></p>
+      <p>Stat : <span id="pet-stat">Intelligence</span></p>
+      <p>Level : <span id="pet-level">1</span></p>
+	  <div class="pet-xp-bar-wrap">
+  <div class="pet-xp-bar" id="pet-xp-bar"></div>
+  <span class="pet-xp-label" id="pet-xp-text">0 / 88</span>
+</div>
+
+
+    </div>
+
+    <div>
+      <label>
+        <input type="checkbox" id="pet-share-toggle">
+        Partager l'XP
+      </label>
+
+      <input type="number" id="pet-share-input" min="10" max="90" placeholder="10-90%">
+    </div>
+
+    <button class="popup-close" id="close-pet">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Inventaire Familier -->
+<div class="popup-overlay" id="pet-inventory">
+  <div class="popup-content">
+    <h3>Inventaire Familier</h3>
+
+    <div class="pet-list" id="pet-list"></div>
+
+    <button class="popup-close" id="close-pet-inventory">Fermer</button>
+  </div>
+</div>
+
+
+
+
+<!-- POPUP Avatars -->
+<div class="popup-overlay" id="avatar-popup">
+  <div class="popup-content">
+    <h3>Avatars</h3>
+    <div class="avatar-list" id="avatar-list"></div>
+    <button class="popup-close" id="close-avatar-popup">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Badges -->
+<div class="popup-overlay" id="badge-popup">
+  <div class="popup-content">
+    <h3>Badges</h3>
+    <div class="badge-list" id="badge-list"></div>
+    <button class="popup-close" id="close-badge-popup">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Titres -->
+<div class="popup-overlay" id="title-popup">
+  <div class="popup-content">
+    <h3>Titres</h3>
+    <div class="title-list" id="title-list"></div>
+    <button class="popup-close" id="close-title-popup">Fermer</button>
+  </div>
+</div>
+
+
+<!-- POPUP Info Stats RPG -->
+<div class="popup-overlay" id="stats-info-popup">
+  <div class="popup-content info-popup-content">
+    <h3>⚔ STATS RPG</h3>
+    <div class="info-popup-body">
+      <div class="info-stat-block">
+        <div class="info-stat-title">💪 FORCE</div>
+        <div class="info-stat-desc">Augmente les gains de HP. Chaque tranche de 10 pts ajoute +1 HP bonus lors du clic 💪.</div>
+      </div>
+      <div class="info-stat-block">
+        <div class="info-stat-title">🧠 INTELLIGENCE</div>
+        <div class="info-stat-desc">Booste les gains de compétences. Chaque tranche de 10 pts ajoute +1 point bonus sur Mécanique, Anglais et Dev.</div>
+      </div>
+      <div class="info-stat-block">
+        <div class="info-stat-title">🛡 DISCIPLINE</div>
+        <div class="info-stat-desc">Augmente les gains d'XP via les quêtes. Chaque tranche de 8 pts ajoute +1 XP bonus par quête validée.</div>
+      </div>
+      <div class="info-stat-block">
+        <div class="info-stat-title">🎯 FOCUS</div>
+        <div class="info-stat-desc">Booste les gains d'XP via les Échecs. Chaque tranche de 10 pts ajoute +1 XP bonus sur les gains Chess.com.</div>
+      </div>
+      <div class="info-stat-note">Tu gagnes des points de stats à chaque montée de niveau. Les badges équipés peuvent aussi booster tes stats.</div>
+    </div>
+    <button class="popup-close" id="close-stats-info">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Ligues Échecs -->
+<div class="popup-overlay" id="chess-leagues-popup">
+  <div class="popup-content info-popup-content">
+    <h3>♟ LIGUES ÉCHECS</h3>
+    <div class="info-popup-body">
+      <div class="info-league-block bronze">
+        <span class="info-league-name">🥉 BRONZE</span>
+        <span class="info-league-range">0 — 299 ELO</span>
+      </div>
+      <div class="info-league-block argent">
+        <span class="info-league-name">🥈 ARGENT</span>
+        <span class="info-league-range">300 — 599 ELO</span>
+      </div>
+      <div class="info-league-block or">
+        <span class="info-league-name">🥇 OR</span>
+        <span class="info-league-range">600 — 899 ELO</span>
+      </div>
+      <div class="info-league-block platine">
+        <span class="info-league-name">💎 PLATINE</span>
+        <span class="info-league-range">900+ ELO</span>
+      </div>
+      <div class="info-stat-note">La ligue est basée sur ton ELO actuel Chess.com. Le peak ELO est sauvegardé pour les Hauts Faits.</div>
+    </div>
+    <button class="popup-close" id="close-chess-leagues">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Haut Fait -->
+<div class="popup-overlay" id="hf-popup">
+  <div class="popup-content hf-popup-content">
+    <h3 id="hf-popup-title">Haut Fait</h3>
+    <div id="hf-popup-list" class="hf-popup-list"></div>
+    <button class="popup-close" id="hf-popup-close">Fermer</button>
+  </div>
+</div>
+
+<div class="stats-page">
+  <!-- Quêtes -->
+  <div class="quest-box">
+    <div class="box-title">QUÊTES</div>
+    <ul class="quest-list"></ul>
+    <input type="text" id="new-quest" placeholder="Nouvelle quête...">
+    <button id="add-quest" class="add-quest-btn">Ajouter</button>
+    <button class="validate-btn">Valider</button>
+	<button class="reset-btn">Reset XP</button>
+  </div>
+</div>
+
+<!-- HAUTS FAITS -->
+<div class="achievements-section">
+  <div class="box-title">⚔ HAUTS FAITS</div>
+  <div class="achievements-grid" id="achievements-grid"></div>
+</div>
+
+<!-- Menu stats coulissant -->
+<div class="stats-box" id="stats-box">
+  <div class="stats-toggle" id="stats-toggle">&lt;</div>
+
+  <div class="stat-item">
+    <span class="stat-name">Force :</span>
+    <div class="stat-right">
+      <span class="stat-value" id="stat-force">0</span>
+      <button class="stat-add-btn" onclick="addStat('Force')">+</button>
+    </div>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-name">Intelligence :</span>
+    <div class="stat-right">
+      <span class="stat-value" id="stat-intel">0</span>
+      <button class="stat-add-btn" onclick="addStat('Intelligence')">+</button>
+    </div>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-name">Discipline :</span>
+    <div class="stat-right">
+      <span class="stat-value" id="stat-discipline">0</span>
+      <button class="stat-add-btn" onclick="addStat('Discipline')">+</button>
+    </div>
+  </div>
+
+  <div class="stat-item">
+    <span class="stat-name">Focus :</span>
+    <div class="stat-right">
+      <span class="stat-value" id="stat-focus">0</span>
+      <button class="stat-add-btn" onclick="addStat('Focus')">+</button>
+    </div>
+  </div>
+
+  <div class="stat-item points-row">
+    <span class="stat-name">Points :</span>
+    <div class="stat-right">
+      <span id="points-left" class="stat-value">0</span>
+      <button class="info-btn" id="open-stats-info" title="Comment fonctionnent les stats ?">?</button>
+    </div>
+  </div>
+
+  <button id="reset-skills" class="reset-btn">RESET SKILLS</button>
+</div>
+
+<script src="stats.js"></script>
+</body>
+</html>
