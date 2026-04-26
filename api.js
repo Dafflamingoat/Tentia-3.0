@@ -112,38 +112,60 @@ async function loadProfile() {
   const data = await apiRequest('GET', '/data/profile');
   if (!data) return;
 
-  // Injecter dans localStorage pour que le reste du code fonctionne
-  if (data.xp           !== undefined) localStorage.setItem('xp',            data.xp);
-  if (data.level        !== undefined) localStorage.setItem('level',          data.level);
-  if (data.hp           !== undefined) localStorage.setItem('hp',             data.hp);
-  if (data.force        !== undefined) localStorage.setItem('Force',          data.force);
-  if (data.intelligence !== undefined) localStorage.setItem('Intelligence',   data.intelligence);
-  if (data.discipline   !== undefined) localStorage.setItem('Discipline',     data.discipline);
-  if (data.focus        !== undefined) localStorage.setItem('Focus',          data.focus);
-  if (data.skills)                     localStorage.setItem('skills',         JSON.stringify(data.skills));
-  if (data.selected_skin)              localStorage.setItem('selectedSkin',   data.selected_skin);
-  if (data.selected_bg)                localStorage.setItem('selectedBG',     JSON.stringify(data.selected_bg));
-  if (data.equipped_title)             localStorage.setItem('equippedTitleId', data.equipped_title);
-  if (data.equipped_avatar)            localStorage.setItem('equippedAvatarId', data.equipped_avatar);
-  if (data.equipped_pet)               localStorage.setItem('equippedPetId',  data.equipped_pet);
-  if (data.titles)                     localStorage.setItem('titles',         JSON.stringify(data.titles));
-  if (data.avatars)                     localStorage.setItem('avatars',        JSON.stringify(data.avatars));
-  if (data.skins)                      localStorage.setItem('skins',          JSON.stringify(data.skins));
-  if (data.backgrounds)                localStorage.setItem('backgrounds',    JSON.stringify(data.backgrounds));
-  if (data.badges)                     localStorage.setItem('badges',         JSON.stringify(data.badges));
-  if (data.pets)                       localStorage.setItem('pets',           JSON.stringify(data.pets));
-  if (data.badge_slots)                localStorage.setItem('badges_equipped', JSON.stringify(data.badge_slots));
-  if (data.achievements_claimed)       localStorage.setItem('achievementsClaimed', JSON.stringify(data.achievements_claimed));
-  if (data.journal)                    localStorage.setItem('journal',        JSON.stringify(data.journal));
-  if (data.quests)                     localStorage.setItem('quests',         JSON.stringify(data.quests));
-  if (data.total_login_days !== undefined) localStorage.setItem('totalLoginDays',  data.total_login_days);
-  if (data.total_quests_done !== undefined) localStorage.setItem('totalQuestsDone', data.total_quests_done);
-  if (data.total_quest_xp !== undefined)   localStorage.setItem('totalQuestXP',    data.total_quest_xp);
-  if (data.total_chess_xp !== undefined)   localStorage.setItem('totalChessXP',    data.total_chess_xp);
-  if (data.peak_elo !== undefined)         localStorage.setItem('peakElo',          data.peak_elo);
-  if (data.last_login)                     localStorage.setItem('lastLogin',        data.last_login);
-  if (data.last_elo !== undefined)         localStorage.setItem('lastElo',          data.last_elo);
-  if (data.current_elo !== undefined)      localStorage.setItem('currentElo',       data.current_elo);
+  // Helper : n'écrase le localStorage que si la valeur Supabase est non nulle
+  const setIfDefined = (key, val) => {
+    if (val !== undefined && val !== null) localStorage.setItem(key, val);
+  };
+
+  // Helper : n'écrase les tableaux/objets que s'ils ont du contenu
+  const setIfNotEmpty = (key, val) => {
+    if (!val) return;
+    const parsed = typeof val === 'string' ? JSON.parse(val) : val;
+    const isEmpty = Array.isArray(parsed) ? parsed.length === 0 : Object.keys(parsed).length === 0;
+    if (!isEmpty) localStorage.setItem(key, JSON.stringify(parsed));
+  };
+
+  // Valeurs simples — toujours charger
+  setIfDefined('xp',            data.xp);
+  setIfDefined('level',         data.level);
+  setIfDefined('hp',            data.hp);
+  setIfDefined('Force',         data.force);
+  setIfDefined('Intelligence',  data.intelligence);
+  setIfDefined('Discipline',    data.discipline);
+  setIfDefined('Focus',         data.focus);
+  setIfDefined('totalLoginDays',  data.total_login_days);
+  setIfDefined('totalQuestsDone', data.total_quests_done);
+  setIfDefined('totalQuestXP',    data.total_quest_xp);
+  setIfDefined('totalChessXP',    data.total_chess_xp);
+  setIfDefined('peakElo',         data.peak_elo);
+  setIfDefined('lastLogin',       data.last_login);
+  setIfDefined('lastElo',         data.last_elo);
+  setIfDefined('currentElo',      data.current_elo);
+
+  // Cosmétique simple
+  if (data.selected_skin)   localStorage.setItem('selectedSkin',    data.selected_skin);
+  if (data.equipped_title)  localStorage.setItem('equippedTitleId', data.equipped_title);
+  if (data.equipped_avatar) localStorage.setItem('equippedAvatarId', data.equipped_avatar);
+  if (data.equipped_pet)    localStorage.setItem('equippedPetId',   data.equipped_pet);
+
+  // Background (objet)
+  if (data.selected_bg && data.selected_bg !== 'null') {
+    localStorage.setItem('selectedBG', JSON.stringify(data.selected_bg));
+  }
+
+  // Tableaux — ne pas écraser si vide dans Supabase
+  // Le code JS régénère les bonnes valeurs par défaut si localStorage est vide
+  setIfNotEmpty('skills',              data.skills);
+  setIfNotEmpty('titles',              data.titles);
+  setIfNotEmpty('avatars',             data.avatars);
+  setIfNotEmpty('skins',               data.skins);
+  setIfNotEmpty('backgrounds',         data.backgrounds);
+  setIfNotEmpty('badges',              data.badges);
+  setIfNotEmpty('pets',                data.pets);
+  setIfNotEmpty('badges_equipped',     data.badge_slots);
+  setIfNotEmpty('achievementsClaimed', data.achievements_claimed);
+  setIfNotEmpty('journal',             data.journal);
+  setIfNotEmpty('quests',              data.quests);
 
   return data;
 }
