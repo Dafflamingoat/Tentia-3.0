@@ -185,8 +185,8 @@ let skins = JSON.parse(localStorage.getItem('skins')) || [
   { id: 'skin_roi_liche',       name: 'Roi Liche',         folder: 'Skin_liche',   owned: false },
   { id: 'skin_imu',             name: 'Imu Nerona',        folder: 'Skin_imu',     owned: false },
   // ── Hauts Faits : Quêtes ──
-  { id: 'skin_iop',     name: 'IOP',     folder: 'Skin_IOP',     owned: false },
-  { id: 'skin_xelor',   name: 'Xelor',   folder: 'Skin_Xelor',   owned: false },
+  { id: 'skin_iop',     name: 'IOP',     folder: 'Skin_iop',     owned: false },
+  { id: 'skin_xelor',   name: 'Xelor',   folder: 'Skin_xelor',   owned: false },
   // ── Hauts Faits : Échecs ──
   { id: 'skin_carlsen', name: 'Carlsen', folder: 'Skin_carlsen', owned: false },
 ];
