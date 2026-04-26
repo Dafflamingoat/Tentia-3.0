@@ -47,6 +47,9 @@ function setSkin(skinName) {
   currentSkin = skinName;
   localStorage.setItem('selectedSkin', skinName);
   startAnimation();
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ selected_skin: skinName });
+  }
 }
 
 function startAnimation() {
@@ -236,6 +239,9 @@ function addHP() {
   updateHPUI();
   localStorage.setItem('hp', hp);
   console.log(`+${1 + bonus} HP (Force incluse)`);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ hp });
+  }
 }
 
 function removeHP() {
@@ -243,6 +249,9 @@ function removeHP() {
   hp--;
   updateHPUI();
   localStorage.setItem('hp', hp);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ hp });
+  }
 }
 
 // Brancher les boutons sport / fumette
@@ -336,6 +345,9 @@ function applyBG(bg1, bg2) {
     bgFrameIndex = (bgFrameIndex + 1) % bgFrames.length;
     charFrame.style.backgroundImage = `url(${bgFrames[bgFrameIndex]})`;
   }, 400);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ selected_bg: [bg1, bg2] });
+  }
 }
 
 function renderBGThumbs() {
@@ -494,6 +506,11 @@ function getBadges() {
 
 function saveBadgesIndex(badges) {
   localStorage.setItem('badges', JSON.stringify(badges));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    const slots = {};
+    badges.forEach(b => { if (b.equippedSlot) slots[b.id] = b.equippedSlot; });
+    window.TentiaAPI.saveProfile({ badges, badge_slots: slots });
+  }
 }
 
 // Met à jour visuellement les 4 slots depuis le localStorage

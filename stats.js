@@ -574,10 +574,16 @@ function saveBackgrounds() {
 function savePets() {
   localStorage.setItem('pets', JSON.stringify(pets));
   localStorage.setItem('equippedPetId', equippedPetId);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ pets, equipped_pet: equippedPetId });
+  }
 }
 
 function saveBadges() {
   localStorage.setItem('badges', JSON.stringify(badges));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ badges });
+  }
 }
 
 function saveTitlesAndAvatars() {
@@ -585,6 +591,13 @@ function saveTitlesAndAvatars() {
   localStorage.setItem('avatars', JSON.stringify(avatars));
   localStorage.setItem('equippedTitleId', equippedTitleId);
   localStorage.setItem('equippedAvatarId', equippedAvatarId);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({
+      titles, avatars,
+      equipped_title:  equippedTitleId,
+      equipped_avatar: equippedAvatarId
+    });
+  }
 }
 
 function getEquippedPet() {
@@ -1267,6 +1280,11 @@ function addXP(amount) {
 
   addPetXP(amount);
   updateProfilePanel();
+
+  // Sync Supabase
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ xp, level: parseInt(localStorage.getItem('level')) || 1 });
+  }
 }
 
 // ────────────────
@@ -1316,6 +1334,14 @@ function giveDailyXP() {
     localStorage.setItem('totalLoginDays', days);
     console.log('+5 XP (connexion) — jour total :', days);
     checkAllAchievements();
+
+    // Sync Supabase
+    if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+      window.TentiaAPI.saveProfile({
+        last_login: today,
+        total_login_days: days
+      });
+    }
   }
 
   updateProfilePanel();
@@ -1415,6 +1441,17 @@ function addStat(statName) {
 
   updateStatsUI();
   updatePointsUI();
+
+  // Sync Supabase
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({
+      force:        parseInt(localStorage.getItem('Force'))        || 0,
+      intelligence: parseInt(localStorage.getItem('Intelligence')) || 0,
+      discipline:   parseInt(localStorage.getItem('Discipline'))   || 0,
+      focus:        parseInt(localStorage.getItem('Focus'))        || 0,
+      points_left:  statPoints
+    });
+  }
 }
 
 function updateStatsUI() {
@@ -1732,6 +1769,16 @@ function giveChessXP() {
   console.log(`+${xpGained} XP (Échecs - ligue)`);
   updateProfilePanel();
   checkAllAchievements();
+
+  // Sync Supabase
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({
+      current_elo: currentElo,
+      last_elo:    currentElo,
+      peak_elo:    parseInt(localStorage.getItem('peakElo')) || 0,
+      total_chess_xp: prevChessXP + xpGained
+    });
+  }
 }
 
 // ────────────────
@@ -1842,6 +1889,11 @@ function saveJournal() {
   entry.games = parseInt(document.getElementById('journal-games-input').value) || 0;
 
   localStorage.setItem('journal', JSON.stringify(journal));
+
+  // Sync Supabase
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ journal });
+  }
 }
 
 // ────────────────
@@ -1886,6 +1938,15 @@ if (validateBtn) {
       saveQuests();
       renderQuests();
       checkAllAchievements();
+
+      // Sync Supabase
+      if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+        window.TentiaAPI.saveProfile({
+          quests,
+          total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0,
+          total_quest_xp:    parseInt(localStorage.getItem('totalQuestXP'))    || 0,
+        });
+      }
     } else {
       alert('Aucune quête valide ou déjà validée.');
     }
