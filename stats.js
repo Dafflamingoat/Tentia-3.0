@@ -1358,6 +1358,54 @@ function generateID() {
 
 function saveQuests() {
   localStorage.setItem('quests', JSON.stringify(quests));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ quests });
+  }
+}
+
+// ────────────────
+// HISTORIQUE QUÊTES
+// ────────────────
+function saveQuestHistory(questText) {
+  const history = JSON.parse(localStorage.getItem('questHistory')) || {};
+  const today = getToday();
+  if (!history[today]) history[today] = [];
+  history[today].push(questText);
+  localStorage.setItem('questHistory', JSON.stringify(history));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ quests }); // on piggyback sur quests pour l'instant
+  }
+}
+
+function openQuestHistoryPopup() {
+  const overlay = document.getElementById('quest-history-popup');
+  const list    = document.getElementById('quest-history-list');
+  if (!overlay || !list) return;
+
+  const history = JSON.parse(localStorage.getItem('questHistory')) || {};
+  list.innerHTML = '';
+
+  const dates = Object.keys(history).sort().reverse();
+  if (dates.length === 0) {
+    list.innerHTML = '<div class="qh-empty">Aucune quête accomplie pour le moment.</div>';
+  } else {
+    dates.forEach(date => {
+      const block = document.createElement('div');
+      block.className = 'qh-block';
+      const d = new Date(date);
+      const label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      block.innerHTML = `<div class="qh-date">${label}</div>`;
+      history[date].forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'qh-item';
+        item.textContent = '✅ ' + q;
+        block.appendChild(item);
+      });
+      list.appendChild(block);
+    });
+  }
+
+  overlay.classList.add('active');
 }
 
 function renderQuests() {
@@ -1415,7 +1463,7 @@ function renderQuests() {
 
     deleteBtn.addEventListener('click', () => {
       quests = quests.filter((q) => q.id !== quest.id);
-      saveQuests();
+      saveQuests(); // sync Supabase automatiquement
       renderQuests();
     });
   });
@@ -1932,6 +1980,12 @@ if (validateBtn) {
     });
 
     if (gainedXP > 0) {
+      // Sauvegarder les quêtes validées dans l'historique
+      quests.filter(q => q.claimed).forEach(q => saveQuestHistory(q.text));
+
+      // Supprimer les quêtes validées définitivement
+      quests = quests.filter(q => !q.claimed);
+
       trackQuestStats(newlyClaimed, gainedXP);
       addXP(gainedXP);
       alert(`+${gainedXP} XP gagné !`);
@@ -2220,6 +2274,25 @@ setInterval(() => {
     loadJournal();
   }
 }, 5000);
+
+// ────────────────
+// EVENTS HISTORIQUE QUÊTES
+// ────────────────
+const openQuestHistoryBtn  = document.getElementById('open-quest-history');
+const questHistoryPopup    = document.getElementById('quest-history-popup');
+const closeQuestHistoryBtn = document.getElementById('close-quest-history');
+
+if (openQuestHistoryBtn) {
+  openQuestHistoryBtn.addEventListener('click', openQuestHistoryPopup);
+}
+if (closeQuestHistoryBtn && questHistoryPopup) {
+  closeQuestHistoryBtn.addEventListener('click', () => questHistoryPopup.classList.remove('active'));
+}
+if (questHistoryPopup) {
+  questHistoryPopup.addEventListener('click', (e) => {
+    if (e.target === questHistoryPopup) questHistoryPopup.classList.remove('active');
+  });
+}
 
 // ────────────────
 // EVENTS INFO POPUPS

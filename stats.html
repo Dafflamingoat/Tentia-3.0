@@ -4,17 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="stats.css">
-  <link rel="stylesheet" href="login.css">
-  <script src="api.js" defer></script>
   <title>Stats</title>
 </head>
 <body>
-
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    await TentiaAPI.initApp();
-  });
-</script>
 
 <a href="index.html" class="back-btn">RETOUR</a>
 
@@ -235,7 +227,17 @@
     <input type="text" id="new-quest" placeholder="Nouvelle quête...">
     <button id="add-quest" class="add-quest-btn">Ajouter</button>
     <button class="validate-btn">Valider</button>
-	<button class="reset-btn">Reset XP</button>
+    <button class="reset-btn">Reset XP</button>
+    <button class="history-btn" id="open-quest-history">📜 Historique</button>
+  </div>
+</div>
+
+<!-- POPUP Historique Quêtes -->
+<div class="popup-overlay" id="quest-history-popup">
+  <div class="popup-content info-popup-content">
+    <h3>📜 QUÊTES ACCOMPLIES</h3>
+    <div id="quest-history-list" class="quest-history-list"></div>
+    <button class="popup-close" id="close-quest-history">Fermer</button>
   </div>
 </div>
 

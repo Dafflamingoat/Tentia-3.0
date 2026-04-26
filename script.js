@@ -109,6 +109,9 @@ function increment(name) {
   }
   updateSkillUI(name);
   localStorage.setItem('skills', JSON.stringify(skills));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ skills });
+  }
 }
 
 function resetSkill(skill) {
@@ -116,6 +119,9 @@ function resetSkill(skill) {
   skills[skill] = 0;
   updateSkillUI(skill);
   localStorage.setItem('skills', JSON.stringify(skills));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ skills });
+  }
 }
 
 // ────────────────
@@ -128,18 +134,31 @@ async function fetchChessElo() {
     const resp = await fetch(`https://api.chess.com/pub/player/${CHESS_USERNAME}/stats`);
     const data = await resp.json();
 
-    const blitz = data.chess_blitz?.last?.rating || 0;
-    const rapid = data.chess_rapid?.last?.rating || 0;
-    const bullet = data.chess_bullet?.last?.rating || 0;
-    const elo = blitz || rapid || bullet || 0;
+    const blitz  = data.chess_blitz?.last?.rating  || 0;
+    const rapid  = data.chess_rapid?.last?.rating   || 0;
+    const bullet = data.chess_bullet?.last?.rating  || 0;
+    const elo    = blitz || rapid || bullet || 0;
 
     localStorage.setItem('currentElo', elo);
+
+    // Mettre à jour le peak ELO
+    const peak = parseInt(localStorage.getItem('peakElo')) || 0;
+    if (elo > peak) localStorage.setItem('peakElo', elo);
+
     if (typeof updateProfilePanel === "function") updateProfilePanel();
 
     skills.echec = Math.min(elo, MAX_LEVELS.echec);
     updateSkillUI('echec');
     updateEloBar(skills.echec);
     localStorage.setItem('skills', JSON.stringify(skills));
+
+    // Sync Supabase — sauvegarde l'ELO actuel pour que stats.js y accède
+    if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+      window.TentiaAPI.saveProfile({
+        current_elo: elo,
+        peak_elo:    Math.max(elo, peak)
+      });
+    }
 
     console.log("ELO récupéré :", elo);
   } catch (err) {
