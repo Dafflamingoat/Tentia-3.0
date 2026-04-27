@@ -153,8 +153,7 @@ async function loadProfile() {
     localStorage.setItem('selectedBG', JSON.stringify(data.selected_bg));
   }
 
-  // Tableaux — ne pas écraser si vide dans Supabase
-  // Le code JS régénère les bonnes valeurs par défaut si localStorage est vide
+  // Tableaux cosmétiques — ne pas écraser si vide dans Supabase
   setIfNotEmpty('skills',              data.skills);
   setIfNotEmpty('titles',              data.titles);
   setIfNotEmpty('avatars',             data.avatars);
@@ -164,8 +163,15 @@ async function loadProfile() {
   setIfNotEmpty('pets',                data.pets);
   setIfNotEmpty('badges_equipped',     data.badge_slots);
   setIfNotEmpty('achievementsClaimed', data.achievements_claimed);
-  setIfNotEmpty('journal',             data.journal);
-  setIfNotEmpty('quests',              data.quests);
+
+  // Quêtes et journal — TOUJOURS charger depuis Supabase (source de vérité)
+  // même si vide, pour éviter que des suppressions locales réapparaissent
+  if (data.quests !== undefined && data.quests !== null) {
+    localStorage.setItem('quests', JSON.stringify(data.quests));
+  }
+  if (data.journal !== undefined && data.journal !== null) {
+    localStorage.setItem('journal', JSON.stringify(data.journal));
+  }
 
   return data;
 }

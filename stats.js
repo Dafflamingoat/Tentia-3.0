@@ -1933,12 +1933,14 @@ function saveJournal() {
   updateCurrentDayElo(journal);
   const entry = ensureJournalEntry(journal, key);
 
-  entry.text = document.getElementById('journal-text').value;
+  entry.text  = document.getElementById('journal-text').value;
   entry.games = parseInt(document.getElementById('journal-games-input').value) || 0;
 
+  // Mettre à jour le journal en mémoire avec l'entrée modifiée
+  journal[key] = entry;
   localStorage.setItem('journal', JSON.stringify(journal));
 
-  // Sync Supabase
+  // Sync Supabase avec le journal complet à jour
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     window.TentiaAPI.saveProfile({ journal });
   }
@@ -2341,6 +2343,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Si l'API est disponible, charger le profil depuis Supabase d'abord
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     await window.TentiaAPI.loadProfile();
+
+    // Resynchroniser les variables globales depuis le localStorage mis à jour
+    quests = JSON.parse(localStorage.getItem('quests')) || [];
   }
 
   syncRewardsWithCurrentLevel();
