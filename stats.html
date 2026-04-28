@@ -4,9 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="stats.css">
+  <link rel="stylesheet" href="login.css">
+  <script src="api.js" defer></script>
   <title>Stats</title>
 </head>
 <body>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    await TentiaAPI.initApp();
+  });
+</script>
 
 <a href="index.html" class="back-btn">RETOUR</a>
 
