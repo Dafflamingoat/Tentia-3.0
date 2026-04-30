@@ -1205,3 +1205,62 @@ body {
   text-align: center;
   padding: 20px 0;
 }
+
+/* ── Sélecteur Forme End Game ── */
+.pet-form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.pet-form-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  background: #1a1208;
+  border: 2px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.pet-form-item:hover {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 8px var(--gold);
+}
+
+.pet-form-item.pet-form-active {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  background: #1e1a06;
+}
+
+.pet-form-sprite {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.pet-form-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pet-form-name {
+  font-size: 8px;
+  color: var(--gold-light);
+}
+
+.pet-form-bonus {
+  font-size: 7px;
+  color: #8bc34a;
+}

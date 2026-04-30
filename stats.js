@@ -21,6 +21,12 @@ let pets = JSON.parse(localStorage.getItem('pets')) || [
     share: 0.1,
     active: true,
     owned: false,
+    // Évolutions : Héricendre (1-15), Feurisson (16-34), Typhlosion (35-50)
+    evolutions: [
+      { minLevel: 1,  maxLevel: 15, name: 'Hericendre', sprite1: 'assets/pets/intel/pet1_frame1.png', sprite2: 'assets/pets/intel/pet1_frame2.png' },
+      { minLevel: 16, maxLevel: 34, name: 'Feurisson',  sprite1: 'assets/pets/intel/pet2_frame1.png', sprite2: 'assets/pets/intel/pet2_frame2.png' },
+      { minLevel: 35, maxLevel: 50, name: 'Typhlosion', sprite1: 'assets/pets/intel/pet3_frame1.png', sprite2: 'assets/pets/intel/pet3_frame2.png' },
+    ],
     sprite1: 'assets/pets/intel/pet1_frame1.png',
     sprite2: 'assets/pets/intel/pet1_frame2.png'
   },
@@ -50,13 +56,18 @@ let pets = JSON.parse(localStorage.getItem('pets')) || [
   },
   {
     id: 'pet4',
-    name: 'Aigle Royale',
+    name: 'Oeuf Mystère',
     stat: 'Focus',
     level: 1,
     xp: 0,
     share: 0.1,
     active: true,
     owned: false,
+    // Évolutions : Oeuf Mystère (1-9), Aigle Royale (10-50)
+    evolutions: [
+      { minLevel: 1,  maxLevel: 9,  name: 'Oeuf Mystère', sprite1: 'assets/pets/focus/pet1_frame1.png', sprite2: 'assets/pets/focus/pet1_frame2.png' },
+      { minLevel: 10, maxLevel: 50, name: 'Aigle Royale',  sprite1: 'assets/pets/focus/pet2_frame1.png', sprite2: 'assets/pets/focus/pet2_frame2.png' },
+    ],
     sprite1: 'assets/pets/focus/pet1_frame1.png',
     sprite2: 'assets/pets/focus/pet1_frame2.png'
   },
@@ -86,15 +97,24 @@ let pets = JSON.parse(localStorage.getItem('pets')) || [
   },
   {
     id: 'pet_endgame',
-    name: 'Pet End Game',
-    stat: 'All',
+    name: 'Arme Ultime',
+    stat: 'EndGame',
     level: 1,
     xp: 0,
     share: 0.1,
     active: true,
     owned: false,
-    sprite1: 'assets/pets/pet1_frame1.png',
-    sprite2: 'assets/pets/pet1_frame2.png'
+    // Forme active : 'arc' | 'baton' | 'marteau' | 'bouclier'
+    endgameForm: 'arc',
+    // 4 formes disponibles
+    forms: {
+      arc:     { name: 'Arc Céleste',      dominant: 'Focus',       sprite1: 'assets/pets/arc_frame1.png',     sprite2: 'assets/pets/arc_frame2.png'     },
+      baton:   { name: 'Bâton du Sage',    dominant: 'Intelligence', sprite1: 'assets/pets/baton_frame1.png',   sprite2: 'assets/pets/baton_frame2.png'   },
+      marteau: { name: 'Marteau Divin',    dominant: 'Force',       sprite1: 'assets/pets/marteau_frame1.png', sprite2: 'assets/pets/marteau_frame2.png' },
+      bouclier:{ name: 'Bouclier Absolu',  dominant: 'Discipline',  sprite1: 'assets/pets/bouclier_frame1.png',sprite2: 'assets/pets/bouclier_frame2.png'},
+    },
+    sprite1: 'assets/pets/arc_frame1.png',
+    sprite2: 'assets/pets/arc_frame2.png'
   }
 ];
 
@@ -721,9 +741,65 @@ function syncRewardsWithCurrentLevel() {
 // ────────────────
 // FONCTIONS PETS
 // ────────────────
+// ────────────────
+// ÉVOLUTION PETS
+// ────────────────
+
+// Retourne le sprite et nom actuels selon le niveau (pour pets avec évolutions)
+function getPetCurrentForm(pet) {
+  // Pet End Game — basé sur la forme choisie
+  if (pet.id === 'pet_endgame' && pet.forms) {
+    const formKey = pet.endgameForm || 'arc';
+    const form = pet.forms[formKey];
+    return {
+      name:    form.name,
+      sprite1: form.sprite1,
+      sprite2: form.sprite2
+    };
+  }
+
+  // Pets avec évolutions par niveau
+  if (pet.evolutions && pet.evolutions.length > 0) {
+    const lvl = pet.level || 1;
+    const evo = pet.evolutions.find(e => lvl >= e.minLevel && lvl <= e.maxLevel)
+             || pet.evolutions[pet.evolutions.length - 1];
+    return {
+      name:    evo.name,
+      sprite1: evo.sprite1,
+      sprite2: evo.sprite2
+    };
+  }
+
+  // Pet sans évolution
+  return {
+    name:    pet.name,
+    sprite1: pet.sprite1,
+    sprite2: pet.sprite2
+  };
+}
+
+// Scaling End Game par paliers
+function getEndgameBonus(pet, statName) {
+  const lvl = pet.level || 1;
+  const form = pet.forms?.[pet.endgameForm || 'arc'];
+  const dominant = form?.dominant;
+
+  let base, dom;
+  if      (lvl <= 25) { base = 5;  dom = 10; }
+  else if (lvl <= 49) { base = 10; dom = 12; }
+  else                { base = 15; dom = 20; }
+
+  return statName === dominant ? dom : base;
+}
+
 function getPetBonus(statName) {
   const pet = getEquippedPet();
   if (!pet || !pet.active) return 0;
+
+  // End Game — scaling par paliers et forme dominante
+  if (pet.id === 'pet_endgame') {
+    return getEndgameBonus(pet, statName);
+  }
 
   if (pet.stat === statName) {
     return Math.min(pet.level, 50);
@@ -735,12 +811,10 @@ function getPetBonus(statName) {
       : 0;
   }
 
-  if (pet.stat === 'All') {
-    return Math.floor(Math.min(pet.level, 50) * 0.2);
-  }
-
-  if (pet.stat === 'EndGame') {
-    return Math.floor(Math.min(pet.level, 50) * 0.3);
+  if (pet.stat === 'FocusDiscipline') {
+    return (statName === 'Focus' || statName === 'Discipline')
+      ? Math.floor(Math.min(pet.level, 50) / 2)
+      : 0;
   }
 
   return 0;
@@ -1592,10 +1666,18 @@ if (petPlaceholder) petPlaceholder.style.display = 'none';
 
 
 
-  if (petName) petName.textContent = pet.name;
-  if (petStat) petStat.textContent = `${pet.stat} (+${getPetBonusLabel(pet)})`;
+  if (petName) petName.textContent = getPetCurrentForm(pet).name;
+  if (petStat) petStat.textContent = `${pet.stat === 'EndGame' ? getPetCurrentForm(pet).name : pet.stat} (+${getPetBonusLabel(pet)})`;
   if (petLevel) petLevel.textContent = pet.level;
-  if (petSprite) petSprite.src = pet.sprite1;
+  if (petSprite) petSprite.src = getPetCurrentForm(pet).sprite1;
+
+  // Bouton changement de forme pour End Game
+  const formBtnWrap = document.getElementById('pet-form-btn-wrap');
+  if (pet.id === 'pet_endgame') {
+    if (formBtnWrap) formBtnWrap.style.display = 'block';
+  } else {
+    if (formBtnWrap) formBtnWrap.style.display = 'none';
+  }
 
   if (shareToggle) shareToggle.checked = pet.share > 0;
   if (shareInput) shareInput.value = Math.floor((pet.share || 0) * 100);
@@ -1608,10 +1690,18 @@ if (petPlaceholder) petPlaceholder.style.display = 'none';
 }
 
 function getPetBonusLabel(pet) {
-  if (pet.stat === 'ForceIntelligence') return 'Force + Intelligence';
-  if (pet.stat === 'All') return 'Toutes stats';
-  if (pet.stat === 'EndGame') return 'End Game';
-  return Math.min(pet.level, 50);
+  if (pet.stat === 'ForceIntelligence') return `Force + Intelligence (+${Math.floor(Math.min(pet.level,50)/2)} chacune)`;
+  if (pet.stat === 'FocusDiscipline')   return `Focus + Discipline (+${Math.floor(Math.min(pet.level,50)/2)} chacune)`;
+  if (pet.id   === 'pet_endgame') {
+    const form = pet.forms?.[pet.endgameForm || 'arc'];
+    const lvl  = pet.level || 1;
+    let base, dom;
+    if      (lvl <= 25) { base = 5;  dom = 10; }
+    else if (lvl <= 49) { base = 10; dom = 12; }
+    else                { base = 15; dom = 20; }
+    return `${form?.dominant} +${dom} / autres +${base}`;
+  }
+  return `+${Math.min(pet.level, 50)}`;
 }
 
 function renderPetInventory() {
@@ -1636,26 +1726,27 @@ function renderPetInventory() {
 
     const xpNeeded = getPetXpNeeded(pet.level);
     const xpPercent = Math.min((pet.xp / xpNeeded) * 100, 100);
-    const unlockLevel = rewardUnlockLevels[pet.id];
+    const unlockLabel = getUnlockLabel(pet.id);
+    const form = getPetCurrentForm(pet);
 
     item.innerHTML = `
       <div class="reward-card-media">
-        <img src="${pet.sprite1}" alt="${pet.name}" class="pet-item-sprite">
+        <img src="${form.sprite1}" alt="${form.name}" class="pet-item-sprite">
         ${!pet.owned ? '<div class="reward-lock">🔒</div>' : ''}
       </div>
-      <span class="pet-item-name">${pet.name}</span>
-      <span class="pet-item-stat">${pet.stat}</span>
+      <span class="pet-item-name">${form.name}</span>
+      <span class="pet-item-stat">${getPetBonusLabel(pet)}</span>
       <span class="pet-item-level">Lvl ${pet.level}</span>
       <div class="pet-item-xp-wrap">
         <div class="pet-item-xp-bar" style="width: ${xpPercent}%"></div>
         <span class="pet-item-xp-label">${pet.xp} / ${xpNeeded}</span>
       </div>
-      ${!pet.owned ? `<span class="reward-unlock-text">Niveau ${unlockLevel}</span>` : ''}
+      ${!pet.owned && unlockLabel ? `<span class="reward-unlock-text">${unlockLabel}</span>` : ''}
     `;
 
     item.addEventListener('click', () => {
       if (!pet.owned) {
-        alert(`Ce familier se debloque au niveau ${unlockLevel}.`);
+        alert(unlockLabel ? `Ce familier se débloque : ${unlockLabel}.` : 'Non débloqué.');
         return;
       }
 
@@ -1665,9 +1756,7 @@ function renderPetInventory() {
       updateStatsUI();
       renderPetInventory();
 
-      if (petInventory) {
-        petInventory.classList.remove('active');
-      }
+      if (petInventory) petInventory.classList.remove('active');
     });
 
     petList.appendChild(item);
@@ -2127,6 +2216,68 @@ if (petPopup) {
     if (e.target === petPopup) {
       petPopup.classList.remove('active');
     }
+  });
+}
+
+// ── Popup sélection forme End Game ──────────
+const openPetFormBtn  = document.getElementById('open-pet-form-selector');
+const petFormPopup    = document.getElementById('pet-form-popup');
+const closePetFormBtn = document.getElementById('close-pet-form');
+const petFormList     = document.getElementById('pet-form-list');
+
+function renderPetFormSelector() {
+  if (!petFormList) return;
+  petFormList.innerHTML = '';
+
+  const pet = pets.find(p => p.id === 'pet_endgame');
+  if (!pet || !pet.forms) return;
+
+  Object.entries(pet.forms).forEach(([key, form]) => {
+    const btn = document.createElement('button');
+    btn.className = 'pet-form-item' + (pet.endgameForm === key ? ' pet-form-active' : '');
+    btn.type = 'button';
+
+    const lvl = pet.level || 1;
+    let base, dom;
+    if      (lvl <= 25) { base = 5;  dom = 10; }
+    else if (lvl <= 49) { base = 10; dom = 12; }
+    else                { base = 15; dom = 20; }
+
+    btn.innerHTML = `
+      <img src="${form.sprite1}" alt="${form.name}" class="pet-form-sprite">
+      <div class="pet-form-info">
+        <div class="pet-form-name">${form.name}</div>
+        <div class="pet-form-bonus">${form.dominant} +${dom} / autres +${base}</div>
+      </div>
+    `;
+
+    btn.addEventListener('click', () => {
+      pet.endgameForm = key;
+      pet.sprite1 = form.sprite1;
+      pet.sprite2 = form.sprite2;
+      savePets();
+      updatePetUI();
+      updateStatsUI();
+      renderPetFormSelector();
+      petFormPopup.classList.remove('active');
+    });
+
+    petFormList.appendChild(btn);
+  });
+}
+
+if (openPetFormBtn && petFormPopup) {
+  openPetFormBtn.addEventListener('click', () => {
+    renderPetFormSelector();
+    petFormPopup.classList.add('active');
+  });
+}
+if (closePetFormBtn && petFormPopup) {
+  closePetFormBtn.addEventListener('click', () => petFormPopup.classList.remove('active'));
+}
+if (petFormPopup) {
+  petFormPopup.addEventListener('click', (e) => {
+    if (e.target === petFormPopup) petFormPopup.classList.remove('active');
   });
 }
 

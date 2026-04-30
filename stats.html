@@ -119,7 +119,21 @@
       <input type="number" id="pet-share-input" min="10" max="90" placeholder="10-90%">
     </div>
 
+    <!-- Sélecteur de forme End Game (visible seulement pour pet_endgame) -->
+    <div id="pet-form-btn-wrap" style="display:none; margin-top:10px;">
+      <button class="profile-btn" id="open-pet-form-selector">⚔ Changer de Forme</button>
+    </div>
+
     <button class="popup-close" id="close-pet">Fermer</button>
+  </div>
+</div>
+
+<!-- POPUP Sélection Forme End Game -->
+<div class="popup-overlay" id="pet-form-popup">
+  <div class="popup-content info-popup-content">
+    <h3>⚔ FORME DE L'ARME</h3>
+    <div class="pet-form-list" id="pet-form-list"></div>
+    <button class="popup-close" id="close-pet-form">Fermer</button>
   </div>
 </div>
 
