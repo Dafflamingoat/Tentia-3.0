@@ -72,21 +72,72 @@ sprite.onerror = function () {
 // ════════════════════════════════════════════
 //  COMPÉTENCES + sauvegarde
 // ════════════════════════════════════════════
-const MAX_LEVELS = { mecanique:100, anglais:100, dev:100, echec:1000, argent:3000 };
-const skills = { mecanique:0, anglais:0, dev:0, echec:0, argent:0 };
+const CUSTOM_SKILLS_KEY = 'customSkills';
+const REMOVED_DEFAULT_SKILLS = ['mecanique', 'anglais', 'dev'];
+const MAX_LEVELS = { echec: 1000, argent: 3000 };
+const skills = { echec: 0, argent: 0 };
+let customSkills = [];
 
-const savedSkills = localStorage.getItem('skills');
-if (savedSkills) {
-  Object.assign(skills, JSON.parse(savedSkills));
-  Object.keys(skills).forEach(name => updateSkillUI(name));
+function getCustomSkills() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_SKILLS_KEY) || '[]');
+    return Array.isArray(saved) ? saved : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function loadSavedSkills() {
+  customSkills = getCustomSkills();
+
+  Object.keys(skills).forEach(name => delete skills[name]);
+  skills.echec = 0;
+  skills.argent = 0;
+
+  try {
+    const savedSkills = JSON.parse(localStorage.getItem('skills') || '{}');
+    Object.keys(savedSkills).forEach(name => {
+      if (!REMOVED_DEFAULT_SKILLS.includes(name)) skills[name] = savedSkills[name];
+    });
+  } catch (e) {}
+
+  customSkills.forEach(skill => {
+    if (typeof skills[skill.id] !== 'number') skills[skill.id] = skill.value || 0;
+  });
+
+  localStorage.setItem('skills', JSON.stringify(skills));
+}
+
+loadSavedSkills();
+
+function getSkillMax(name) {
+  if (MAX_LEVELS[name]) return MAX_LEVELS[name];
+  const custom = customSkills.find(skill => skill.id === name);
+  return custom ? custom.max : 100;
+}
+
+function persistSkills() {
+  customSkills = customSkills.map(skill => ({
+    ...skill,
+    value: skills[skill.id] || 0
+  }));
+
+  localStorage.setItem('skills', JSON.stringify(skills));
+  localStorage.setItem(CUSTOM_SKILLS_KEY, JSON.stringify(customSkills));
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ skills, custom_skills: customSkills });
+  }
 }
 
 function updateSkillUI(name) {
-  const val = skills[name];
-  const max = MAX_LEVELS[name];
+  const val = skills[name] || 0;
+  const max = getSkillMax(name);
   const bar = document.getElementById('bar-' + name);
   const label = document.getElementById('val-' + name);
   const node = document.getElementById('skill-' + name);
+
+  if (!bar || !label || !node || !max) return;
 
   bar.style.width = (val / max * 100) + '%';
   label.textContent = val.toLocaleString() + '/' + max.toLocaleString();
@@ -95,38 +146,171 @@ function updateSkillUI(name) {
   else node.classList.remove('maxed');
 }
 
+function renderCustomSkills() {
+  const list = document.getElementById('custom-skills-list');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  customSkills.forEach(skill => {
+    const node = document.createElement('div');
+    node.className = 'skill-node custom-skill-node';
+    node.id = 'skill-' + skill.id;
+
+    node.innerHTML = `
+      <button class="skill-delete-btn" type="button" title="Supprimer ${skill.name}" aria-label="Supprimer ${skill.name}">x</button>
+      <div class="skill-icon">+</div>
+      <div class="skill-name"></div>
+      <div class="skill-bar-wrap">
+        <div class="skill-bar" id="bar-${skill.id}" style="width:0%"></div>
+        <span class="skill-val" id="val-${skill.id}">0/${skill.max}</span>
+      </div>
+      <div class="skill-buttons">
+        <button class="skill-btn" type="button" data-action="increment">+</button>
+        <button class="skill-btn reset-btn" type="button" data-action="reset">R</button>
+      </div>
+    `;
+
+    node.querySelector('.skill-name').textContent = skill.name;
+    node.querySelector('[data-action="increment"]').addEventListener('click', () => increment(skill.id));
+    node.querySelector('[data-action="reset"]').addEventListener('click', () => resetSkill(skill.id));
+    node.querySelector('.skill-delete-btn').addEventListener('click', () => deleteCustomSkill(skill.id));
+
+    list.appendChild(node);
+    updateSkillUI(skill.id);
+  });
+}
+
+function normalizeSkillName(name) {
+  return name.trim().replace(/\s+/g, ' ').slice(0, 24);
+}
+
+function createSkillId(name) {
+  const base = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'competence';
+
+  let id = base;
+  let index = 2;
+  while (skills[id] !== undefined || MAX_LEVELS[id] || customSkills.some(skill => skill.id === id)) {
+    id = `${base}-${index}`;
+    index++;
+  }
+  return id;
+}
+
+function showAddSkillError(message) {
+  const error = document.getElementById('add-skill-error');
+  if (error) error.textContent = message || '';
+}
+
+function openAddSkillModal() {
+  const modal = document.getElementById('add-skill-modal');
+  const input = document.getElementById('add-skill-input');
+  if (!modal || !input) return;
+
+  showAddSkillError('');
+  input.value = '';
+  modal.style.display = 'flex';
+  setTimeout(() => input.focus(), 0);
+}
+
+function closeAddSkillModal() {
+  const modal = document.getElementById('add-skill-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function addCustomSkill(name) {
+  const cleanName = normalizeSkillName(name);
+  if (!cleanName) {
+    showAddSkillError('Entre un nom de competence.');
+    return;
+  }
+
+  const alreadyExists = customSkills.some(skill => skill.name.toLowerCase() === cleanName.toLowerCase());
+  if (alreadyExists) {
+    showAddSkillError('Cette competence existe deja.');
+    return;
+  }
+
+  const skill = {
+    id: createSkillId(cleanName),
+    name: cleanName,
+    value: 0,
+    max: 100
+  };
+
+  customSkills.push(skill);
+  skills[skill.id] = 0;
+  persistSkills();
+  renderCustomSkills();
+  closeAddSkillModal();
+}
+
+function deleteCustomSkill(id) {
+  const skill = customSkills.find(item => item.id === id);
+  if (!skill) return;
+  if (!confirm(`Supprimer la competence "${skill.name}" ?`)) return;
+
+  customSkills = customSkills.filter(item => item.id !== id);
+  delete skills[id];
+  persistSkills();
+  renderCustomSkills();
+}
+
 function increment(name) {
   if (name === 'echec') return;
+
+  const max = getSkillMax(name);
+  if (!max) return;
+
   if (name === 'argent') {
-    const step = 50;
-    skills[name] = Math.min(skills[name] + step, MAX_LEVELS[name]);
+    skills[name] = Math.min((skills[name] || 0) + 50, max);
   } else {
     const intel = parseInt(localStorage.getItem('Intelligence')) || 0;
     const bonus = Math.floor(intel / 10);
     const step = 1 + bonus;
-    skills[name] = Math.min(skills[name] + step, MAX_LEVELS[name]);
+    skills[name] = Math.min((skills[name] || 0) + step, max);
     console.log(`+${step} ${name} (Intelligence incluse)`);
   }
+
   updateSkillUI(name);
-  localStorage.setItem('skills', JSON.stringify(skills));
-  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ skills });
-  }
+  persistSkills();
 }
 
 function resetSkill(skill) {
-  if (skill === 'echec') return;
+  if (skill === 'echec' || skills[skill] === undefined) return;
   skills[skill] = 0;
   updateSkillUI(skill);
-  localStorage.setItem('skills', JSON.stringify(skills));
-  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ skills });
-  }
+  persistSkills();
 }
 
-// ────────────────
+renderCustomSkills();
+Object.keys(skills).forEach(name => updateSkillUI(name));
+
+// Events ajout competence
+const addSkillModal = document.getElementById('add-skill-modal');
+const addSkillForm = document.getElementById('add-skill-form');
+const openAddSkill = document.getElementById('open-add-skill');
+const closeAddSkill = document.getElementById('close-add-skill');
+
+if (openAddSkill) openAddSkill.addEventListener('click', openAddSkillModal);
+if (closeAddSkill) closeAddSkill.addEventListener('click', closeAddSkillModal);
+if (addSkillModal) addSkillModal.addEventListener('click', (e) => { if (e.target === addSkillModal) closeAddSkillModal(); });
+if (addSkillForm) {
+  addSkillForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('add-skill-input');
+    addCustomSkill(input ? input.value : '');
+  });
+}
+
+// ----------------
 // ELO CHESS
-// ────────────────
+// ----------------
 const CHESS_USERNAME = 'Dafflaming0';
 
 async function fetchChessElo() {
@@ -672,6 +856,11 @@ window.addEventListener('load', async () => {
     renderBadgeSlots();
     renderSkinThumbs();
     renderBGThumbs();
+
+    // Recharger les competences personnalisees
+    loadSavedSkills();
+    renderCustomSkills();
+    Object.keys(skills).forEach(name => updateSkillUI(name));
 
     // Recharger la BG sauvegardée
     const savedBG = localStorage.getItem('selectedBG');

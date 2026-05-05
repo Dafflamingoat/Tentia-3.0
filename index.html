@@ -27,36 +27,40 @@
     </div>
   </div>
 
-  <!-- POPUP Info Arbre de Compétences -->
+  <!-- POPUP Info Arbre de Competences -->
   <div id="skill-info-modal" class="badge-modal-overlay" style="display:none;">
     <div class="badge-modal-box info-modal-box">
-      <div class="badge-modal-title">🌟 COMPÉTENCES</div>
+      <div class="badge-modal-title">COMPETENCES</div>
       <div class="info-modal-body">
         <div class="info-skill-block">
-          <div class="info-skill-title">⚙️ MÉCANIQUE</div>
-          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ta progression réelle en mécanique.</div>
+          <div class="info-skill-title">COMPETENCES PERSO</div>
+          <div class="info-skill-desc">Ajoute tes propres competences avec la case +. Chaque competence peut progresser, etre remise a zero ou supprimee.</div>
         </div>
         <div class="info-skill-block">
-          <div class="info-skill-title">🇬🇧 ANGLAIS</div>
-          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ton niveau d'anglais.</div>
+          <div class="info-skill-title">ECHECS</div>
+          <div class="info-skill-desc">Mise a jour automatique via l'API Chess.com. Maximum : 1000 ELO affiche.</div>
         </div>
         <div class="info-skill-block">
-          <div class="info-skill-title">💻 DEV</div>
-          <div class="info-skill-desc">Clique ＋ pour progresser. Intelligence booste le gain. Reflète ta progression en développement.</div>
-        </div>
-        <div class="info-skill-block">
-          <div class="info-skill-title">♟️ ÉCHECS</div>
-          <div class="info-skill-desc">Mise à jour automatique via l'API Chess.com. Maximum : 1000 ELO affiché.</div>
-        </div>
-        <div class="info-skill-block">
-          <div class="info-skill-title">💰 ARGENT</div>
-          <div class="info-skill-desc">Clique ＋ pour progresser (pas d'incrément basé sur les stats). Représente tes économies.</div>
+          <div class="info-skill-title">ARGENT</div>
+          <div class="info-skill-desc">Clique + pour progresser. Represente tes economies.</div>
         </div>
       </div>
-      <button class="badge-modal-close" id="close-skill-info">✕ FERMER</button>
+      <button class="badge-modal-close" id="close-skill-info">FERMER</button>
     </div>
   </div>
 
+  <!-- POPUP Ajout Competence -->
+  <div id="add-skill-modal" class="badge-modal-overlay" style="display:none;">
+    <form class="badge-modal-box add-skill-modal-box" id="add-skill-form">
+      <div class="badge-modal-title">NOUVELLE COMPETENCE</div>
+      <input class="add-skill-input" id="add-skill-input" type="text" maxlength="24" autocomplete="off" placeholder="Nom de la competence">
+      <p class="add-skill-error" id="add-skill-error" aria-live="polite"></p>
+      <div class="add-skill-actions">
+        <button class="badge-modal-close add-skill-submit" type="submit">AJOUTER</button>
+        <button class="badge-modal-close" id="close-add-skill" type="button">FERMER</button>
+      </div>
+    </form>
+  </div>
   <!-- POPUP Ligues Échecs (index) -->
   <div id="chess-info-modal" class="badge-modal-overlay" style="display:none;">
     <div class="badge-modal-box info-modal-box">
@@ -192,44 +196,12 @@
       </h2>
       <div class="skill-tree">
 
-        <div class="skill-node" id="skill-mecanique">
-          <div class="skill-icon">⚙️</div>
-          <div class="skill-name">Mécanique</div>
-          <div class="skill-bar-wrap">
-            <div class="skill-bar" id="bar-mecanique" style="width:0%"></div>
-            <span class="skill-val" id="val-mecanique">0/100</span>
-          </div>
-          <div class="skill-buttons">
-            <button class="skill-btn" onclick="increment('mecanique')">＋</button>
-            <button class="skill-btn reset-btn" onclick="resetSkill('mecanique')">↺</button>
-          </div>
-        </div>
+        <div class="custom-skills-list" id="custom-skills-list"></div>
 
-        <div class="skill-node" id="skill-anglais">
-          <div class="skill-icon">🇬🇧</div>
-          <div class="skill-name">Anglais</div>
-          <div class="skill-bar-wrap">
-            <div class="skill-bar" id="bar-anglais" style="width:0%"></div>
-            <span class="skill-val" id="val-anglais">0/100</span>
-          </div>
-          <div class="skill-buttons">
-            <button class="skill-btn" onclick="increment('anglais')">＋</button>
-            <button class="skill-btn reset-btn" onclick="resetSkill('anglais')">↺</button>
-          </div>
-        </div>
-
-        <div class="skill-node" id="skill-dev">
-          <div class="skill-icon">💻</div>
-          <div class="skill-name">Dev</div>
-          <div class="skill-bar-wrap">
-            <div class="skill-bar" id="bar-dev" style="width:0%"></div>
-            <span class="skill-val" id="val-dev">0/100</span>
-          </div>
-          <div class="skill-buttons">
-            <button class="skill-btn" onclick="increment('dev')">＋</button>
-            <button class="skill-btn reset-btn" onclick="resetSkill('dev')">↺</button>
-          </div>
-        </div>
+        <button class="skill-node add-skill-node" id="open-add-skill" type="button" title="Ajouter une competence">
+          <div class="add-skill-plus">+</div>
+          <div class="skill-name">Ajouter</div>
+        </button>
 
         <div class="skill-node" id="skill-echec">
           <div class="skill-icon">♟️</div>

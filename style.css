@@ -761,3 +761,103 @@ color: #fff;
   border-top: 1px solid var(--border);
   line-height: 1.6;
 }
+/* --- COMPETENCES PERSONNALISEES --- */
+.custom-skills-list {
+  display: contents;
+}
+
+.custom-skill-node {
+  position: relative;
+}
+
+.add-skill-node {
+  min-height: 122px;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--gold-light);
+}
+
+.add-skill-node:hover .add-skill-plus {
+  transform: scale(1.12);
+  text-shadow: 0 0 12px var(--gold-light);
+}
+
+.add-skill-plus {
+  font-size: 34px;
+  line-height: 1;
+  transition: transform 0.12s, text-shadow 0.12s;
+}
+
+.skill-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  line-height: 1;
+  background: var(--bg-panel);
+  border: 1px solid #f44336;
+  color: #f44336;
+  cursor: pointer;
+  box-shadow: 1px 1px 0 #000;
+}
+
+.skill-delete-btn:hover {
+  background: #f44336;
+  color: #fff;
+  box-shadow: 0 0 8px #f44336, 1px 1px 0 #000;
+}
+
+.add-skill-modal-box {
+  gap: 10px;
+}
+
+.add-skill-input {
+  width: 100%;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--text);
+  background: var(--bg-slot);
+  border: 2px solid var(--border);
+  padding: 10px;
+  outline: none;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 2px 2px 0 #000;
+}
+
+.add-skill-input:focus {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 10px rgba(200,163,44,0.35), inset 0 0 8px rgba(0,0,0,0.6), 2px 2px 0 #000;
+}
+
+.add-skill-input::placeholder {
+  color: var(--text-dim);
+}
+
+.add-skill-error {
+  min-height: 12px;
+  font-size: 6px;
+  color: #f44336;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.add-skill-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.add-skill-actions .badge-modal-close {
+  flex: 1;
+}
+
+.add-skill-submit {
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+.add-skill-submit:hover {
+  border-color: #4caf50;
+  color: #4caf50;
+}
