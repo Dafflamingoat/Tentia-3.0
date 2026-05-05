@@ -483,12 +483,66 @@ const levelRewards = {
   ]
 };
 
+const TIMELINE_SKILLS_KEY = '_timelineId';
+
+const billaudBackgroundRewardByLevel = {
+  7: 'bg_billaud_3',
+  15: 'bg_billaud_4',
+  27: 'bg_billaud_5',
+  37: 'bg_billaud_6',
+  46: 'bg_billaud_7',
+  57: 'bg_billaud_8',
+  65: 'bg_billaud_9',
+  75: 'bg_billaud_10',
+  87: 'bg_billaud_11',
+  98: 'bg_billaud_12',
+  100: 'bg_billaud_13'
+};
+
+function getTimelineIdStats() {
+  const fromStorage = localStorage.getItem('timelineId');
+  if (fromStorage) return fromStorage;
+
+  try {
+    const skillsPayload = JSON.parse(localStorage.getItem('skills') || '{}');
+    if (skillsPayload[TIMELINE_SKILLS_KEY]) return skillsPayload[TIMELINE_SKILLS_KEY];
+  } catch (e) {}
+
+  return 'dafz';
+}
+
+function getTimelineAwareRewards(levelReached) {
+  const rewards = levelRewards[levelReached] || [];
+  const timelineId = getTimelineIdStats();
+
+  if (timelineId !== 'billaud') return rewards;
+
+  return rewards
+    .map((reward) => {
+      if (reward.type === 'background') {
+        const billaudBgId = billaudBackgroundRewardByLevel[levelReached];
+        return billaudBgId ? { type: 'background', id: billaudBgId } : null;
+      }
+
+      if (reward.type === 'skin' || reward.type === 'avatar') {
+        return null;
+      }
+
+      return reward;
+    })
+    .filter(Boolean);
+}
+
 const rewardUnlockLevels = {};
 
 Object.entries(levelRewards).forEach(([levelKey, rewards]) => {
   rewards.forEach((reward) => {
     rewardUnlockLevels[reward.id] = parseInt(levelKey, 10);
   });
+});
+
+Object.entries(billaudBackgroundRewardByLevel).forEach(([levelKey, rewardId]) => {
+  rewardUnlockLevels[rewardId] = parseInt(levelKey, 10);
 });
 
 // Exposer la map en localStorage pour que script.js puisse afficher les niveaux de déblocage
@@ -716,7 +770,7 @@ function unlockReward(reward) {
 }
 
 function applyLevelRewardsFor(levelReached) {
-  const rewards = levelRewards[levelReached];
+  const rewards = getTimelineAwareRewards(levelReached);
   if (!rewards || rewards.length === 0) return;
 
   rewards.forEach((reward) => {
@@ -729,7 +783,7 @@ function applyLevelRewardsFor(levelReached) {
 
 function syncRewardsWithCurrentLevel() {
   for (let i = 1; i <= level; i++) {
-    const rewards = levelRewards[i];
+    const rewards = getTimelineAwareRewards(i);
     if (!rewards) continue;
 
     rewards.forEach((reward) => {

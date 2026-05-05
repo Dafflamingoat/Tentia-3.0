@@ -128,7 +128,15 @@ function getSkillMax(name) {
 }
 
 function getSkillsPayload() {
+  const savedSkills = (() => {
+    try { return JSON.parse(localStorage.getItem('skills') || '{}'); }
+    catch (e) { return {}; }
+  })();
+
+  const timelineId = savedSkills._timelineId || localStorage.getItem('timelineId') || 'dafz';
+
   return {
+    _timelineId: timelineId,
     ...skills,
     _customSkills: customSkills
   };
@@ -756,11 +764,12 @@ function renderBGThumbs() {
   if (!wrap) return;
 
   const ownedBGs = getBackgrounds();
-  // Lire les données depuis les thumbs déjà dans le HTML
-  const thumbData = Array.from(wrap.querySelectorAll('.bg-thumb')).map(t => ({
-    bg1: t.dataset.bg1,
-    bg2: t.dataset.bg2
-  }));
+  const thumbData = ownedBGs.length
+    ? ownedBGs.map(bg => ({ bg1: bg.bg1, bg2: bg.bg2 }))
+    : Array.from(wrap.querySelectorAll('.bg-thumb')).map(t => ({
+        bg1: t.dataset.bg1,
+        bg2: t.dataset.bg2
+      }));
 
   wrap.innerHTML = '';
 
@@ -816,10 +825,11 @@ function renderSkinThumbs() {
   if (!skinWrapEl) return;
 
   const ownedSkins = getSkins();
-  // Lire les données depuis les thumbs déjà dans le HTML
-  const thumbData = Array.from(skinWrapEl.querySelectorAll('.skin-thumb')).map(t => ({
-    folder: t.dataset.skin
-  }));
+  const thumbData = ownedSkins.length
+    ? ownedSkins.map(skin => ({ folder: skin.folder }))
+    : Array.from(skinWrapEl.querySelectorAll('.skin-thumb')).map(t => ({
+        folder: t.dataset.skin
+      }));
 
   skinWrapEl.innerHTML = '';
 
