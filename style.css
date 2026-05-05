@@ -768,6 +768,8 @@ color: #fff;
 
 .custom-skill-node {
   position: relative;
+  min-height: 150px;
+  justify-content: space-between;
 }
 
 .add-skill-node {
@@ -786,6 +788,59 @@ color: #fff;
   font-size: 34px;
   line-height: 1;
   transition: transform 0.12s, text-shadow 0.12s;
+}
+
+.custom-skill-icon {
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+
+.skill-time-panel {
+  width: 100%;
+  padding: 9px 6px;
+  background: var(--bar-bg);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.skill-time-label {
+  font-size: 5px;
+  color: var(--text-dim);
+}
+
+.skill-time-total {
+  font-size: 11px;
+  color: var(--gold-light);
+  text-shadow: 0 0 8px rgba(240,200,68,0.45);
+}
+
+.skill-time-session {
+  font-size: 6px;
+  color: var(--text);
+}
+
+.timer-btn {
+  min-width: 76px;
+  font-size: 7px;
+  padding: 7px 8px;
+}
+
+.custom-skill-node.timer-running {
+  border-color: #4caf50;
+  box-shadow: 0 0 14px rgba(76,175,80,0.35), inset 0 0 10px rgba(0,0,0,0.6), 2px 2px 0 #000;
+}
+
+.custom-skill-node.timer-running .timer-btn {
+  border-color: #f44336;
+  color: #f44336;
+}
+
+.custom-skill-node.timer-running .skill-time-total {
+  color: #8bc34a;
 }
 
 .skill-delete-btn {

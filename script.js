@@ -77,6 +77,7 @@ const REMOVED_DEFAULT_SKILLS = ['mecanique', 'anglais', 'dev'];
 const MAX_LEVELS = { echec: 1000, argent: 3000 };
 const skills = { echec: 0, argent: 0 };
 let customSkills = [];
+let customSkillTimerInterval = null;
 
 function getCustomSkills() {
   try {
@@ -88,24 +89,32 @@ function getCustomSkills() {
 }
 
 function loadSavedSkills() {
-  customSkills = getCustomSkills();
+  let savedSkills = {};
+
+  try {
+    savedSkills = JSON.parse(localStorage.getItem('skills') || '{}');
+  } catch (e) {}
+
+  const localCustomSkills = getCustomSkills();
+  const syncedCustomSkills = Array.isArray(savedSkills._customSkills) ? savedSkills._customSkills : [];
+  const sourceCustomSkills = localCustomSkills.length ? localCustomSkills : syncedCustomSkills;
+
+  customSkills = sourceCustomSkills.map(skill => ({
+    id: skill.id,
+    name: skill.name,
+    totalMs: Number(skill.totalMs || 0),
+    activeStartedAt: skill.activeStartedAt || null
+  }));
 
   Object.keys(skills).forEach(name => delete skills[name]);
   skills.echec = 0;
   skills.argent = 0;
 
-  try {
-    const savedSkills = JSON.parse(localStorage.getItem('skills') || '{}');
-    Object.keys(savedSkills).forEach(name => {
-      if (!REMOVED_DEFAULT_SKILLS.includes(name)) skills[name] = savedSkills[name];
-    });
-  } catch (e) {}
+  skills.echec = Number(savedSkills.echec || 0);
+  skills.argent = Number(savedSkills.argent || 0);
 
-  customSkills.forEach(skill => {
-    if (typeof skills[skill.id] !== 'number') skills[skill.id] = skill.value || 0;
-  });
-
-  localStorage.setItem('skills', JSON.stringify(skills));
+  localStorage.setItem('skills', JSON.stringify(getSkillsPayload()));
+  localStorage.setItem(CUSTOM_SKILLS_KEY, JSON.stringify(customSkills));
 }
 
 loadSavedSkills();
@@ -116,17 +125,19 @@ function getSkillMax(name) {
   return custom ? custom.max : 100;
 }
 
-function persistSkills() {
-  customSkills = customSkills.map(skill => ({
-    ...skill,
-    value: skills[skill.id] || 0
-  }));
+function getSkillsPayload() {
+  return {
+    ...skills,
+    _customSkills: customSkills
+  };
+}
 
-  localStorage.setItem('skills', JSON.stringify(skills));
+function persistSkills() {
+  localStorage.setItem('skills', JSON.stringify(getSkillsPayload()));
   localStorage.setItem(CUSTOM_SKILLS_KEY, JSON.stringify(customSkills));
 
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ skills, custom_skills: customSkills });
+    window.TentiaAPI.saveProfile({ skills: getSkillsPayload() });
   }
 }
 
@@ -158,27 +169,81 @@ function renderCustomSkills() {
     node.id = 'skill-' + skill.id;
 
     node.innerHTML = `
-      <button class="skill-delete-btn" type="button" title="Supprimer ${skill.name}" aria-label="Supprimer ${skill.name}">x</button>
-      <div class="skill-icon">+</div>
+      <button class="skill-delete-btn" type="button" title="Supprimer" aria-label="Supprimer la competence">x</button>
+      <div class="skill-icon custom-skill-icon">TIME</div>
       <div class="skill-name"></div>
-      <div class="skill-bar-wrap">
-        <div class="skill-bar" id="bar-${skill.id}" style="width:0%"></div>
-        <span class="skill-val" id="val-${skill.id}">0/${skill.max}</span>
+      <div class="skill-time-panel">
+        <span class="skill-time-label">TOTAL</span>
+        <span class="skill-time-total" id="total-${skill.id}">0'00</span>
+        <span class="skill-time-session" id="session-${skill.id}">00:00:00</span>
       </div>
-      <div class="skill-buttons">
-        <button class="skill-btn" type="button" data-action="increment">+</button>
-        <button class="skill-btn reset-btn" type="button" data-action="reset">R</button>
-      </div>
+      <button class="skill-btn timer-btn" type="button" data-action="toggle"></button>
     `;
 
     node.querySelector('.skill-name').textContent = skill.name;
-    node.querySelector('[data-action="increment"]').addEventListener('click', () => increment(skill.id));
-    node.querySelector('[data-action="reset"]').addEventListener('click', () => resetSkill(skill.id));
+    node.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleSkillTimer(skill.id));
     node.querySelector('.skill-delete-btn').addEventListener('click', () => deleteCustomSkill(skill.id));
 
     list.appendChild(node);
-    updateSkillUI(skill.id);
+    updateCustomSkillUI(skill.id);
   });
+}
+
+function formatSessionTime(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+}
+
+function formatTotalHours(ms) {
+  const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}'${String(minutes).padStart(2, '0')}`;
+}
+
+function getCustomSkillElapsed(skill) {
+  if (!skill) return 0;
+  const runningMs = skill.activeStartedAt ? Date.now() - Number(skill.activeStartedAt) : 0;
+  return Math.max(0, skill.totalMs + runningMs);
+}
+
+function updateCustomSkillUI(id) {
+  const skill = customSkills.find(item => item.id === id);
+  const node = document.getElementById('skill-' + id);
+  if (!skill || !node) return;
+
+  const total = document.getElementById('total-' + id);
+  const session = document.getElementById('session-' + id);
+  const button = node.querySelector('[data-action="toggle"]');
+  const currentSessionMs = skill.activeStartedAt ? Date.now() - Number(skill.activeStartedAt) : 0;
+
+  if (total) total.textContent = formatTotalHours(getCustomSkillElapsed(skill));
+  if (session) session.textContent = formatSessionTime(currentSessionMs);
+  if (button) button.textContent = skill.activeStartedAt ? 'STOP' : 'START';
+
+  node.classList.toggle('timer-running', Boolean(skill.activeStartedAt));
+}
+
+function updateAllCustomSkillTimers() {
+  customSkills.forEach(skill => updateCustomSkillUI(skill.id));
+}
+
+function toggleSkillTimer(id) {
+  const skill = customSkills.find(item => item.id === id);
+  if (!skill) return;
+
+  if (skill.activeStartedAt) {
+    skill.totalMs += Math.max(0, Date.now() - Number(skill.activeStartedAt));
+    skill.activeStartedAt = null;
+  } else {
+    skill.activeStartedAt = Date.now();
+  }
+
+  persistSkills();
+  updateCustomSkillUI(id);
 }
 
 function normalizeSkillName(name) {
@@ -239,12 +304,11 @@ function addCustomSkill(name) {
   const skill = {
     id: createSkillId(cleanName),
     name: cleanName,
-    value: 0,
-    max: 100
+    totalMs: 0,
+    activeStartedAt: null
   };
 
   customSkills.push(skill);
-  skills[skill.id] = 0;
   persistSkills();
   renderCustomSkills();
   closeAddSkillModal();
@@ -256,7 +320,6 @@ function deleteCustomSkill(id) {
   if (!confirm(`Supprimer la competence "${skill.name}" ?`)) return;
 
   customSkills = customSkills.filter(item => item.id !== id);
-  delete skills[id];
   persistSkills();
   renderCustomSkills();
 }
@@ -290,6 +353,10 @@ function resetSkill(skill) {
 
 renderCustomSkills();
 Object.keys(skills).forEach(name => updateSkillUI(name));
+
+if (!customSkillTimerInterval) {
+  customSkillTimerInterval = setInterval(updateAllCustomSkillTimers, 1000);
+}
 
 // Events ajout competence
 const addSkillModal = document.getElementById('add-skill-modal');
@@ -334,7 +401,7 @@ async function fetchChessElo() {
     skills.echec = Math.min(elo, MAX_LEVELS.echec);
     updateSkillUI('echec');
     updateEloBar(skills.echec);
-    localStorage.setItem('skills', JSON.stringify(skills));
+    localStorage.setItem('skills', JSON.stringify(getSkillsPayload()));
 
     // Sync Supabase — sauvegarde l'ELO actuel pour que stats.js y accède
     if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
@@ -395,7 +462,13 @@ resetBtn.addEventListener('click', () => {
     skills[name] = 0;
     updateSkillUI(name);
   });
-  localStorage.setItem('skills', JSON.stringify(skills));
+  customSkills = customSkills.map(skill => ({
+    ...skill,
+    totalMs: 0,
+    activeStartedAt: null
+  }));
+  persistSkills();
+  renderCustomSkills();
 });
 
 // ────────────────
