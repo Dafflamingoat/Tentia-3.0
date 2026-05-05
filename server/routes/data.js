@@ -56,6 +56,70 @@ router.put('/profile', async (req, res) => {
   res.json(data);
 });
 
+const PROFILE_PHOTO_BUCKET = 'profile-photos';
+
+async function ensureProfilePhotoBucket() {
+  const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+  const exists = Array.isArray(buckets) && buckets.some(bucket => bucket.name === PROFILE_PHOTO_BUCKET);
+  if (!exists) {
+    await supabaseAdmin.storage.createBucket(PROFILE_PHOTO_BUCKET, { public: false });
+  }
+}
+
+router.get('/profile-photo', async (req, res) => {
+  const filePath = `${req.user.id}/profile-photo.png`;
+
+  await ensureProfilePhotoBucket();
+
+  const { data, error } = await supabaseAdmin
+    .storage
+    .from(PROFILE_PHOTO_BUCKET)
+    .createSignedUrl(filePath, 60 * 60);
+
+  if (error) return res.json({ url: null });
+  res.json({ url: data.signedUrl });
+});
+
+router.post('/profile-photo', async (req, res) => {
+  const { imageData } = req.body;
+  if (!imageData || typeof imageData !== 'string') {
+    return res.status(400).json({ error: 'Image manquante' });
+  }
+
+  const match = imageData.match(/^data:(image\/(png|jpeg|jpg|webp));base64,(.+)$/);
+  if (!match) {
+    return res.status(400).json({ error: 'Format image invalide' });
+  }
+
+  const contentType = match[1] === 'image/jpg' ? 'image/jpeg' : match[1];
+  const buffer = Buffer.from(match[3], 'base64');
+  const maxBytes = 2 * 1024 * 1024;
+
+  if (buffer.length > maxBytes) {
+    return res.status(400).json({ error: 'Image trop lourde, max 2 Mo' });
+  }
+
+  await ensureProfilePhotoBucket();
+
+  const filePath = `${req.user.id}/profile-photo.png`;
+  const { error } = await supabaseAdmin
+    .storage
+    .from(PROFILE_PHOTO_BUCKET)
+    .upload(filePath, buffer, {
+      contentType,
+      upsert: true
+    });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const { data: signed } = await supabaseAdmin
+    .storage
+    .from(PROFILE_PHOTO_BUCKET)
+    .createSignedUrl(filePath, 60 * 60);
+
+  res.json({ url: signed?.signedUrl || null });
+});
+
 // ── POST /api/data/import ────────────────────
 // Import du localStorage existant (migration initiale)
 router.post('/import', async (req, res) => {

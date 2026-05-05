@@ -487,6 +487,16 @@ async function saveProfile(updates) {
   return apiRequest('PUT', '/data/profile', updates);
 }
 
+async function loadProfilePhoto() {
+  if (!isLoggedIn()) return null;
+  return apiRequest('GET', '/data/profile-photo');
+}
+
+async function saveProfilePhoto(imageData) {
+  if (!isLoggedIn()) return null;
+  return apiRequest('POST', '/data/profile-photo', { imageData });
+}
+
 // Import du localStorage complet (migration initiale)
 async function importFromLocalStorage() {
   const ls = {};
@@ -621,6 +631,7 @@ async function initApp() {
 window.TentiaAPI = {
   isLoggedIn, login, logout, register,
   loadProfile, saveProfile, importFromLocalStorage,
+  loadProfilePhoto, saveProfilePhoto,
   showLoginScreen, hideLoginScreen, initApp,
   getTimelineId, ensureTimelineSelection
 };

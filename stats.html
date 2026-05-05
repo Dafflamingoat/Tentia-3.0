@@ -253,6 +253,55 @@
     <button class="reset-btn">Reset XP</button>
     <button class="history-btn" id="open-quest-history">📜 Historique</button>
   </div>
+  <!-- DASHBOARD -->
+  <section class="dashboard-box" id="dashboard-box">
+    <button class="dashboard-photo" id="dashboard-photo" type="button" title="Changer la photo de profil">
+      <img id="dashboard-photo-img" src="" alt="Photo de profil" style="display:none;">
+      <span id="dashboard-photo-placeholder">PHOTO</span>
+    </button>
+    <input id="dashboard-photo-input" type="file" accept="image/*" hidden>
+
+    <div class="dashboard-main">
+      <div class="dashboard-tabs" role="tablist" aria-label="Dashboard">
+        <button class="dashboard-tab active" type="button" data-dashboard-tab="profile">Profil</button>
+        <button class="dashboard-tab" type="button" data-dashboard-tab="friends">Amis</button>
+        <button class="dashboard-tab" type="button" data-dashboard-tab="settings">Parametres</button>
+        <button class="dashboard-tab" type="button" data-dashboard-tab="quests">Quetes</button>
+      </div>
+
+      <div class="dashboard-panel active" id="dashboard-tab-profile">
+        <div class="dashboard-lines">
+          <div class="dashboard-line"></div>
+          <div class="dashboard-line short"></div>
+          <div class="dashboard-line"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-panel" id="dashboard-tab-friends">
+        <div class="dashboard-lines">
+          <div class="dashboard-line"></div>
+          <div class="dashboard-line"></div>
+          <div class="dashboard-line short"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-panel" id="dashboard-tab-settings">
+        <div class="dashboard-lines">
+          <div class="dashboard-line short"></div>
+          <div class="dashboard-line"></div>
+          <div class="dashboard-line"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-panel" id="dashboard-tab-quests">
+        <div class="dashboard-lines">
+          <div class="dashboard-line"></div>
+          <div class="dashboard-line short"></div>
+          <div class="dashboard-line"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- POPUP Historique Quêtes -->

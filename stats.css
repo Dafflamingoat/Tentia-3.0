@@ -78,6 +78,7 @@ body {
 .stats-page {
   display: flex;
   justify-content: flex-start;
+  align-items: stretch;
   gap: 20px;
   padding: 20px;
   margin-top: 20px;
@@ -85,13 +86,123 @@ body {
 
 /* Quêtes */
 .quest-box {
-  flex: 2;
+  flex: 0 0 500px;
   min-width: 500px;
   max-width: 700px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   padding: 16px;
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
+}
+
+/* Dashboard */
+.dashboard-box {
+  flex: 1;
+  min-width: 620px;
+  min-height: 224px;
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  color: var(--gold-light);
+}
+
+.dashboard-photo {
+  min-height: 220px;
+  background: #111;
+  border: 0;
+  border-right: 2px solid var(--border);
+  color: var(--gold-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.85);
+}
+
+.dashboard-photo:hover {
+  color: #fff;
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.85), 0 0 10px rgba(255,215,0,0.35);
+}
+
+.dashboard-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: auto;
+}
+
+#dashboard-photo-placeholder {
+  opacity: 0.7;
+}
+
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dashboard-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 2px solid var(--border);
+}
+
+.dashboard-tab {
+  min-height: 34px;
+  background: #1b1b1b;
+  border: 0;
+  border-right: 2px solid var(--border);
+  color: var(--gold-light);
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+}
+
+.dashboard-tab:last-child {
+  border-right: 0;
+}
+
+.dashboard-tab:hover,
+.dashboard-tab.active {
+  background: var(--gold-dark);
+  color: #fff;
+}
+
+.dashboard-panel {
+  display: none;
+  flex: 1;
+  padding: 26px 36px;
+  background: linear-gradient(180deg, #242424 0%, #1b1b1b 100%);
+}
+
+.dashboard-panel.active {
+  display: block;
+}
+
+.dashboard-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 520px;
+  margin: 22px auto 0;
+}
+
+.dashboard-line {
+  height: 6px;
+  background: #444;
+  border: 1px solid #111;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.7);
+}
+
+.dashboard-line.short {
+  width: 70%;
+  align-self: center;
 }
 .box-title {
   font-size: 11px;

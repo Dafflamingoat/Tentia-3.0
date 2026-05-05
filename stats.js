@@ -1352,6 +1352,13 @@ const titleList = document.getElementById('title-list');
 const avatarPopup = document.getElementById('avatar-popup');
 const closeAvatarPopup = document.getElementById('close-avatar-popup');
 
+const dashboardTabs = document.querySelectorAll('.dashboard-tab');
+const dashboardPanels = document.querySelectorAll('.dashboard-panel');
+const dashboardPhotoBtn = document.getElementById('dashboard-photo');
+const dashboardPhotoInput = document.getElementById('dashboard-photo-input');
+const dashboardPhotoImg = document.getElementById('dashboard-photo-img');
+const dashboardPhotoPlaceholder = document.getElementById('dashboard-photo-placeholder');
+
 // ────────────────
 // XP JOUEUR
 // ────────────────
@@ -2090,6 +2097,75 @@ function saveJournal() {
 }
 
 // ────────────────
+// DASHBOARD
+// ────────────────
+function setDashboardPhoto(src) {
+  if (!dashboardPhotoImg || !dashboardPhotoPlaceholder) return;
+
+  if (src) {
+    dashboardPhotoImg.src = src;
+    dashboardPhotoImg.style.display = 'block';
+    dashboardPhotoPlaceholder.style.display = 'none';
+  } else {
+    dashboardPhotoImg.removeAttribute('src');
+    dashboardPhotoImg.style.display = 'none';
+    dashboardPhotoPlaceholder.style.display = '';
+  }
+}
+
+async function loadDashboardPhoto() {
+  const localPhoto = localStorage.getItem('dashboardProfilePhoto');
+  if (localPhoto) setDashboardPhoto(localPhoto);
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn() && window.TentiaAPI.loadProfilePhoto) {
+    const result = await window.TentiaAPI.loadProfilePhoto();
+    if (result && result.url) {
+      setDashboardPhoto(result.url);
+    }
+  }
+}
+
+function saveDashboardPhoto(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+
+  const reader = new FileReader();
+  reader.addEventListener('load', async () => {
+    const imageData = reader.result;
+    localStorage.setItem('dashboardProfilePhoto', imageData);
+    setDashboardPhoto(imageData);
+
+    if (window.TentiaAPI && window.TentiaAPI.isLoggedIn() && window.TentiaAPI.saveProfilePhoto) {
+      const result = await window.TentiaAPI.saveProfilePhoto(imageData);
+      if (result && result.url) setDashboardPhoto(result.url);
+    }
+  });
+  reader.readAsDataURL(file);
+}
+
+function initDashboard() {
+  dashboardTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.dashboardTab;
+      dashboardTabs.forEach(item => item.classList.toggle('active', item === tab));
+      dashboardPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === `dashboard-tab-${target}`);
+      });
+    });
+  });
+
+  if (dashboardPhotoBtn && dashboardPhotoInput) {
+    dashboardPhotoBtn.addEventListener('click', () => dashboardPhotoInput.click());
+    dashboardPhotoInput.addEventListener('change', () => {
+      const file = dashboardPhotoInput.files && dashboardPhotoInput.files[0];
+      saveDashboardPhoto(file);
+      dashboardPhotoInput.value = '';
+    });
+  }
+
+  loadDashboardPhoto();
+}
+
+// ────────────────
 // EVENTS QUETES
 // ────────────────
 if (addQuestBtn) {
@@ -2562,6 +2638,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePointsUI();
   updateStatsUI();
   updateProfilePanel();
+  initDashboard();
   updatePetUI();
   renderPetInventory();
   renderQuests();
