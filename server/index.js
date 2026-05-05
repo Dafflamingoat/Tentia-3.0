@@ -14,7 +14,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
-app.use(express.json({ limit: '3mb' }));
+app.use(express.json());
 
 // ── Servir le frontend statique ─────────────
 // Le dossier parent du server/ contient index.html etc.
