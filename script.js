@@ -75,6 +75,8 @@ sprite.onerror = function () {
 const CUSTOM_SKILLS_KEY = 'customSkills';
 const REMOVED_DEFAULT_SKILLS = ['mecanique', 'anglais', 'dev'];
 const MAX_LEVELS = { echec: 1000, argent: 3000 };
+const STUDY_XP_PER_HOUR = 12;
+const STUDY_MIN_SESSION_MS = 5 * 60 * 1000;
 const skills = { echec: 0, argent: 0 };
 let customSkills = [];
 let customSkillTimerInterval = null;
@@ -177,6 +179,7 @@ function renderCustomSkills() {
         <span class="skill-time-total" id="total-${skill.id}">0'00</span>
         <span class="skill-time-session" id="session-${skill.id}">00:00:00</span>
       </div>
+      <span class="skill-xp-feedback" id="xp-feedback-${skill.id}"></span>
       <button class="skill-btn timer-btn" type="button" data-action="toggle"></button>
     `;
 
@@ -204,6 +207,113 @@ function formatTotalHours(ms) {
   return `${hours}'${String(minutes).padStart(2, '0')}`;
 }
 
+function getXpToNextLevel(currentLevel) {
+  return 100 + (currentLevel - 1) * 50;
+}
+
+function getPetXpNeeded(currentLevel) {
+  return 80 + currentLevel * 8;
+}
+
+function getStoredPets() {
+  try {
+    const pets = JSON.parse(localStorage.getItem('pets') || '[]');
+    return Array.isArray(pets) ? pets : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function getEquippedPetForXP() {
+  const pets = getStoredPets();
+  const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
+  return pets.find(pet => pet.id === equippedPetId && pet.owned) || null;
+}
+
+function addPetXPFromStudy(totalXP) {
+  const pets = getStoredPets();
+  const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
+  const pet = pets.find(item => item.id === equippedPetId && item.owned);
+  if (!pet || pet.active === false) return;
+
+  const share = typeof pet.share === 'number' ? pet.share : 0.1;
+  const petXP = Math.floor(totalXP * share);
+  if (petXP <= 0) return;
+
+  pet.xp = (pet.xp || 0) + petXP;
+
+  let xpNeeded = getPetXpNeeded(pet.level || 1);
+  while (pet.xp >= xpNeeded && (pet.level || 1) < 50) {
+    pet.xp -= xpNeeded;
+    pet.level = (pet.level || 1) + 1;
+    xpNeeded = getPetXpNeeded(pet.level);
+  }
+
+  localStorage.setItem('pets', JSON.stringify(pets));
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ pets, equipped_pet: equippedPetId });
+  }
+}
+
+function addPlayerXPFromStudy(totalXP) {
+  let currentXP = parseInt(localStorage.getItem('xp')) || 0;
+  let currentLevel = parseInt(localStorage.getItem('level')) || 1;
+  const equippedPet = getEquippedPetForXP();
+  const share = equippedPet ? (typeof equippedPet.share === 'number' ? equippedPet.share : 0.1) : 0;
+  const playerXP = Math.floor(totalXP * (1 - share));
+
+  currentXP += playerXP;
+
+  let xpNeeded = getXpToNextLevel(currentLevel);
+  let levelsGained = 0;
+  while (currentXP >= xpNeeded) {
+    currentXP -= xpNeeded;
+    currentLevel++;
+    levelsGained++;
+    xpNeeded = getXpToNextLevel(currentLevel);
+  }
+
+  if (levelsGained > 0) {
+    const statPoints = (parseInt(localStorage.getItem('statPoints')) || 0) + levelsGained * 2;
+    localStorage.setItem('statPoints', statPoints);
+  }
+
+  localStorage.setItem('xp', currentXP);
+  localStorage.setItem('level', currentLevel);
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({
+      xp: currentXP,
+      level: currentLevel,
+      points_left: parseInt(localStorage.getItem('statPoints')) || 0
+    });
+  }
+
+  return { playerXP, currentLevel, levelsGained };
+}
+
+function calculateStudyXP(sessionMs) {
+  if (sessionMs < STUDY_MIN_SESSION_MS) return 0;
+
+  const intelligence = parseInt(localStorage.getItem('Intelligence')) || 0;
+  const bonusMultiplier = 1 + Math.floor(intelligence / 10) * 0.05;
+  const rawXP = (sessionMs / 3600000) * STUDY_XP_PER_HOUR * bonusMultiplier;
+  return Math.floor(rawXP);
+}
+
+function awardStudyXP(skill, sessionMs) {
+  const totalXP = calculateStudyXP(sessionMs);
+  if (totalXP <= 0) return 0;
+
+  addPlayerXPFromStudy(totalXP);
+  addPetXPFromStudy(totalXP);
+
+  const totalSkillXP = (parseInt(localStorage.getItem('totalSkillXP')) || 0) + totalXP;
+  localStorage.setItem('totalSkillXP', totalSkillXP);
+
+  return totalXP;
+}
+
 function getCustomSkillElapsed(skill) {
   if (!skill) return 0;
   const runningMs = skill.activeStartedAt ? Date.now() - Number(skill.activeStartedAt) : 0;
@@ -227,6 +337,12 @@ function updateCustomSkillUI(id) {
   node.classList.toggle('timer-running', Boolean(skill.activeStartedAt));
 }
 
+function showSkillXPFeedback(id, message) {
+  const feedback = document.getElementById('xp-feedback-' + id);
+  if (!feedback) return;
+  feedback.textContent = message;
+}
+
 function updateAllCustomSkillTimers() {
   customSkills.forEach(skill => updateCustomSkillUI(skill.id));
 }
@@ -236,10 +352,19 @@ function toggleSkillTimer(id) {
   if (!skill) return;
 
   if (skill.activeStartedAt) {
-    skill.totalMs += Math.max(0, Date.now() - Number(skill.activeStartedAt));
+    const sessionMs = Math.max(0, Date.now() - Number(skill.activeStartedAt));
+    skill.totalMs += sessionMs;
     skill.activeStartedAt = null;
+    const xpGained = awardStudyXP(skill, sessionMs);
+    if (xpGained > 0) {
+      console.log(`+${xpGained} XP (${skill.name}, session ${formatSessionTime(sessionMs)})`);
+      showSkillXPFeedback(skill.id, `+${xpGained} XP`);
+    } else {
+      showSkillXPFeedback(skill.id, 'MIN 5 MIN');
+    }
   } else {
     skill.activeStartedAt = Date.now();
+    showSkillXPFeedback(skill.id, '');
   }
 
   persistSkills();

@@ -823,6 +823,13 @@ color: #fff;
   color: var(--text);
 }
 
+.skill-xp-feedback {
+  min-height: 10px;
+  font-size: 6px;
+  color: #8bc34a;
+  text-align: center;
+}
+
 .timer-btn {
   min-width: 76px;
   font-size: 7px;
