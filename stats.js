@@ -235,8 +235,8 @@ let backgrounds = JSON.parse(localStorage.getItem('backgrounds')) || [
   { id: 'bg_marineford',  name: 'MarineFord',  bg1: 'assets/background/bg18_frame1.png', bg2: 'assets/background/bg18_frame2.png', owned: false },
   { id: 'bg_hell',        name: 'Enfers',      bg1: 'assets/background/bg19_frame1.png', bg2: 'assets/background/bg19_frame2.png', owned: false },
   { id: 'bg_paradis',     name: 'Paradis',     bg1: 'assets/background/bg20_frame1.png', bg2: 'assets/background/bg20_frame2.png', owned: false },
-  { id: 'bg_hf_250',      name: '? (250j)',    bg1: 'assets/background/bg22_frame1.png', bg2: 'assets/background/bg22_frame2.png', owned: false },
-  { id: 'bg_hf_300',      name: '? (300j)',    bg1: 'assets/background/bg23_frame1.png', bg2: 'assets/background/bg23_frame2.png', owned: false },
+  { id: 'bg_hf_250',      name: 'Rome',        bg1: 'assets/background/bg22_frame1.png', bg2: 'assets/background/bg22_frame2.png', owned: false },
+  { id: 'bg_hf_300',      name: 'Domaine des Dieux',    bg1: 'assets/background/bg23_frame1.png', bg2: 'assets/background/bg23_frame2.png', owned: false },
   // ── End Game ──
   { id: 'bg_end_game',     name: 'End Game',    bg1: 'assets/background/bg24_frame1.png', bg2: 'assets/background/bg24_frame2.png', owned: false },
   // ── Hauts Faits : Quêtes ──
