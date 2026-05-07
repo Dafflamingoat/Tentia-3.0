@@ -825,11 +825,12 @@ function renderSkinThumbs() {
   if (!skinWrapEl) return;
 
   const ownedSkins = getSkins();
-  const thumbData = ownedSkins.length
-    ? ownedSkins.map(skin => ({ folder: skin.folder }))
-    : Array.from(skinWrapEl.querySelectorAll('.skin-thumb')).map(t => ({
-        folder: t.dataset.skin
-      }));
+  // Toujours utiliser les thumbs du HTML comme liste complète (owned + locked)
+  const allFolders = Array.from(document.querySelectorAll('.skin-thumbs-wrap .skin-thumb[data-skin]'))
+    .map(t => t.dataset.skin);
+  const thumbData = allFolders.length
+    ? allFolders.map(folder => ({ folder }))
+    : ownedSkins.map(skin => ({ folder: skin.folder }));
 
   skinWrapEl.innerHTML = '';
 

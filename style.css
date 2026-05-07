@@ -435,6 +435,7 @@ color: #fff;
   cursor: pointer;
   box-shadow: 2px 2px 0 #000;
   transition: transform 0.1s;
+  position: relative;
 }
 .skin-thumb:hover { transform: scale(1.1); }
 .skin-thumb.active { border-color: var(--gold); box-shadow: 0 0 8px var(--gold); }
