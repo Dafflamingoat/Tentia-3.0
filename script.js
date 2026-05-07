@@ -711,7 +711,17 @@ let bgFrameIndex = 0;
 let bgInterval = null;
 
 function toggleBGMenu() {
-  bgThumbsWrap.classList.toggle('hidden');
+  const isHidden = bgThumbsWrap.classList.toggle('hidden');
+  // À la fermeture du menu : restaurer le BG owned (annuler prévisualisation)
+  if (isHidden) {
+    const saved = localStorage.getItem('selectedBG');
+    if (saved) {
+      try {
+        const [bg1, bg2] = JSON.parse(saved);
+        applyBG(bg1, bg2);
+      } catch(e) {}
+    }
+  }
 }
 
 // Données par défaut si localStorage vide (avant que stats.js s'exécute)
@@ -764,18 +774,17 @@ function renderBGThumbs() {
   if (!wrap) return;
 
   const ownedBGs = getBackgrounds();
-  const thumbData = ownedBGs.length
-    ? ownedBGs.map(bg => ({ bg1: bg.bg1, bg2: bg.bg2 }))
-    : Array.from(wrap.querySelectorAll('.bg-thumb')).map(t => ({
-        bg1: t.dataset.bg1,
-        bg2: t.dataset.bg2
-      }));
+
+  // Lire tous les BGs depuis le HTML statique avant de vider le wrap
+  const currentThumbs = Array.from(wrap.querySelectorAll('.bg-thumb[data-bg1]'))
+    .map(t => ({ bg1: t.dataset.bg1, bg2: t.dataset.bg2 }));
+  if (currentThumbs.length) window._allBGThumbs = currentThumbs;
+  const thumbData = window._allBGThumbs || [];
 
   wrap.innerHTML = '';
 
   thumbData.forEach(({ bg1, bg2 }) => {
     const bgData = ownedBGs.find(b => b.bg1 === bg1);
-    // Si pas trouvé en localStorage → fallback sur bg1/bg2 de base
     const owned = bgData ? bgData.owned : DEFAULT_OWNED_BG_FILES.includes(bg1);
     const bgName = bgData ? bgData.name : '';
     const unlockInfo = !owned
@@ -803,8 +812,13 @@ function renderBGThumbs() {
     }
 
     thumb.addEventListener('click', () => {
-      if (!owned) return;
-      applyBG(bg1, bg2);
+      if (owned) {
+        applyBG(bg1, bg2);
+      } else {
+        // Prévisualisation temporaire sans sauvegarde
+        if (bgInterval) clearInterval(bgInterval);
+        charFrame.style.backgroundImage = `url(${bg1})`;
+      }
     });
 
     wrap.appendChild(thumb);
@@ -817,7 +831,15 @@ function renderBGThumbs() {
 const skinWrap = document.querySelector('.skin-thumbs-wrap');
 
 function toggleSkinMenu() {
-  skinWrap.classList.toggle('hidden');
+  const isHidden = skinWrap.classList.toggle('hidden');
+  // À la fermeture du menu : restaurer le sprite owned (annuler prévisualisation)
+  if (isHidden) {
+    const sprite = document.getElementById('char-sprite');
+    if (sprite) {
+      sprite.src = `assets/character/${currentSkin}/moove1.png`;
+      sprite.style.filter = '';
+    }
+  }
 }
 
 function renderSkinThumbs() {
@@ -825,19 +847,18 @@ function renderSkinThumbs() {
   if (!skinWrapEl) return;
 
   const ownedSkins = getSkins();
-  // Toujours utiliser les thumbs du HTML comme liste complète (owned + locked)
-  const allFolders = Array.from(document.querySelectorAll('.skin-thumbs-wrap .skin-thumb[data-skin]'))
+
+  // Lire tous les skins depuis le HTML statique avant de vider le wrap
+  const currentThumbs = Array.from(skinWrapEl.querySelectorAll('.skin-thumb[data-skin]'))
     .map(t => t.dataset.skin);
-  const thumbData = allFolders.length
-    ? allFolders.map(folder => ({ folder }))
-    : ownedSkins.map(skin => ({ folder: skin.folder }));
+  if (currentThumbs.length) window._allSkinFolders = currentThumbs;
+  const folders = window._allSkinFolders || [];
 
   skinWrapEl.innerHTML = '';
 
-  thumbData.forEach(({ folder }) => {
+  folders.forEach(folder => {
     const skinData = ownedSkins.find(s => s.folder === folder);
     const owned = skinData ? skinData.owned : DEFAULT_OWNED_SKIN_FOLDERS.includes(folder);
-    // Nom propre : depuis les données ou nettoyé depuis le folder
     const skinName = skinData ? skinData.name : folder.replace(/^Skin_/i, '').replace(/_/g, ' ');
     const unlockInfo = !owned
       ? (skinData ? getUnlockInfoFromStorage(skinData.id) : 'Verrouillé')
@@ -863,10 +884,20 @@ function renderSkinThumbs() {
     }
 
     thumb.addEventListener('click', () => {
-      if (!owned) return;
-      document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
-      thumb.classList.add('active');
-      setSkin(folder);
+      const sprite = document.getElementById('char-sprite');
+      if (owned) {
+        // Sélection réelle
+        document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+        if (sprite) { sprite.style.filter = ''; }
+        setSkin(folder);
+      } else {
+        // Prévisualisation temporaire : pas de sauvegarde
+        if (sprite) {
+          sprite.src = `assets/character/${folder}/moove1.png`;
+          sprite.style.filter = 'grayscale(80%) brightness(0.6)';
+        }
+      }
     });
 
     skinWrapEl.appendChild(thumb);
