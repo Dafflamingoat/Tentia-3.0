@@ -84,6 +84,9 @@ body {
   margin-top: 20px;
 }
 
+.quest-box { flex: 0 0 45% !important; min-width: 0 !important; max-width: 45% !important; }
+.dashboard-box { flex: 0 0 55% !important; min-width: 0 !important; }
+
 /* Quêtes */
 .quest-box {
   flex: 0 0 320px;
