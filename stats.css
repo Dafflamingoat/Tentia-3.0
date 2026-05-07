@@ -339,29 +339,35 @@ body {
 
 /* Menu stats coulissant */
 .stats-box {
-  width: 320px;
+  width: 200px;
   position: fixed;
   top: 250px;
-  right: -320px;
+  right: -200px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
+  border-right: none;
   padding: 16px;
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
   transition: right 0.3s ease;
   z-index: 50;
 }
 .stats-box.open { right: 0; }
+
+/* La flèche est positionnée par rapport à la fenêtre, toujours visible sur le bord droit */
 .stats-toggle {
-  position: absolute;
-  left: -28px;
-  top: 10px;
+  position: fixed;
+  right: 0;
+  top: 270px;
   font-family: 'Press Start 2P', monospace;
   cursor: pointer;
   background: var(--bg-panel);
   border: 2px solid var(--border);
-  padding: 4px 8px;
-  box-shadow: 2px 2px 0 #000;
+  border-right: none;
+  padding: 6px 10px;
+  box-shadow: -2px 2px 0 #000;
   color: var(--gold-light);
+  text-align: center;
+  z-index: 51;
 }
 
  
