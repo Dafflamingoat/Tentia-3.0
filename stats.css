@@ -86,9 +86,9 @@ body {
 
 /* Quêtes */
 .quest-box {
-  flex: 0 0 500px;
-  min-width: 500px;
-  max-width: 700px;
+  flex: 0 0 320px;
+  min-width: 320px;
+  max-width: 320px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   padding: 16px;
@@ -98,8 +98,8 @@ body {
 /* Dashboard */
 .dashboard-box {
   flex: 1;
-  min-width: 620px;
-  min-height: 224px;
+  min-width: 300px;
+  min-height: 180px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
@@ -219,7 +219,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 180px;
+  max-height: 120px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -362,11 +362,10 @@ body {
 }
 .stats-box.open { right: 0; }
 
-/* La flèche est positionnée par rapport à la fenêtre, toujours visible sur le bord droit */
 .stats-toggle {
-  position: fixed;
-  right: 0;
-  top: 270px;
+  position: absolute;
+  left: -34px;
+  top: 10px;
   font-family: 'Press Start 2P', monospace;
   cursor: pointer;
   background: var(--bg-panel);
