@@ -483,8 +483,6 @@ const levelRewards = {
   ]
 };
 
-const TIMELINE_SKILLS_KEY = '_timelineId';
-
 const billaudBackgroundRewardByLevel = {
   7: 'bg_billaud_3',
   15: 'bg_billaud_4',
