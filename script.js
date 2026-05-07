@@ -711,17 +711,7 @@ let bgFrameIndex = 0;
 let bgInterval = null;
 
 function toggleBGMenu() {
-  const isHidden = bgThumbsWrap.classList.toggle('hidden');
-  // À la fermeture du menu : restaurer le BG owned (annuler prévisualisation)
-  if (isHidden) {
-    const saved = localStorage.getItem('selectedBG');
-    if (saved) {
-      try {
-        const [bg1, bg2] = JSON.parse(saved);
-        applyBG(bg1, bg2);
-      } catch(e) {}
-    }
-  }
+  bgThumbsWrap.classList.toggle('hidden');
 }
 
 // Données par défaut si localStorage vide (avant que stats.js s'exécute)
@@ -760,6 +750,10 @@ function applyBG(bg1, bg2) {
   localStorage.setItem('selectedBG', JSON.stringify([bg1, bg2]));
   bgFrameIndex = 0;
   charFrame.style.backgroundImage = `url(${bg1})`;
+  // Retirer le filtre et le cadenas de prévisualisation
+  charFrame.style.filter = '';
+  const lockEl = charFrame.querySelector('.bg-preview-lock');
+  if (lockEl) lockEl.remove();
   bgInterval = setInterval(() => {
     bgFrameIndex = (bgFrameIndex + 1) % bgFrames.length;
     charFrame.style.backgroundImage = `url(${bgFrames[bgFrameIndex]})`;
@@ -814,10 +808,23 @@ function renderBGThumbs() {
     thumb.addEventListener('click', () => {
       if (owned) {
         applyBG(bg1, bg2);
+        // Retirer l'overlay cadenas si présent
+        const existingLock = charFrame.querySelector('.bg-preview-lock');
+        if (existingLock) existingLock.remove();
+        charFrame.style.filter = '';
       } else {
-        // Prévisualisation temporaire sans sauvegarde
+        // Prévisualisation statique grisée avec cadenas
         if (bgInterval) clearInterval(bgInterval);
         charFrame.style.backgroundImage = `url(${bg1})`;
+        charFrame.style.filter = 'grayscale(80%) brightness(0.6)';
+        // Ajouter cadenas si pas déjà là
+        if (!charFrame.querySelector('.bg-preview-lock')) {
+          const lockEl = document.createElement('span');
+          lockEl.className = 'bg-preview-lock';
+          lockEl.textContent = '🔒';
+          lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
+          charFrame.appendChild(lockEl);
+        }
       }
     });
 
@@ -831,15 +838,7 @@ function renderBGThumbs() {
 const skinWrap = document.querySelector('.skin-thumbs-wrap');
 
 function toggleSkinMenu() {
-  const isHidden = skinWrap.classList.toggle('hidden');
-  // À la fermeture du menu : restaurer le sprite owned (annuler prévisualisation)
-  if (isHidden) {
-    const sprite = document.getElementById('char-sprite');
-    if (sprite) {
-      sprite.src = `assets/character/${currentSkin}/moove1.png`;
-      sprite.style.filter = '';
-    }
-  }
+  skinWrap.classList.toggle('hidden');
 }
 
 function renderSkinThumbs() {
