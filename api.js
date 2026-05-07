@@ -5,306 +5,6 @@
 
 const API_URL = window.location.origin + '/api';
 
-const TIMELINE_KEY = 'timelineId';
-const TIMELINE_SKILLS_KEY = '_timelineId';
-
-const TIMELINES = {
-  dafz: {
-    id: 'dafz',
-    name: 'Dafz',
-    skinPreview: 'assets/character/Skin_T1/moove1.png',
-    starter: {
-      selectedSkin: 'Skin_T1',
-      equippedAvatarId: 'avatar1',
-      selectedBG: ['assets/background/bg1_frame1.png', 'assets/background/bg1_frame2.png']
-    }
-  },
-  billaud: {
-    id: 'billaud',
-    name: 'Billaud',
-    skinPreview: 'assets/character/timelines/billaud/Skin_Billaud/moove1.png',
-    starter: {
-      selectedSkin: 'timelines/billaud/Skin_Billaud',
-      equippedAvatarId: 'avatar_billaud',
-      selectedBG: [
-        'assets/background/timelines/billaud/bg1_frame1.png',
-        'assets/background/timelines/billaud/bg1_frame2.png'
-      ]
-    }
-  }
-};
-
-function safeParseJSON(value, fallback) {
-  if (!value) return fallback;
-  if (typeof value === 'object') return value;
-  try { return JSON.parse(value); }
-  catch { return fallback; }
-}
-
-function getStoredSkillsPayload() {
-  return safeParseJSON(localStorage.getItem('skills'), {});
-}
-
-function getTimelineId() {
-  const fromStorage = localStorage.getItem(TIMELINE_KEY);
-  if (fromStorage && TIMELINES[fromStorage]) return fromStorage;
-
-  const skills = getStoredSkillsPayload();
-  if (skills[TIMELINE_SKILLS_KEY] && TIMELINES[skills[TIMELINE_SKILLS_KEY]]) {
-    localStorage.setItem(TIMELINE_KEY, skills[TIMELINE_SKILLS_KEY]);
-    return skills[TIMELINE_SKILLS_KEY];
-  }
-
-  return null;
-}
-
-function getProfileTimelineId(profile) {
-  const skills = safeParseJSON(profile?.skills, {});
-  if (skills[TIMELINE_SKILLS_KEY] && TIMELINES[skills[TIMELINE_SKILLS_KEY]]) {
-    return skills[TIMELINE_SKILLS_KEY];
-  }
-  return null;
-}
-
-function setTimelineIdLocal(timelineId) {
-  if (!TIMELINES[timelineId]) return;
-  const skills = getStoredSkillsPayload();
-  skills[TIMELINE_SKILLS_KEY] = timelineId;
-  localStorage.setItem(TIMELINE_KEY, timelineId);
-  localStorage.setItem('skills', JSON.stringify(skills));
-}
-
-function buildBillaudBackgrounds() {
-  return Array.from({ length: 24 }, (_, index) => {
-    const n = index + 1;
-    return {
-      id: `bg_billaud_${n}`,
-      name: `Billaud ${n}`,
-      bg1: `assets/background/timelines/billaud/bg${n}_frame1.png`,
-      bg2: `assets/background/timelines/billaud/bg${n}_frame2.png`,
-      owned: n <= 2
-    };
-  });
-}
-
-function applyTimelineStarterLocal(timelineId) {
-  const timeline = TIMELINES[timelineId];
-  if (!timeline) return null;
-
-  setTimelineIdLocal(timelineId);
-
-  if (timelineId === 'billaud') {
-    const skins = [
-      {
-        id: 'skin_billaud',
-        name: 'Billaud',
-        folder: 'timelines/billaud/Skin_Billaud',
-        owned: true
-      }
-    ];
-
-    const avatars = [
-      {
-        id: 'avatar_billaud',
-        name: 'Billaud',
-        src: 'assets/avatars/timelines/billaud/avatar_billaud.png',
-        owned: true
-      }
-    ];
-
-    const backgrounds = buildBillaudBackgrounds();
-
-    localStorage.setItem('skins', JSON.stringify(skins));
-    localStorage.setItem('avatars', JSON.stringify(avatars));
-    localStorage.setItem('backgrounds', JSON.stringify(backgrounds));
-  }
-
-  localStorage.setItem('selectedSkin', timeline.starter.selectedSkin);
-  localStorage.setItem('equippedAvatarId', timeline.starter.equippedAvatarId);
-  localStorage.setItem('selectedBG', JSON.stringify(timeline.starter.selectedBG));
-
-  return {
-    skills: getStoredSkillsPayload(),
-    selected_skin: timeline.starter.selectedSkin,
-    selected_bg: timeline.starter.selectedBG,
-    equipped_avatar: timeline.starter.equippedAvatarId,
-    ...(timelineId === 'billaud'
-      ? {
-          skins: safeParseJSON(localStorage.getItem('skins'), []),
-          avatars: safeParseJSON(localStorage.getItem('avatars'), []),
-          backgrounds: safeParseJSON(localStorage.getItem('backgrounds'), [])
-        }
-      : {})
-  };
-}
-
-function isExistingLegacyProfile(profile) {
-  if (!profile) return false;
-  const hasProgress =
-    (profile.level && profile.level > 1) ||
-    (profile.xp && profile.xp > 0) ||
-    (profile.total_quests_done && profile.total_quests_done > 0) ||
-    (profile.total_quest_xp && profile.total_quest_xp > 0) ||
-    (profile.total_chess_xp && profile.total_chess_xp > 0) ||
-    (profile.peak_elo && profile.peak_elo > 0);
-
-  const hasCosmetics =
-    Object.keys(safeParseJSON(profile.skills, {})).length > 0 ||
-    safeParseJSON(profile.skins, []).length > 0 ||
-    safeParseJSON(profile.backgrounds, []).length > 0 ||
-    safeParseJSON(profile.avatars, []).length > 0 ||
-    safeParseJSON(profile.badges, []).length > 0 ||
-    safeParseJSON(profile.pets, []).length > 0;
-
-  const hasNonDefaultSelection =
-    (profile.selected_skin && profile.selected_skin !== 'Skin_T1') ||
-    Boolean(profile.selected_bg) ||
-    (profile.equipped_avatar && profile.equipped_avatar !== 'avatar1');
-
-  return Boolean(hasProgress || hasCosmetics || hasNonDefaultSelection);
-}
-
-function injectTimelineStyles() {
-  if (document.getElementById('timeline-choice-styles')) return;
-
-  const style = document.createElement('style');
-  style.id = 'timeline-choice-styles';
-  style.textContent = `
-    .timeline-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 3000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.82);
-      font-family: 'Press Start 2P', monospace;
-    }
-    .timeline-box {
-      width: min(620px, calc(100vw - 28px));
-      background: #2a1e08;
-      border: 2px solid #c8a32c;
-      box-shadow: 0 0 22px rgba(240,200,68,0.55), 4px 4px 0 #000;
-      padding: 20px;
-      color: #f5e6b0;
-    }
-    .timeline-title {
-      color: #f0c844;
-      text-align: center;
-      font-size: 11px;
-      margin-bottom: 18px;
-      text-shadow: 0 0 8px #c8a32c;
-    }
-    .timeline-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-    .timeline-card {
-      background: #12100a;
-      border: 2px solid #6b4a00;
-      padding: 14px 10px;
-      color: #f5e6b0;
-      cursor: pointer;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.65), 2px 2px 0 #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-    }
-    .timeline-card:hover {
-      border-color: #f0c844;
-      box-shadow: 0 0 12px rgba(240,200,68,0.5), inset 0 0 10px rgba(0,0,0,0.65), 2px 2px 0 #000;
-      transform: translateY(-1px);
-    }
-    .timeline-sprite {
-      width: 82px;
-      height: 104px;
-      object-fit: contain;
-      image-rendering: pixelated;
-    }
-    .timeline-name {
-      color: #f0c844;
-      font-size: 8px;
-      letter-spacing: 1px;
-    }
-    .timeline-btn {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 7px;
-      padding: 8px 10px;
-      color: #f0c844;
-      background: #2a1e08;
-      border: 2px solid #6b4a00;
-      box-shadow: 2px 2px 0 #000;
-    }
-    @media (max-width: 520px) {
-      .timeline-grid { grid-template-columns: 1fr; }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function showTimelineChoice() {
-  injectTimelineStyles();
-
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'timeline-overlay';
-    overlay.innerHTML = `
-      <div class="timeline-box">
-        <div class="timeline-title">CHOISIS TA TIMELINE</div>
-        <div class="timeline-grid">
-          ${Object.values(TIMELINES).map(timeline => `
-            <button class="timeline-card" type="button" data-timeline="${timeline.id}">
-              <img class="timeline-sprite" src="${timeline.skinPreview}" alt="${timeline.name}">
-              <span class="timeline-name">${timeline.name}</span>
-              <span class="timeline-btn">CHOISIR</span>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    `;
-
-    overlay.querySelectorAll('[data-timeline]').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const timelineId = button.dataset.timeline;
-        const updates = applyTimelineStarterLocal(timelineId);
-
-        if (updates && isLoggedIn()) {
-          await saveProfile(updates);
-        }
-
-        overlay.remove();
-        resolve(timelineId);
-      });
-    });
-
-    document.body.appendChild(overlay);
-  });
-}
-
-async function ensureTimelineSelection(profile) {
-  const profileTimelineId = getProfileTimelineId(profile);
-  if (profileTimelineId) {
-    setTimelineIdLocal(profileTimelineId);
-    return profileTimelineId;
-  }
-
-  if (profile && !isExistingLegacyProfile(profile)) {
-    return showTimelineChoice();
-  }
-
-  if (getTimelineId()) return getTimelineId();
-
-  if (isExistingLegacyProfile(profile)) {
-    localStorage.setItem(TIMELINE_KEY, 'dafz');
-    return 'dafz';
-  }
-
-  return showTimelineChoice();
-}
-
 // ── Gestion du token ─────────────────────────
 function getToken() {
   return localStorage.getItem('_token');
@@ -455,10 +155,6 @@ async function loadProfile() {
 
   // Tableaux cosmétiques — ne pas écraser si vide dans Supabase
   setIfNotEmpty('skills',              data.skills);
-  const loadedSkills = safeParseJSON(localStorage.getItem('skills'), {});
-  if (loadedSkills[TIMELINE_SKILLS_KEY] && TIMELINES[loadedSkills[TIMELINE_SKILLS_KEY]]) {
-    localStorage.setItem(TIMELINE_KEY, loadedSkills[TIMELINE_SKILLS_KEY]);
-  }
   setIfNotEmpty('titles',              data.titles);
   setIfNotEmpty('avatars',             data.avatars);
   setIfNotEmpty('skins',               data.skins);
@@ -468,11 +164,11 @@ async function loadProfile() {
   setIfNotEmpty('badges_equipped',     data.badge_slots);
   setIfNotEmpty('achievementsClaimed', data.achievements_claimed);
 
-  // Quêtes — charger depuis Supabase seulement si non vide
-  // (évite d'écraser des quêtes locales fraîches avec un tableau vide au login)
-  setIfNotEmpty('quests', data.quests);
-  // Journal — toujours charger depuis Supabase (source de vérité)
-  // Le journal est sauvegardé à chaque modification, donc Supabase est toujours à jour
+  // Quêtes et journal — TOUJOURS charger depuis Supabase (source de vérité)
+  // même si vide, pour éviter que des suppressions locales réapparaissent
+  if (data.quests !== undefined && data.quests !== null) {
+    localStorage.setItem('quests', JSON.stringify(data.quests));
+  }
   if (data.journal !== undefined && data.journal !== null) {
     localStorage.setItem('journal', JSON.stringify(data.journal));
   }
@@ -484,16 +180,6 @@ async function loadProfile() {
 async function saveProfile(updates) {
   if (!isLoggedIn()) return;
   return apiRequest('PUT', '/data/profile', updates);
-}
-
-async function loadProfilePhoto() {
-  if (!isLoggedIn()) return null;
-  return apiRequest('GET', '/data/profile-photo');
-}
-
-async function saveProfilePhoto(imageData) {
-  if (!isLoggedIn()) return null;
-  return apiRequest('POST', '/data/profile-photo', { imageData });
 }
 
 // Import du localStorage complet (migration initiale)
@@ -588,8 +274,7 @@ function createLoginScreen() {
     if (result.error) { err.textContent = result.error; return; }
 
     err.textContent = '';
-    const profile = await loadProfile();
-    await ensureTimelineSelection(profile);
+    await loadProfile();
     hideLoginScreen();
     window.location.reload();
   });
@@ -621,8 +306,7 @@ async function initApp() {
     return false;
   }
 
-  const profile = await loadProfile();
-  await ensureTimelineSelection(profile);
+  await loadProfile();
   return true;
 }
 
@@ -630,7 +314,5 @@ async function initApp() {
 window.TentiaAPI = {
   isLoggedIn, login, logout, register,
   loadProfile, saveProfile, importFromLocalStorage,
-  loadProfilePhoto, saveProfilePhoto,
-  showLoginScreen, hideLoginScreen, initApp,
-  getTimelineId, ensureTimelineSelection
+  showLoginScreen, hideLoginScreen, initApp
 };
