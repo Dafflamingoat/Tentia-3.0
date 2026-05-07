@@ -885,13 +885,14 @@ function renderSkinThumbs() {
     thumb.addEventListener('click', () => {
       const sprite = document.getElementById('char-sprite');
       if (owned) {
-        // Sélection réelle
+        // Sélection réelle : relancer l'animation normalement
         document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
         thumb.classList.add('active');
         if (sprite) { sprite.style.filter = ''; }
         setSkin(folder);
       } else {
-        // Prévisualisation temporaire : pas de sauvegarde
+        // Prévisualisation : stopper l'animation et figer sur moove1 grisé
+        if (animationInterval) clearInterval(animationInterval);
         if (sprite) {
           sprite.src = `assets/character/${folder}/moove1.png`;
           sprite.style.filter = 'grayscale(80%) brightness(0.6)';
