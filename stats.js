@@ -483,6 +483,8 @@ const levelRewards = {
   ]
 };
 
+const TIMELINE_SKILLS_KEY = '_timelineId';
+
 const billaudBackgroundRewardByLevel = {
   7: 'bg_billaud_3',
   15: 'bg_billaud_4',
@@ -2231,7 +2233,8 @@ if (validateBtn) {
 // ────────────────
 if (statsToggle && statsBox) {
   statsToggle.addEventListener('click', () => {
-    statsBox.classList.toggle('open');
+    const isOpen = statsBox.classList.toggle('open');
+    statsToggle.textContent = isOpen ? '>' : '<';
   });
 }
 
