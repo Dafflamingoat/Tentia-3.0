@@ -2323,6 +2323,12 @@ if (journalText) {
 
 if (journalGames) {
   journalGames.addEventListener('input', saveJournal);
+  journalGames.addEventListener('change', saveJournal);
+}
+
+// Sauvegarder aussi à la fermeture du popup journal
+if (closeJournal) {
+  closeJournal.addEventListener('click', saveJournal);
 }
 
 // ────────────────
