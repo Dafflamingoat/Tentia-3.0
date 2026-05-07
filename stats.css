@@ -84,8 +84,8 @@ body {
   margin-top: 20px;
 }
 
-.quest-box { flex: 0 0 45% !important; min-width: 0 !important; max-width: 45% !important; }
-.dashboard-box { flex: 0 0 55% !important; min-width: 0 !important; }
+.quest-box { flex: 0 0 35% !important; min-width: 0 !important; max-width: 35% !important; }
+.dashboard-box { flex: 0 0 65% !important; min-width: 0 !important; }
 
 /* Quêtes */
 .quest-box {
@@ -360,14 +360,14 @@ body {
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
   transition: right 0.3s ease;
   z-index: 50;
-  overflow: hidden;
   box-sizing: border-box;
+  overflow: visible;
 }
 .stats-box.open { right: 0; }
 
 .stats-toggle {
   position: absolute;
-  left: -34px;
+  left: -36px;
   top: 10px;
   font-family: 'Press Start 2P', monospace;
   cursor: pointer;
@@ -378,7 +378,8 @@ body {
   box-shadow: -2px 2px 0 #000;
   color: var(--gold-light);
   text-align: center;
-  z-index: 51;
+  z-index: 52;
+  white-space: nowrap;
 }
 
  
