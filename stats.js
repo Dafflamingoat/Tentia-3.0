@@ -2350,6 +2350,136 @@ window.addEventListener('beforeunload', () => {
   saveJournal();
 });
 
+
+// ────────────────
+// SYSTÈME AMIS
+// ────────────────
+
+const API_URL_FRIENDS = window.location.origin + '/api/friends';
+
+async function friendsRequest(method, path, body = null) {
+  const token = localStorage.getItem('_token');
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API_URL_FRIENDS + path, opts);
+  return res.json();
+}
+
+// Heartbeat last_seen toutes les 60s
+if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+  friendsRequest('PUT', '/lastseen');
+  setInterval(() => friendsRequest('PUT', '/lastseen'), 60000);
+}
+
+async function loadFriends() {
+  const friendsList    = document.getElementById('friends-list');
+  const requestsBox    = document.getElementById('friends-requests');
+  const requestsList   = document.getElementById('friends-requests-list');
+  if (!friendsList) return;
+
+  // Charger amis
+  const friends = await friendsRequest('GET', '/list');
+  friendsList.innerHTML = '';
+
+  if (!friends.length || friends.error) {
+    friendsList.innerHTML = '<div class="friends-empty">Aucun ami pour l\'instant</div>';
+  } else {
+    friends.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'friends-row';
+      row.innerHTML = `
+        <span class="friends-status ${f.online ? 'online' : 'offline'}"></span>
+        <span class="friends-name">${f.username}</span>
+        <span class="friends-level">Lvl ${f.level || 1}</span>
+        <button class="friends-visit-btn" data-username="${f.username}">👁</button>
+        <button class="friends-remove-btn" data-id="${f.user_id}">✕</button>
+      `;
+      friendsList.appendChild(row);
+    });
+  }
+
+  // Charger demandes reçues
+  const requests = await friendsRequest('GET', '/requests');
+  if (requests.length && !requests.error) {
+    requestsBox.style.display = '';
+    requestsList.innerHTML = '';
+    requests.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'friends-request-row';
+      row.innerHTML = `
+        <span class="friends-name">${r.username}</span>
+        <button class="friends-accept-btn" data-id="${r.request_id}">✔</button>
+        <button class="friends-decline-btn" data-id="${r.request_id}">✕</button>
+      `;
+      requestsList.appendChild(row);
+    });
+  } else {
+    requestsBox.style.display = 'none';
+  }
+}
+
+// Délégation d'événements sur le panel amis
+document.getElementById('dashboard-tab-friends')?.addEventListener('click', async (e) => {
+  const feedback = document.getElementById('friends-feedback');
+
+  // Accepter
+  if (e.target.classList.contains('friends-accept-btn')) {
+    const id = e.target.dataset.id;
+    const res = await friendsRequest('POST', '/accept', { request_id: id });
+    if (res.ok) loadFriends();
+  }
+
+  // Refuser
+  if (e.target.classList.contains('friends-decline-btn')) {
+    const id = e.target.dataset.id;
+    await friendsRequest('POST', '/decline', { request_id: id });
+    loadFriends();
+  }
+
+  // Supprimer ami
+  if (e.target.classList.contains('friends-remove-btn')) {
+    if (!confirm('Supprimer cet ami ?')) return;
+    const id = e.target.dataset.id;
+    await friendsRequest('DELETE', '/remove', { friend_id: id });
+    loadFriends();
+  }
+
+  // Visiter profil
+  if (e.target.classList.contains('friends-visit-btn')) {
+    const username = e.target.dataset.username;
+    window.open(`profile.html?user=${username}`, '_blank');
+  }
+});
+
+// Bouton ajouter un ami
+document.getElementById('friends-add-btn')?.addEventListener('click', async () => {
+  const input    = document.getElementById('friends-add-input');
+  const feedback = document.getElementById('friends-feedback');
+  const username = input.value.trim();
+  if (!username) return;
+
+  feedback.textContent = 'Envoi...';
+  feedback.style.color = 'var(--gold-light)';
+  const res = await friendsRequest('POST', '/request', { username });
+
+  if (res.ok) {
+    feedback.textContent = res.message || 'Demande envoyée !';
+    feedback.style.color = '#4caf50';
+    input.value = '';
+  } else {
+    feedback.textContent = res.error || 'Erreur';
+    feedback.style.color = '#f44336';
+  }
+});
+
+// Charger les amis quand l'onglet est ouvert
+document.querySelectorAll('[data-dashboard-tab="friends"]').forEach(btn => {
+  btn.addEventListener('click', loadFriends);
+});
+
 // ────────────────
 // ANIMATION FAMILIER
 // ────────────────

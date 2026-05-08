@@ -1412,3 +1412,118 @@ body {
   outline: none;
   width: 100%;
 }
+
+/* ── SYSTÈME AMIS ── */
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) #111;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  padding: 6px;
+  margin-bottom: 8px;
+}
+.friends-list::-webkit-scrollbar { width: 4px; }
+.friends-list::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+.friends-empty {
+  color: var(--gold-dark);
+  font-size: 8px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.friends-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: var(--gold-light);
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(200,163,44,0.1);
+}
+
+.friends-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.friends-status.online  { background: #4caf50; box-shadow: 0 0 4px #4caf50; }
+.friends-status.offline { background: #555; }
+
+.friends-name  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friends-level { color: var(--gold-dark); font-size: 8px; flex-shrink: 0; }
+
+.friends-visit-btn,
+.friends-remove-btn,
+.friends-accept-btn,
+.friends-decline-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--gold-light);
+  cursor: pointer;
+  font-size: 9px;
+  padding: 2px 5px;
+  flex-shrink: 0;
+}
+.friends-remove-btn  { color: #f44336; border-color: #f44336; }
+.friends-accept-btn  { color: #4caf50; border-color: #4caf50; }
+.friends-decline-btn { color: #f44336; border-color: #f44336; }
+
+.friends-requests {
+  margin-bottom: 8px;
+}
+.friends-requests-title {
+  font-size: 8px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.friends-request-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: var(--gold-light);
+  padding: 3px 0;
+}
+
+.friends-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.friends-input {
+  flex: 1;
+  background: #111;
+  border: 1px solid var(--border);
+  color: var(--gold-light);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 4px 6px;
+  outline: none;
+  min-width: 0;
+}
+.friends-add-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 4px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.friends-add-btn:hover { background: var(--gold-dark); }
+
+.friends-feedback {
+  font-size: 8px;
+  margin-top: 4px;
+  min-height: 14px;
+}

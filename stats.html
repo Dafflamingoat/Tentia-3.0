@@ -281,11 +281,21 @@
       </div>
 
       <div class="dashboard-panel" id="dashboard-tab-friends">
-        <div class="dashboard-lines">
-          <div class="dashboard-line"></div>
-          <div class="dashboard-line"></div>
-          <div class="dashboard-line short"></div>
+        <!-- Liste des amis -->
+        <div class="friends-list" id="friends-list"></div>
+
+        <!-- Demandes reçues -->
+        <div class="friends-requests" id="friends-requests" style="display:none;">
+          <div class="friends-requests-title">Demandes reçues</div>
+          <div class="friends-requests-list" id="friends-requests-list"></div>
         </div>
+
+        <!-- Actions -->
+        <div class="friends-actions">
+          <input class="friends-input" id="friends-add-input" type="text" placeholder="Username..." maxlength="32" autocomplete="off">
+          <button class="friends-add-btn" id="friends-add-btn">Ajouter</button>
+        </div>
+        <div class="friends-feedback" id="friends-feedback"></div>
       </div>
 
       <div class="dashboard-panel" id="dashboard-tab-settings">
