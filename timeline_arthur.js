@@ -13,9 +13,9 @@ window.TIMELINE_DATA.arthur = {
   // ────────────────
   titles: [
     { id: 'title1',              name: 'Novice',                    owned: true  },
-    { id: 'title_t1_supporter',  name: 'T1 Supporter',              owned: false },
-    { id: 'title_SlimShady',     name: 'The Slim Shady',            owned: false },
-    { id: 'title_dresseur',      name: 'Dresseur',                  owned: false },
+    { id: 'title_stagiaire',     name: 'Stagiaire',                 owned: false },
+    { id: 'title_peche',         name: 'Le Gardon Frais',           owned: false },
+    { id: 'title_boxe',          name: 'Champion de Boxe',          owned: false },
     { id: 'title_exorciste',     name: 'Apprenti Exorciste',        owned: false },
     { id: 'title_mugiwara',      name: 'Mugiwara',                  owned: false },
     { id: 'title_bataillon',     name: "Bataillon d'exploration",   owned: false },
@@ -45,10 +45,10 @@ window.TIMELINE_DATA.arthur = {
   // ⚙ Remplacer les src par les assets Arthur
   // ────────────────
   avatars: [
-    { id: 'avatar_arthur',    name: 'Avatar Arthur',     src: 'assets/avatars/timelines/arthur/avatar_arthur.png',    owned: true  },
-    { id: 'avatar_t1',        name: 'Avatar T1',          src: 'assets/avatars/timelines/arthur/avatar_t1.png',         owned: false },
-    { id: 'avatar_rap',       name: 'Avatar SlimShady',   src: 'assets/avatars/timelines/arthur/avatar_rap.png',        owned: false },
-    { id: 'avatar_pokeball',  name: 'Avatar Pokeball',    src: 'assets/avatars/timelines/arthur/avatar_pokeball.png',   owned: false },
+    { id: 'avatar_arthur',    name: 'Avatar Arthur',      src: 'assets/avatars/timelines/arthur/avatar_arthur.png',       owned: true  },
+    { id: 'avatar_t1',        name: 'Avatar Stage',       src: 'assets/avatars/timelines/arthur/avatar_stage.png',        owned: false },
+    { id: 'avatar_peche',     name: 'Avatar Pêche',       src: 'assets/avatars/timelines/arthur/avatar_peche.png',        owned: false },
+    { id: 'avatar_boxe',      name: 'Avatar Boxe',        src: 'assets/avatars/timelines/arthur/avatar_boxe.png',         owned: false },
     { id: 'avatar_jjk',       name: 'Avatar JJK',         src: 'assets/avatars/timelines/arthur/avatar_jjk.png',        owned: false },
     { id: 'avatar_op',        name: 'Avatar One Piece',   src: 'assets/avatars/timelines/arthur/avatar_op.png',         owned: false },
     { id: 'avatar_snk',       name: 'Avatar SNK',         src: 'assets/avatars/timelines/arthur/avatar_snk.png',        owned: false },
@@ -69,9 +69,9 @@ window.TIMELINE_DATA.arthur = {
   // ⚙ Remplacer les folders par les dossiers Arthur
   // ────────────────
   skins: [
-    { id: 'skin_arthur',          name: 'Arthur',         folder: 'timelines/arthur/Skin_Arthur',         owned: true  },
-    { id: 'skin_eminem',          name: 'Slim Shady',     folder: 'timelines/arthur/Skin_Eminem',         owned: false },
-    { id: 'skin_pokemon',         name: 'Pokémon',        folder: 'timelines/arthur/Skin_Pokemon',        owned: false },
+    { id: 'skin_arthur',          name: 'Arthur',         folder: 'timelines/arthur/Skin_arthur',         owned: true  },
+    { id: 'skin_peche',           name: 'Le pêcheur',     folder: 'timelines/arthur/Skin_peche',          owned: false },
+    { id: 'skin_boxe',            name: 'Le Boxeur',      folder: 'timelines/arthur/Skin_boxe',           owned: false },
     { id: 'skin_yuji',            name: 'Yuji Itadori',   folder: 'timelines/arthur/Skin_JJK',            owned: false },
     { id: 'skin_op',              name: 'One Piece',      folder: 'timelines/arthur/Skin_OP',             owned: false },
     { id: 'skin_titan',           name: 'Titan',          folder: 'timelines/arthur/Skin_Snk',            owned: false },
@@ -126,23 +126,23 @@ window.TIMELINE_DATA.arthur = {
   // ⚙ Adapter skin/avatar/background aux ids Arthur
   // ────────────────
   levelRewards: {
-    2:  [{ type: 'title',      id: 'title_t1_supporter' }],
-    4:  [{ type: 'avatar',     id: 'avatar_t1' }],
+    2:  [{ type: 'title',      id: 'title_stagiaire' }],
+    4:  [{ type: 'avatar',     id: 'avatar_stage' }],
     7:  [{ type: 'background', id: 'bg_arthur_3' }],
     10: [{ type: 'badge',      id: 'badge_t1' }],
 
-    12: [{ type: 'title',      id: 'title_SlimShady' }],
-    13: [{ type: 'avatar',     id: 'avatar_rap' }],
+    12: [{ type: 'title',      id: 'title_peche' }],
+    13: [{ type: 'avatar',     id: 'avatar_peche' }],
     15: [{ type: 'background', id: 'bg_arthur_4' }],
     17: [{ type: 'badge',      id: 'badge_plume' }],
-    20: [{ type: 'skin',       id: 'skin_eminem' }],
+    20: [{ type: 'skin',       id: 'skin_peche' }],
 
-    22: [{ type: 'title',      id: 'title_dresseur' }],
-    23: [{ type: 'avatar',     id: 'avatar_pokeball' }],
+    22: [{ type: 'title',      id: 'title_boxe' }],
+    23: [{ type: 'avatar',     id: 'avatar_boxe' }],
     25: [{ type: 'pet',        id: 'pet1' }],
     27: [{ type: 'background', id: 'bg_arthur_5' }],
     29: [{ type: 'badge',      id: 'badge_pokemon' }],
-    30: [{ type: 'skin',       id: 'skin_pokemon' }],
+    30: [{ type: 'skin',       id: 'skin_boxe' }],
 
     32: [{ type: 'title',      id: 'title_exorciste' }],
     33: [{ type: 'avatar',     id: 'avatar_jjk' }],

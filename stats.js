@@ -139,7 +139,7 @@ let equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
 let badges = JSON.parse(localStorage.getItem('badges')) || [
   {
     id: 'badge_t1',
-    name: 'Emblème T1',
+    name: 'Badge Force I',
     src: 'assets/badges/badge_t1.png',
     stats: {
       Force: { base: 5, dominant: 5 }
@@ -149,7 +149,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_plume',
-    name: 'Plume du MC',
+    name: 'Badge Intel I',
     src: 'assets/badges/badge_plume.png',
     stats: {
       Intelligence: { base: 5, dominant: 5 }
@@ -159,7 +159,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_pokemon',
-    name: 'Badge Pokémon',
+    name: 'Badge Discip I',
     src: 'assets/badges/badge_pokemon.png',
     stats: {
       Discipline: { base: 5, dominant: 5 }
@@ -169,7 +169,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_tengen',
-    name: 'Sceau de Tengen',
+    name: 'Badge Focus I',
     src: 'assets/badges/badge_tengen.png',
     stats: {
       Focus: { base: 5, dominant: 5 }
@@ -179,7 +179,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_op',
-    name: 'Chapeau de Paille',
+    name: 'Badge Force II',
     src: 'assets/badges/badge_op.png',
     stats: {
 	  Force: { base: 10, dominant: 15 },
@@ -189,7 +189,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_snk',
-    name: 'Ailes de la Liberté',
+    name: 'Badge Discip II',
     src: 'assets/badges/badge_snk.png',
     stats: {
       Discipline: { base: 10, dominant: 15 },
@@ -199,7 +199,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_rick',
-    name: 'Portail dimensionnel',
+    name: 'Badge Intel II',
     src: 'assets/badges/badge_rick.png',
     stats: {
       Intelligence: { base: 10, dominant: 15 },
@@ -209,7 +209,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_dragon',
-    name: 'Écaille de Dragon',
+    name: 'Badge Focus II',
     src: 'assets/badges/badge_dragon.png',
     stats: {
       Focus: { base: 10, dominant: 15 },
@@ -219,7 +219,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_tiers3_1',
-    name: 'Badge Tiers 3 - Focus',
+    name: 'Badge Focus III',
     src: 'assets/badges/badge_tiers3_1.png',
     stats: {
       Focus: { base: 1.05, dominant: 1.05 }
@@ -230,7 +230,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_tiers3_2',
-    name: 'Badge Tiers 3 - Force',
+    name: 'Badge Force III',
     src: 'assets/badges/badge_tiers3_2.png',
     stats: {
       Force: { base: 1.05, dominant: 1.05 }
@@ -241,7 +241,7 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_tiers3_3',
-    name: 'Badge Tiers 3 - Intelligence',
+    name: 'Badge Intel III',
     src: 'assets/badges/badge_tiers3_3.png',
     stats: {
       Intelligence: { base: 1.05, dominant: 1.05 }
@@ -252,10 +252,10 @@ let badges = JSON.parse(localStorage.getItem('badges')) || [
   },
   {
     id: 'badge_tiers3_4',
-    name: 'Badge Tiers 3 - Focus',
+    name: 'Badge Focus III',
     src: 'assets/badges/badge_tiers3_4.png',
     stats: {
-      Focus: { base: 1.05, dominant: 1.05 }
+      Discipline: { base: 1.05, dominant: 1.05 }
     },
     multiplier: true,
     equippedSlot: null,
