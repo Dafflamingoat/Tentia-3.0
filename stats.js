@@ -121,6 +121,163 @@ let pets = JSON.parse(localStorage.getItem('pets')) || [
 let equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
 
 // ────────────────
+// DONNEES BADGES
+// ────────────────
+// Structure d'un badge :
+//   id        : identifiant unique
+//   name      : nom affiché
+//   src       : chemin vers l'image PNG 64x64
+//   stats     : { NomStat: { base: N, dominant: N }, ... }
+//               base = bonus quand ce n'est PAS le slot dominant
+//               dominant = bonus quand équipé DANS ce slot
+//               Pour un badge mono-stat base === dominant
+//   equippedSlot : null | 'Force' | 'Intelligence' | 'Discipline' | 'Focus'
+//   owned     : bool
+//
+// ⚙ POUR MODIFIER LES NIVEAUX DE DEBLOCAGE → voir levelRewards plus bas
+// ⚙ POUR MODIFIER LES VALEURS DE BONUS     → modifier base/dominant ici
+let badges = JSON.parse(localStorage.getItem('badges')) || [
+  {
+    id: 'badge_t1',
+    name: 'Emblème T1',
+    src: 'assets/badges/badge_t1.png',
+    stats: {
+      Force: { base: 5, dominant: 5 }
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_plume',
+    name: 'Plume du MC',
+    src: 'assets/badges/badge_plume.png',
+    stats: {
+      Intelligence: { base: 5, dominant: 5 }
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_pokemon',
+    name: 'Badge Pokémon',
+    src: 'assets/badges/badge_pokemon.png',
+    stats: {
+      Discipline: { base: 5, dominant: 5 }
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_tengen',
+    name: 'Sceau de Tengen',
+    src: 'assets/badges/badge_tengen.png',
+    stats: {
+      Focus: { base: 5, dominant: 5 }
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_op',
+    name: 'Chapeau de Paille',
+    src: 'assets/badges/badge_op.png',
+    stats: {
+	  Force: { base: 10, dominant: 15 },
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_snk',
+    name: 'Ailes de la Liberté',
+    src: 'assets/badges/badge_snk.png',
+    stats: {
+      Discipline: { base: 10, dominant: 15 },
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_rick',
+    name: 'Portail dimensionnel',
+    src: 'assets/badges/badge_rick.png',
+    stats: {
+      Intelligence: { base: 10, dominant: 15 },
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_dragon',
+    name: 'Écaille de Dragon',
+    src: 'assets/badges/badge_dragon.png',
+    stats: {
+      Focus: { base: 10, dominant: 15 },
+    },
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_tiers3_1',
+    name: 'Badge Tiers 3 - Focus',
+    src: 'assets/badges/badge_tiers3_1.png',
+    stats: {
+      Focus: { base: 1.05, dominant: 1.05 }
+    },
+    multiplier: true,
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_tiers3_2',
+    name: 'Badge Tiers 3 - Force',
+    src: 'assets/badges/badge_tiers3_2.png',
+    stats: {
+      Force: { base: 1.05, dominant: 1.05 }
+    },
+    multiplier: true,
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_tiers3_3',
+    name: 'Badge Tiers 3 - Intelligence',
+    src: 'assets/badges/badge_tiers3_3.png',
+    stats: {
+      Intelligence: { base: 1.05, dominant: 1.05 }
+    },
+    multiplier: true,
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_tiers3_4',
+    name: 'Badge Tiers 3 - Focus',
+    src: 'assets/badges/badge_tiers3_4.png',
+    stats: {
+      Focus: { base: 1.05, dominant: 1.05 }
+    },
+    multiplier: true,
+    equippedSlot: null,
+    owned: false
+  },
+  {
+    id: 'badge_endgame',
+    name: 'Badge End Game',
+    src: 'assets/badges/badge_endgame.png',
+    stats: {
+      Force:        { base: 15, dominant: 20 },
+      Intelligence: { base: 15, dominant: 20 },
+      Discipline:   { base: 15, dominant: 20 },
+      Focus:        { base: 15, dominant: 20 }
+    },
+    equippedSlot: null,
+    owned: false
+  }
+];
+
+
+// ────────────────
 // DONNÉES TIMELINE (chargées depuis timeline_<id>.js)
 // Skins, backgrounds, avatars, titres, levelRewards
 // ────────────────
