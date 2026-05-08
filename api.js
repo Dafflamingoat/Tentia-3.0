@@ -285,23 +285,21 @@ function showTimelineChoice() {
 }
 
 async function ensureTimelineSelection(profile) {
+  // Si le profil Supabase a déjà une timeline → l'appliquer et stop
   const profileTimelineId = getProfileTimelineId(profile);
   if (profileTimelineId) {
     setTimelineIdLocal(profileTimelineId);
     return profileTimelineId;
   }
 
-  if (profile && !isExistingLegacyProfile(profile)) {
-    return showTimelineChoice();
-  }
-
-  if (getTimelineId()) return getTimelineId();
-
-  if (isExistingLegacyProfile(profile)) {
-    localStorage.setItem(TIMELINE_KEY, 'dafz');
+  // Profil legacy existant (Dafz historique) → assigner dafz sans demander
+  if (profile && isExistingLegacyProfile(profile)) {
+    setTimelineIdLocal('dafz');
+    await saveProfile({ skills: getStoredSkillsPayload() });
     return 'dafz';
   }
 
+  // Nouveau compte vierge → afficher le choix
   return showTimelineChoice();
 }
 
@@ -403,8 +401,19 @@ async function login(email, password) {
 
 async function logout() {
   await apiRequest('POST', '/auth/logout');
-  clearToken();
+  clearLocalStorage();
   showLoginScreen();
+}
+
+function clearLocalStorage() {
+  // Garder uniquement les clés système, tout vider pour ne pas polluer le prochain compte
+  const keep = [];
+  clearToken();
+  const allKeys = [];
+  for (let i = 0; i < localStorage.length; i++) allKeys.push(localStorage.key(i));
+  allKeys.forEach(key => {
+    if (!keep.includes(key)) localStorage.removeItem(key);
+  });
 }
 
 // ── Données ──────────────────────────────────
@@ -587,6 +596,8 @@ function createLoginScreen() {
 
     if (result.error) { err.textContent = result.error; return; }
 
+    // Vider le localStorage de l'ancien compte avant de charger le nouveau
+    clearLocalStorage();
     err.textContent = '';
     const profile = await loadProfile();
     await ensureTimelineSelection(profile);
