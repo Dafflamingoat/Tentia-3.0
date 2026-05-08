@@ -130,6 +130,9 @@ let skins = [];
 let backgrounds = [];
 let levelRewards = {};
 
+let equippedTitleId = localStorage.getItem('equippedTitleId') || 'title1';
+let equippedAvatarId = localStorage.getItem('equippedAvatarId') || 'avatar1';
+
 function loadTimelineData() {
   const timelineId = getTimelineIdStats();
   const data = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
