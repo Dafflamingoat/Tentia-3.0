@@ -140,6 +140,8 @@ function applyTimelineStarterLocal(timelineId) {
 
 function isExistingLegacyProfile(profile) {
   if (!profile) return false;
+  // Un profil legacy = vrai progrès mesurable uniquement
+  // (pas hasCosmetics qui se déclenche sur un profil vierge avec skills vide)
   const hasProgress =
     (profile.level && profile.level > 1) ||
     (profile.xp && profile.xp > 0) ||
@@ -148,20 +150,7 @@ function isExistingLegacyProfile(profile) {
     (profile.total_chess_xp && profile.total_chess_xp > 0) ||
     (profile.peak_elo && profile.peak_elo > 0);
 
-  const hasCosmetics =
-    Object.keys(safeParseJSON(profile.skills, {})).length > 0 ||
-    safeParseJSON(profile.skins, []).length > 0 ||
-    safeParseJSON(profile.backgrounds, []).length > 0 ||
-    safeParseJSON(profile.avatars, []).length > 0 ||
-    safeParseJSON(profile.badges, []).length > 0 ||
-    safeParseJSON(profile.pets, []).length > 0;
-
-  const hasNonDefaultSelection =
-    (profile.selected_skin && profile.selected_skin !== 'Skin_T1') ||
-    Boolean(profile.selected_bg) ||
-    (profile.equipped_avatar && profile.equipped_avatar !== 'avatar1');
-
-  return Boolean(hasProgress || hasCosmetics || hasNonDefaultSelection);
+  return Boolean(hasProgress);
 }
 
 function injectTimelineStyles() {
