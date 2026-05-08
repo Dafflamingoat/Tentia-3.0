@@ -597,12 +597,14 @@ function createLoginScreen() {
     if (!email || !password) { err.textContent = 'Remplis tous les champs.'; return; }
 
     err.textContent = 'Connexion...';
+
+    // Vider le localStorage de l'ancien compte AVANT de login
+    clearLocalStorage();
+
     const result = await login(email, password);
 
     if (result.error) { err.textContent = result.error; return; }
 
-    // Vider le localStorage de l'ancien compte avant de charger le nouveau
-    clearLocalStorage();
     err.textContent = '';
     const profile = await loadProfile();
     await ensureTimelineSelection(profile);
