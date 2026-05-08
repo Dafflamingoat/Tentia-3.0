@@ -10,6 +10,17 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Email, mot de passe et pseudo requis' });
   }
 
+  // 0. Vérifier que le username n'est pas déjà pris
+  const { data: existing } = await supabaseAdmin
+    .from('profiles')
+    .select('user_id')
+    .ilike('username', username)
+    .single();
+
+  if (existing) {
+    return res.status(400).json({ error: 'Ce pseudo est déjà utilisé' });
+  }
+
   // 1. Créer le compte auth
   const { data, error } = await supabase.auth.signUp({
     email,
