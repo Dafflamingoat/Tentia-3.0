@@ -285,21 +285,26 @@ function showTimelineChoice() {
 }
 
 async function ensureTimelineSelection(profile) {
-  // Si le profil Supabase a déjà une timeline → l'appliquer et stop
+  // 1. Si le localStorage a déjà une timeline valide → stop immédiat (pas de popup)
+  const localTimeline = getTimelineId();
+  if (localTimeline) return localTimeline;
+
+  // 2. Si le profil Supabase a une timeline → l'appliquer et stop
   const profileTimelineId = getProfileTimelineId(profile);
   if (profileTimelineId) {
     setTimelineIdLocal(profileTimelineId);
     return profileTimelineId;
   }
 
-  // Profil legacy existant (Dafz historique) → assigner dafz sans demander
+  // 3. Profil legacy existant → assigner dafz, sauvegarder, ne plus demander
   if (profile && isExistingLegacyProfile(profile)) {
     setTimelineIdLocal('dafz');
-    await saveProfile({ skills: getStoredSkillsPayload() });
+    const skills = getStoredSkillsPayload();
+    await saveProfile({ skills });
     return 'dafz';
   }
 
-  // Nouveau compte vierge → afficher le choix
+  // 4. Nouveau compte vierge → afficher le choix une seule fois
   return showTimelineChoice();
 }
 
