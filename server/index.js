@@ -3,8 +3,9 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 
-const authRoutes = require('./routes/auth');
-const dataRoutes = require('./routes/data');
+const authRoutes    = require('./routes/auth');
+const dataRoutes    = require('./routes/data');
+const friendsRoutes = require('./routes/friends');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -21,8 +22,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
 // ── Routes API ──────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/data', dataRoutes);
+app.use('/api/auth',    authRoutes);
+app.use('/api/data',    dataRoutes);
+app.use('/api/friends', friendsRoutes);
 
 // ── Fallback : toutes les routes non-API → index.html ──
 app.get('*', (req, res) => {
