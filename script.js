@@ -769,10 +769,18 @@ function renderBGThumbs() {
 
   const ownedBGs = getBackgrounds();
 
-  // Lire tous les BGs depuis le HTML statique avant de vider le wrap
-  const currentThumbs = Array.from(wrap.querySelectorAll('.bg-thumb[data-bg1]'))
-    .map(t => ({ bg1: t.dataset.bg1, bg2: t.dataset.bg2 }));
-  if (currentThumbs.length) window._allBGThumbs = currentThumbs;
+  // Lire depuis TIMELINE_DATA selon la timeline active
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId]) || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+  const allBGs = timelineData ? timelineData.backgrounds : [];
+  if (allBGs.length) window._allBGThumbs = allBGs.map(b => ({ bg1: b.bg1, bg2: b.bg2 }));
+
+  // Fallback sur HTML statique si pas de TIMELINE_DATA
+  if (!window._allBGThumbs || !window._allBGThumbs.length) {
+    const currentThumbs = Array.from(wrap.querySelectorAll('.bg-thumb[data-bg1]'))
+      .map(t => ({ bg1: t.dataset.bg1, bg2: t.dataset.bg2 }));
+    if (currentThumbs.length) window._allBGThumbs = currentThumbs;
+  }
   const thumbData = window._allBGThumbs || [];
 
   wrap.innerHTML = '';
@@ -847,10 +855,18 @@ function renderSkinThumbs() {
 
   const ownedSkins = getSkins();
 
-  // Lire tous les skins depuis le HTML statique avant de vider le wrap
-  const currentThumbs = Array.from(skinWrapEl.querySelectorAll('.skin-thumb[data-skin]'))
-    .map(t => t.dataset.skin);
-  if (currentThumbs.length) window._allSkinFolders = currentThumbs;
+  // Lire depuis TIMELINE_DATA selon la timeline active
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId]) || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+  const allSkins = timelineData ? timelineData.skins : [];
+  if (allSkins.length) window._allSkinFolders = allSkins.map(s => s.folder);
+
+  // Fallback sur HTML statique si pas de TIMELINE_DATA
+  if (!window._allSkinFolders || !window._allSkinFolders.length) {
+    const currentThumbs = Array.from(skinWrapEl.querySelectorAll('.skin-thumb[data-skin]'))
+      .map(t => t.dataset.skin);
+    if (currentThumbs.length) window._allSkinFolders = currentThumbs;
+  }
   const folders = window._allSkinFolders || [];
 
   skinWrapEl.innerHTML = '';
