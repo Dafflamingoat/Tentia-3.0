@@ -1586,12 +1586,27 @@ function renderQuests() {
     });
 
     editBtn.addEventListener('click', () => {
-      const newText = prompt('Modifier la quête', quest.text);
-      if (newText) {
-        quest.text = newText;
+      // Édition inline : remplacer le span par un input
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = quest.text;
+      input.className = 'quest-edit-input';
+      content.replaceChild(input, label);
+      input.focus();
+      input.select();
+
+      const confirm = () => {
+        const newText = input.value.trim();
+        if (newText) quest.text = newText;
         saveQuests();
         renderQuests();
-      }
+      };
+
+      input.addEventListener('blur', confirm);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') confirm();
+        if (e.key === 'Escape') renderQuests();
+      });
     });
 
     deleteBtn.addEventListener('click', () => {

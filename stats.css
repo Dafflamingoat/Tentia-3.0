@@ -85,7 +85,7 @@ body {
 }
 
 .quest-box { flex: 0 0 35% !important; min-width: 0 !important; max-width: 35% !important; }
-.dashboard-box { flex: 0 0 65% !important; min-width: 0 !important; }
+.dashboard-box { flex: 1 1 0 !important; min-width: 0 !important; max-width: 65% !important; }
 
 /* Quêtes */
 .quest-box {
@@ -217,7 +217,7 @@ body {
 }
 .quest-list {
   list-style: none;
-  padding: 0;
+  padding: 8px;
   margin: 0 0 12px 0;
   display: flex;
   flex-direction: column;
@@ -227,6 +227,9 @@ body {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--gold-dark) #111;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
 }
 .quest-list::-webkit-scrollbar { width: 5px; }
 .quest-list::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
@@ -1395,4 +1398,17 @@ body {
 .pet-form-bonus {
   font-size: 7px;
   color: #8bc34a;
+}
+
+/* ── Édition inline quête ── */
+.quest-edit-input {
+  flex: 1;
+  background: #111;
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 4px 6px;
+  outline: none;
+  width: 100%;
 }
