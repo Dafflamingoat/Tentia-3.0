@@ -511,11 +511,20 @@ if (addSkillForm) {
 // ----------------
 // ELO CHESS
 // ----------------
-const CHESS_USERNAME = 'Dafflaming0';
 
 async function fetchChessElo() {
+  // Lire le username Chess.com depuis Supabase (chargé dans loadProfile)
+  const chessUsername = localStorage.getItem('chessUsername');
+
+  if (!chessUsername) {
+    // Pas de compte connecté : afficher la jauge vide avec message
+    updateEloBar(0, true);
+    return;
+  }
+
   try {
-    const resp = await fetch(`https://api.chess.com/pub/player/${CHESS_USERNAME}/stats`);
+    const resp = await fetch(`https://api.chess.com/pub/player/${chessUsername}/stats`);
+    if (!resp.ok) throw new Error('Compte introuvable');
     const data = await resp.json();
 
     const blitz  = data.chess_blitz?.last?.rating  || 0;
@@ -533,37 +542,40 @@ async function fetchChessElo() {
 
     skills.echec = Math.min(elo, MAX_LEVELS.echec);
     updateSkillUI('echec');
-    updateEloBar(skills.echec);
+    updateEloBar(skills.echec, false);
     localStorage.setItem('skills', JSON.stringify(getSkillsPayload()));
 
-    // Sync Supabase — sauvegarde l'ELO actuel pour que stats.js y accède
+    // Sync Supabase
     if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
       window.TentiaAPI.saveProfile({
         current_elo: elo,
         peak_elo:    Math.max(elo, peak)
       });
     }
-
-    console.log("ELO récupéré :", elo);
   } catch (err) {
     console.warn("Erreur récupération ELO :", err);
+    updateEloBar(0, true);
   }
 }
 
-fetchChessElo();
+// Appelé après loadProfile() pour avoir chessUsername disponible
+window._fetchChessEloWhenReady = function() {
+  fetchChessElo();
+  setInterval(() => {
+    if (document.visibilityState === 'visible') fetchChessElo();
+  }, 300000);
+};
 
-setInterval(() => {
-  if (document.visibilityState === 'visible') {
-    console.log("🔄 Refresh ELO (actif)");
-    fetchChessElo();
-  }
-}, 300000);
-
-function updateEloBar(elo) {
+function updateEloBar(elo, noAccount = false) {
   const maxElo = MAX_LEVELS.echec || 1000;
   const bar = document.getElementById('bar-echec');
   const val = document.getElementById('val-echec');
   if (!bar || !val) return;
+  if (noAccount) {
+    bar.style.width = '0%';
+    val.textContent = 'Non connecté';
+    return;
+  }
   bar.style.width = Math.min((elo / maxElo) * 100, 100) + '%';
   bar.style.background = `linear-gradient(90deg, ${getEloColor(elo)}, #ffffff22)`;
   val.textContent = `${elo}/${maxElo}`;

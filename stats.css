@@ -1527,3 +1527,39 @@ body {
   margin-top: 4px;
   min-height: 14px;
 }
+
+/* ── PARAMÈTRES CHESS.COM ── */
+.settings-section {
+  margin-bottom: 12px;
+}
+.settings-label {
+  font-size: 8px;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.settings-chess-connected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  color: #4caf50;
+}
+.settings-chess-disconnect {
+  background: none;
+  border: 1px solid #f44336;
+  color: #f44336;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.settings-chess-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.settings-chess-feedback {
+  font-size: 8px;
+  margin-top: 4px;
+  min-height: 14px;
+}

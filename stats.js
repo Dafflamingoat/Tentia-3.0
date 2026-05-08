@@ -2351,6 +2351,85 @@ window.addEventListener('beforeunload', () => {
 });
 
 
+
+// ────────────────
+// CONNEXION CHESS.COM (Paramètres)
+// ────────────────
+
+function initChessSettings() {
+  const connected   = document.getElementById('settings-chess-connected');
+  const form        = document.getElementById('settings-chess-form');
+  const usernameEl  = document.getElementById('settings-chess-username');
+  const feedback    = document.getElementById('settings-chess-feedback');
+  const input       = document.getElementById('settings-chess-input');
+  const connectBtn  = document.getElementById('settings-chess-connect');
+  const disconnectBtn = document.getElementById('settings-chess-disconnect');
+
+  if (!connected) return;
+
+  // Afficher l'état actuel
+  const saved = localStorage.getItem('chessUsername');
+  if (saved) {
+    connected.style.display = 'flex';
+    form.style.display = 'none';
+    usernameEl.textContent = saved;
+  } else {
+    connected.style.display = 'none';
+    form.style.display = 'flex';
+  }
+
+  // Connecter
+  connectBtn?.addEventListener('click', async () => {
+    const username = input.value.trim();
+    if (!username) return;
+
+    feedback.textContent = 'Vérification...';
+    feedback.style.color = 'var(--gold-light)';
+
+    try {
+      const resp = await fetch(`https://api.chess.com/pub/player/${username}`);
+      if (!resp.ok) throw new Error('Compte introuvable');
+
+      // Sauvegarder dans Supabase et localStorage
+      await window.TentiaAPI.saveProfile({ chess_username: username });
+      localStorage.setItem('chessUsername', username);
+
+      connected.style.display = 'flex';
+      form.style.display = 'none';
+      usernameEl.textContent = username;
+      feedback.textContent = '✅ Compte connecté !';
+      feedback.style.color = '#4caf50';
+      input.value = '';
+
+      // Relancer la récupération ELO
+      if (typeof window._fetchChessEloWhenReady === 'function') {
+        window._fetchChessEloWhenReady();
+      }
+    } catch (err) {
+      feedback.textContent = 'Compte Chess.com introuvable';
+      feedback.style.color = '#f44336';
+    }
+  });
+
+  // Déconnecter
+  disconnectBtn?.addEventListener('click', async () => {
+    await window.TentiaAPI.saveProfile({ chess_username: null });
+    localStorage.removeItem('chessUsername');
+    localStorage.setItem('currentElo', 0);
+
+    connected.style.display = 'none';
+    form.style.display = 'flex';
+    usernameEl.textContent = '';
+    feedback.textContent = 'Compte déconnecté';
+    feedback.style.color = 'var(--gold-dark)';
+  });
+}
+
+// Initialiser quand l'onglet Paramètres est ouvert
+document.querySelectorAll('[data-dashboard-tab="settings"]').forEach(btn => {
+  btn.addEventListener('click', initChessSettings);
+});
+
 // ────────────────
 // SYSTÈME AMIS
 // ────────────────

@@ -630,6 +630,12 @@ async function initApp() {
 
   const profile = await loadProfile();
   await ensureTimelineSelection(profile);
+
+  // Déclencher la récupération ELO maintenant que le profil est chargé
+  if (typeof window._fetchChessEloWhenReady === 'function') {
+    window._fetchChessEloWhenReady();
+  }
+
   return true;
 }
 

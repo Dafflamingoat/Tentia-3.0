@@ -299,11 +299,21 @@
       </div>
 
       <div class="dashboard-panel" id="dashboard-tab-settings">
-        <div class="dashboard-lines">
-          <div class="dashboard-line short"></div>
-          <div class="dashboard-line"></div>
-          <div class="dashboard-line"></div>
+
+        <!-- Connexion Chess.com -->
+        <div class="settings-section">
+          <div class="settings-label">♟ Chess.com</div>
+          <div class="settings-chess-connected" id="settings-chess-connected" style="display:none;">
+            <span id="settings-chess-username"></span>
+            <button class="settings-chess-disconnect" id="settings-chess-disconnect">Déconnecter</button>
+          </div>
+          <div class="settings-chess-form" id="settings-chess-form">
+            <input class="friends-input" id="settings-chess-input" type="text" placeholder="Pseudo Chess.com" autocomplete="off">
+            <button class="friends-add-btn" id="settings-chess-connect">Connecter</button>
+          </div>
+          <div class="settings-chess-feedback" id="settings-chess-feedback"></div>
         </div>
+
         <button class="profile-btn" id="btn-logout" style="margin-top:12px; background:#3a0a0a; border-color:#8b1a1a; color:#ff6b6b;" onclick="if(confirm('Se déconnecter ?')) window.TentiaAPI.logout()">🚪 Se déconnecter</button>
       </div>
 

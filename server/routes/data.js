@@ -31,7 +31,7 @@ router.put('/profile', async (req, res) => {
     'badge_slots', 'achievements_claimed', 'journal', 'quests',
     'total_login_days', 'total_quests_done', 'total_quest_xp',
     'total_chess_xp', 'peak_elo', 'last_login', 'last_elo', 'current_elo',
-    'last_seen'
+    'last_seen', 'chess_username'
   ];
 
   // Filtrer pour ne garder que les champs autorisés
