@@ -451,6 +451,13 @@ async function loadProfile() {
   if (data.equipped_avatar) localStorage.setItem('equippedAvatarId', data.equipped_avatar);
   if (data.equipped_pet)    localStorage.setItem('equippedPetId',   data.equipped_pet);
 
+  // Chess.com username
+  if (data.chess_username) {
+    localStorage.setItem('chessUsername', data.chess_username);
+  } else {
+    localStorage.removeItem('chessUsername');
+  }
+
   // Background (objet)
   if (data.selected_bg && data.selected_bg !== 'null') {
     localStorage.setItem('selectedBG', JSON.stringify(data.selected_bg));
@@ -631,10 +638,8 @@ async function initApp() {
   const profile = await loadProfile();
   await ensureTimelineSelection(profile);
 
-  // Déclencher la récupération ELO maintenant que le profil est chargé
-  if (typeof window._fetchChessEloWhenReady === 'function') {
-    window._fetchChessEloWhenReady();
-  }
+  // Signaler que le profil est prêt (script.js écoute cet event pour lancer fetchChessElo)
+  window.dispatchEvent(new Event('tentia:profileReady'));
 
   return true;
 }
