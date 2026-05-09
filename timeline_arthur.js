@@ -168,8 +168,14 @@ window.TIMELINE_DATA.arthur = {
     },
     pet_endgame: {
       name: 'Arme Ultime',
-      sprite1: 'assets/pets/arc_frame1.png',
-      sprite2: 'assets/pets/arc_frame2.png'
+      sprite1: 'assets/pets/timelines/arthur/endgame_arc_f1.png',
+      sprite2: 'assets/pets/timelines/arthur/endgame_arc_f2.png',
+      forms: {
+        arc:      { name: 'Arc Céleste',      sprite1: 'assets/pets/timelines/arthur/endgame_arc_f1.png',      sprite2: 'assets/pets/timelines/arthur/endgame_arc_f2.png'      },
+        baton:    { name: 'Bâton du Sage',    sprite1: 'assets/pets/timelines/arthur/endgame_baton_f1.png',    sprite2: 'assets/pets/timelines/arthur/endgame_baton_f2.png'    },
+        marteau:  { name: 'Marteau Divin',    sprite1: 'assets/pets/timelines/arthur/endgame_marteau_f1.png',  sprite2: 'assets/pets/timelines/arthur/endgame_marteau_f2.png'  },
+        bouclier: { name: 'Bouclier Absolu',  sprite1: 'assets/pets/timelines/arthur/endgame_bouclier_f1.png', sprite2: 'assets/pets/timelines/arthur/endgame_bouclier_f2.png' },
+      }
     }
   },
 

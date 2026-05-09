@@ -169,7 +169,13 @@ window.TIMELINE_DATA.dafz = {
     pet_endgame: {
       name: 'Arme Ultime',
       sprite1: 'assets/pets/arc_frame1.png',
-      sprite2: 'assets/pets/arc_frame2.png'
+      sprite2: 'assets/pets/arc_frame2.png',
+      forms: {
+        arc:      { name: 'Arc Céleste',      sprite1: 'assets/pets/arc_frame1.png',      sprite2: 'assets/pets/arc_frame2.png'      },
+        baton:    { name: 'Bâton du Sage',    sprite1: 'assets/pets/baton_frame1.png',    sprite2: 'assets/pets/baton_frame2.png'    },
+        marteau:  { name: 'Marteau Divin',    sprite1: 'assets/pets/marteau_frame1.png',  sprite2: 'assets/pets/marteau_frame2.png'  },
+        bouclier: { name: 'Bouclier Absolu',  sprite1: 'assets/pets/bouclier_frame1.png', sprite2: 'assets/pets/bouclier_frame2.png' },
+      }
     }
   },
 

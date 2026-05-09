@@ -134,6 +134,16 @@ function applyTimelinePetVisuals() {
     pet.sprite1 = visual.sprite1;
     pet.sprite2 = visual.sprite2;
     if (visual.evolutions) pet.evolutions = visual.evolutions;
+    // pet_endgame : merger les forms (nom + sprites par forme)
+    if (visual.forms && pet.forms) {
+      Object.keys(visual.forms).forEach(formKey => {
+        if (pet.forms[formKey]) {
+          pet.forms[formKey].name    = visual.forms[formKey].name;
+          pet.forms[formKey].sprite1 = visual.forms[formKey].sprite1;
+          pet.forms[formKey].sprite2 = visual.forms[formKey].sprite2;
+        }
+      });
+    }
   });
 }
 
