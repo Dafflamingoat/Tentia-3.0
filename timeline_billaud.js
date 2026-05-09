@@ -72,7 +72,7 @@ window.TIMELINE_DATA.billaud = {
     { id: 'skin_billaud',         name: 'Billaud',        folder: 'timelines/billaud/Skin_Billaud',       owned: true  },
     { id: 'skin_fallout',         name: 'Armor X01',      folder: 'timelines/billaud/Skin_Fallout',       owned: false },
     { id: 'skin_witcher',         name: 'Geralt',         folder: 'timelines/billaud/Skin_Witcher',       owned: false },
-    { id: 'skin_yuji',            name: 'Yuji Itadori',   folder: 'timelines/billaud/Skin_JJK',           owned: false },
+    { id: 'skin_nick',            name: 'Nick',           folder: 'timelines/billaud/Skin_Nick',          owned: false },
     { id: 'skin_op',              name: 'One Piece',      folder: 'timelines/billaud/Skin_OP',            owned: false },
     { id: 'skin_titan',           name: 'Titan',          folder: 'timelines/billaud/Skin_Snk',           owned: false },
     { id: 'skin_rick',            name: 'Rick & Morty',   folder: 'timelines/billaud/Skin_RM',            owned: false },
