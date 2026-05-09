@@ -13,9 +13,9 @@ window.TIMELINE_DATA.billaud = {
   // ────────────────
   titles: [
     { id: 'title1',              name: 'Novice',                    owned: true  },
-    { id: 'title_t1_supporter',  name: 'T1 Supporter',              owned: false },
-    { id: 'title_SlimShady',     name: 'The Slim Shady',            owned: false },
-    { id: 'title_dresseur',      name: 'Dresseur',                  owned: false },
+    { id: 'title_stalk',         name: 'Stalker',                   owned: false },
+    { id: 'title_edge_runner',   name: 'Edgerunner',                owned: false },
+    { id: 'title_witcher',       name: 'Sorceleurs',                owned: false },
     { id: 'title_exorciste',     name: 'Apprenti Exorciste',        owned: false },
     { id: 'title_mugiwara',      name: 'Mugiwara',                  owned: false },
     { id: 'title_bataillon',     name: "Bataillon d'exploration",   owned: false },
@@ -45,10 +45,10 @@ window.TIMELINE_DATA.billaud = {
   // ⚙ Remplacer les src par les assets Billaud
   // ────────────────
   avatars: [
-    { id: 'avatar_billaud',   name: 'Avatar Billaud',    src: 'assets/avatars/timelines/billaud/avatar_billaud.png', owned: true  },
-    { id: 'avatar_t1',        name: 'Avatar T1',          src: 'assets/avatars/timelines/billaud/avatar_t1.png',        owned: false },
-    { id: 'avatar_rap',       name: 'Avatar SlimShady',   src: 'assets/avatars/timelines/billaud/avatar_rap.png',       owned: false },
-    { id: 'avatar_pokeball',  name: 'Avatar Pokeball',    src: 'assets/avatars/timelines/billaud/avatar_pokeball.png',  owned: false },
+    { id: 'avatar_billaud',   name: 'Avatar Billaud',     src: 'assets/avatars/timelines/billaud/avatar_billaud.png',   owned: true  },
+    { id: 'avatar_fallout',   name: 'Avatar Volboy',      src: 'assets/avatars/timelines/billaud/avatar_fallout.png',   owned: false },
+    { id: 'avatar_cyberpunk', name: 'Avatar Cyberpunk',   src: 'assets/avatars/timelines/billaud/avatar_cyberpunk.png', owned: false },
+    { id: 'avatar_witcher',   name: 'Avatar The Witcher', src: 'assets/avatars/timelines/billaud/avatar_witcher.png',   owned: false },
     { id: 'avatar_jjk',       name: 'Avatar JJK',         src: 'assets/avatars/timelines/billaud/avatar_jjk.png',       owned: false },
     { id: 'avatar_op',        name: 'Avatar One Piece',   src: 'assets/avatars/timelines/billaud/avatar_op.png',        owned: false },
     { id: 'avatar_snk',       name: 'Avatar SNK',         src: 'assets/avatars/timelines/billaud/avatar_snk.png',       owned: false },
@@ -70,8 +70,8 @@ window.TIMELINE_DATA.billaud = {
   // ────────────────
   skins: [
     { id: 'skin_billaud',         name: 'Billaud',        folder: 'timelines/billaud/Skin_Billaud',       owned: true  },
-    { id: 'skin_eminem',          name: 'Slim Shady',     folder: 'timelines/billaud/Skin_Eminem',        owned: false },
-    { id: 'skin_pokemon',         name: 'Pokémon',        folder: 'timelines/billaud/Skin_Pokemon',       owned: false },
+    { id: 'skin_fallout',         name: 'Armor X01',      folder: 'timelines/billaud/Skin_Fallout',       owned: false },
+    { id: 'skin_witcher',         name: 'Geralt',         folder: 'timelines/billaud/Skin_Witcher',       owned: false },
     { id: 'skin_yuji',            name: 'Yuji Itadori',   folder: 'timelines/billaud/Skin_JJK',           owned: false },
     { id: 'skin_op',              name: 'One Piece',      folder: 'timelines/billaud/Skin_OP',            owned: false },
     { id: 'skin_titan',           name: 'Titan',          folder: 'timelines/billaud/Skin_Snk',           owned: false },
@@ -126,23 +126,23 @@ window.TIMELINE_DATA.billaud = {
   // Même structure que Dafz — remplacer skin/avatar/background par les ids Billaud
   // ────────────────
   levelRewards: {
-    2:  [{ type: 'title',      id: 'title_t1_supporter' }],
-    4:  [{ type: 'avatar',     id: 'avatar_t1' }],
+    2:  [{ type: 'title',      id: 'title_stalk' }],
+    4:  [{ type: 'avatar',     id: 'avatar_fallout' }],
     7:  [{ type: 'background', id: 'bg_billaud_3' }],
     10: [{ type: 'badge',      id: 'badge_t1' }],
 
-    12: [{ type: 'title',      id: 'title_SlimShady' }],
-    13: [{ type: 'avatar',     id: 'avatar_rap' }],
+    12: [{ type: 'title',      id: 'title_edge_runner' }],
+    13: [{ type: 'avatar',     id: 'avatar_cyberpunk' }],
     15: [{ type: 'background', id: 'bg_billaud_4' }],
     17: [{ type: 'badge',      id: 'badge_plume' }],
-    20: [{ type: 'skin',       id: 'skin_eminem' }],
+    20: [{ type: 'skin',       id: 'skin_fallout' }],
 
-    22: [{ type: 'title',      id: 'title_dresseur' }],
-    23: [{ type: 'avatar',     id: 'avatar_pokeball' }],
+    22: [{ type: 'title',      id: 'title_witcher' }],
+    23: [{ type: 'avatar',     id: 'avatar_witcher' }],
     25: [{ type: 'pet',        id: 'pet1' }],
     27: [{ type: 'background', id: 'bg_billaud_5' }],
     29: [{ type: 'badge',      id: 'badge_pokemon' }],
-    30: [{ type: 'skin',       id: 'skin_pokemon' }],
+    30: [{ type: 'skin',       id: 'skin_witcher' }],
 
     32: [{ type: 'title',      id: 'title_exorciste' }],
     33: [{ type: 'avatar',     id: 'avatar_jjk' }],
