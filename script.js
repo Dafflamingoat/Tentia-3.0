@@ -566,6 +566,23 @@ window._fetchChessEloWhenReady = function() {
   }, 300000);
 };
 
+// Lancer quand api.js signale que le profil est chargé
+// Si l'event a déjà été dispatché avant que script.js soit chargé,
+// on vérifie chessUsername directement et on lance immédiatement
+function startChessPolling() {
+  fetchChessElo();
+  setInterval(() => {
+    if (document.visibilityState === 'visible') fetchChessElo();
+  }, 300000);
+}
+
+window.addEventListener('tentia:profileReady', startChessPolling);
+
+// Fallback : si le profil est déjà chargé (event manqué), lancer directement
+if (localStorage.getItem('chessUsername')) {
+  startChessPolling();
+}
+
 function updateEloBar(elo, noAccount = false) {
   const maxElo = MAX_LEVELS.echec || 1000;
   const bar = document.getElementById('bar-echec');
