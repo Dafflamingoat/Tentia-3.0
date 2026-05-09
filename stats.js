@@ -813,8 +813,6 @@ const ACHIEVEMENT_CATEGORIES = [
       // ⚙ À COMPLÉTER — changer reward.id quand tu as trouvé les récompenses 250/300j
       { id: 'hf_login250', label: '250 jours de connexion', target: 250, reward: { type: 'background', id: 'bg_hf_250'       } },
       { id: 'hf_login300', label: '300 jours de connexion', target: 300, reward: { type: 'background', id: 'bg_hf_300'       } },
-      { id: 'hf_login400', label: '400 jours de connexion', target: 400, reward: { type: 'background', id: 'bg_japon'    } },
-      { id: 'hf_login500', label: '500 jours de connexion', target: 500, reward: { type: 'background', id: 'bg_japon'    } },
     ]
   },
 
