@@ -130,7 +130,7 @@ window.TIMELINE_DATA.billaud = {
     pet1: {
       name: 'Pet 1',
       evolutions: [
-        { minLevel: 1,  maxLevel: 15, name: 'Pet 1 Forme 1', sprite1: 'assets/pets/timelines/billaud/pet1_evo1_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo1_f2.png' },
+        { minLevel: 1,  maxLevel: 15, name: 'Carapuce',      sprite1: 'assets/pets/timelines/billaud/pet1_evo1_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo1_f2.png' },
         { minLevel: 16, maxLevel: 34, name: 'Pet 1 Forme 2', sprite1: 'assets/pets/timelines/billaud/pet1_evo2_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo2_f2.png' },
         { minLevel: 35, maxLevel: 50, name: 'Pet 1 Forme 3', sprite1: 'assets/pets/timelines/billaud/pet1_evo3_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo3_f2.png' },
       ],
