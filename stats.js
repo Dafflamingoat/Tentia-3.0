@@ -386,8 +386,8 @@ const REWARD_NAMES = {
   bg_marineford:   'Background : Marine Ford',
   bg_hell:         'Background : Hell',
   bg_paradis:      'Background : Paradis',
-  bg_hf_250:       'Background : Rare (à définir)',
-  bg_hf_300:       'Background : Ultime (à définir)',
+  bg_hf_250:       'Background : Rome Antique',
+  bg_hf_300:       'Background : Royaume Céleste',
   bg_end_game:     'Background : End Game',
   // Backgrounds quêtes
   bg_dofus:        'Background : Dofus',
