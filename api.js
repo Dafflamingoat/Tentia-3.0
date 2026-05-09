@@ -31,6 +31,19 @@ const TIMELINES = {
         'assets/background/timelines/billaud/bg1_frame2.png'
       ]
     }
+  },
+  arthur: {
+    id: 'arthur',
+    name: 'Arthur',
+    skinPreview: 'assets/character/timelines/arthur/Skin_Arthur/moove1.png',
+    starter: {
+      selectedSkin: 'timelines/arthur/Skin_Arthur',
+      equippedAvatarId: 'avatar_arthur',
+      selectedBG: [
+        'assets/background/timelines/arthur/bg1_frame1.png',
+        'assets/background/timelines/arthur/bg1_frame2.png'
+      ]
+    }
   }
 };
 
@@ -87,32 +100,43 @@ function buildBillaudBackgrounds() {
   });
 }
 
+function buildArthurBackgrounds() {
+  return Array.from({ length: 24 }, (_, index) => {
+    const n = index + 1;
+    return {
+      id: `bg_arthur_${n}`,
+      name: `Arthur ${n}`,
+      bg1: `assets/background/timelines/arthur/bg${n}_frame1.png`,
+      bg2: `assets/background/timelines/arthur/bg${n}_frame2.png`,
+      owned: n <= 2
+    };
+  });
+}
+
 function applyTimelineStarterLocal(timelineId) {
   const timeline = TIMELINES[timelineId];
   if (!timeline) return null;
 
   setTimelineIdLocal(timelineId);
 
-  if (timelineId === 'billaud') {
-    const skins = [
-      {
-        id: 'skin_billaud',
-        name: 'Billaud',
-        folder: 'timelines/billaud/Skin_Billaud',
-        owned: true
-      }
-    ];
-
-    const avatars = [
-      {
-        id: 'avatar_billaud',
-        name: 'Billaud',
-        src: 'assets/avatars/timelines/billaud/avatar_billaud.png',
-        owned: true
-      }
-    ];
-
-    const backgrounds = buildBillaudBackgrounds();
+  if (timelineId === 'billaud' || timelineId === 'arthur') {
+    const tl = timelineId;
+    const tlName = tl.charAt(0).toUpperCase() + tl.slice(1);
+    const skins = [{
+      id: `skin_${tl}`,
+      name: tlName,
+      folder: `timelines/${tl}/Skin_${tlName}`,
+      owned: true
+    }];
+    const avatars = [{
+      id: `avatar_${tl}`,
+      name: tlName,
+      src: `assets/avatars/timelines/${tl}/avatar_${tl}.png`,
+      owned: true
+    }];
+    const backgrounds = timelineId === 'billaud'
+      ? buildBillaudBackgrounds()
+      : buildArthurBackgrounds();
 
     localStorage.setItem('skins', JSON.stringify(skins));
     localStorage.setItem('avatars', JSON.stringify(avatars));
@@ -128,7 +152,7 @@ function applyTimelineStarterLocal(timelineId) {
     selected_skin: timeline.starter.selectedSkin,
     selected_bg: timeline.starter.selectedBG,
     equipped_avatar: timeline.starter.equippedAvatarId,
-    ...(timelineId === 'billaud'
+    ...(['billaud', 'arthur'].includes(timelineId)
       ? {
           skins: safeParseJSON(localStorage.getItem('skins'), []),
           avatars: safeParseJSON(localStorage.getItem('avatars'), []),
