@@ -120,6 +120,25 @@ let pets = JSON.parse(localStorage.getItem('pets')) || [
 
 let equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
 
+// Appliquer les visuels/noms de la timeline active sur les pets
+function applyTimelinePetVisuals() {
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+  if (!timelineData || !timelineData.pets) return;
+
+  pets.forEach(pet => {
+    const visual = timelineData.pets[pet.id];
+    if (!visual) return;
+    pet.name    = visual.name;
+    pet.sprite1 = visual.sprite1;
+    pet.sprite2 = visual.sprite2;
+    if (visual.evolutions) pet.evolutions = visual.evolutions;
+  });
+}
+
+applyTimelinePetVisuals();
+
 // ────────────────
 // DONNEES BADGES
 // ────────────────

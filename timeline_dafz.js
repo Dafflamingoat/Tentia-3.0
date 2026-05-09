@@ -122,6 +122,57 @@ window.TIMELINE_DATA.dafz = {
     { id: 'bg_echecs',      name: 'Échiquier',       bg1: 'assets/background/bg25_frame1.png', bg2: 'assets/background/bg25_frame2.png', owned: false },
   ],
 
+
+  // ────────────────
+  // PETS (visuels et noms uniquement — stats/level/xp dans stats.js)
+  // ────────────────
+  pets: {
+    pet1: {
+      name: 'Hericendre',
+      evolutions: [
+        { minLevel: 1,  maxLevel: 15, name: 'Hericendre', sprite1: 'assets/pets/intel/pet1_frame1.png', sprite2: 'assets/pets/intel/pet1_frame2.png' },
+        { minLevel: 16, maxLevel: 34, name: 'Feurisson',  sprite1: 'assets/pets/intel/pet2_frame1.png', sprite2: 'assets/pets/intel/pet2_frame2.png' },
+        { minLevel: 35, maxLevel: 50, name: 'Typhlosion', sprite1: 'assets/pets/intel/pet3_frame1.png', sprite2: 'assets/pets/intel/pet3_frame2.png' },
+      ],
+      sprite1: 'assets/pets/intel/pet1_frame1.png',
+      sprite2: 'assets/pets/intel/pet1_frame2.png'
+    },
+    pet2: {
+      name: 'Chopper',
+      sprite1: 'assets/pets/force/pet1_frame1.png',
+      sprite2: 'assets/pets/force/pet1_frame2.png'
+    },
+    pet3: {
+      name: 'Titan capturé',
+      sprite1: 'assets/pets/discipline/pet1_frame1.png',
+      sprite2: 'assets/pets/discipline/pet1_frame2.png'
+    },
+    pet4: {
+      name: 'Oeuf Mystère',
+      evolutions: [
+        { minLevel: 1,  maxLevel: 9,  name: 'Oeuf Mystère', sprite1: 'assets/pets/focus/pet1_frame1.png', sprite2: 'assets/pets/focus/pet1_frame2.png' },
+        { minLevel: 10, maxLevel: 50, name: 'Aigle Royale',  sprite1: 'assets/pets/focus/pet2_frame1.png', sprite2: 'assets/pets/focus/pet2_frame2.png' },
+      ],
+      sprite1: 'assets/pets/focus/pet1_frame1.png',
+      sprite2: 'assets/pets/focus/pet1_frame2.png'
+    },
+    pet_dragon_legendary: {
+      name: 'Dragon legendaire',
+      sprite1: 'assets/pets/got/pet1_frame1.png',
+      sprite2: 'assets/pets/got/pet1_frame2.png'
+    },
+    pet_bob: {
+      name: 'Fantôme de Bob',
+      sprite1: 'assets/pets/legends/pet1_frame1.png',
+      sprite2: 'assets/pets/legends/pet1_frame2.png'
+    },
+    pet_endgame: {
+      name: 'Arme Ultime',
+      sprite1: 'assets/pets/arc_frame1.png',
+      sprite2: 'assets/pets/arc_frame2.png'
+    }
+  },
+
   // ────────────────
   // RÉCOMPENSES DE NIVEAU (skins/avatars/backgrounds spécifiques Dafz)
   // Les badges, pets, titres HF sont universels → dans stats.js

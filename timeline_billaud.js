@@ -121,6 +121,58 @@ window.TIMELINE_DATA.billaud = {
     { id: 'bg_echecs',     name: 'Échiquier',      bg1: 'assets/background/bg25_frame1.png', bg2: 'assets/background/bg25_frame2.png', owned: false },
   ],
 
+
+  // ────────────────
+  // PETS (visuels et noms uniquement — stats/level/xp dans stats.js)
+  // ⚙ Remplacer les sprites et noms selon la timeline
+  // ────────────────
+  pets: {
+    pet1: {
+      name: 'Pet 1',
+      evolutions: [
+        { minLevel: 1,  maxLevel: 15, name: 'Pet 1 Forme 1', sprite1: 'assets/pets/timelines/billaud/pet1_evo1_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo1_f2.png' },
+        { minLevel: 16, maxLevel: 34, name: 'Pet 1 Forme 2', sprite1: 'assets/pets/timelines/billaud/pet1_evo2_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo2_f2.png' },
+        { minLevel: 35, maxLevel: 50, name: 'Pet 1 Forme 3', sprite1: 'assets/pets/timelines/billaud/pet1_evo3_f1.png', sprite2: 'assets/pets/timelines/billaud/pet1_evo3_f2.png' },
+      ],
+      sprite1: 'assets/pets/timelines/billaud/pet1_evo1_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet1_evo1_f2.png'
+    },
+    pet2: {
+      name: 'Pet 2',
+      sprite1: 'assets/pets/timelines/billaud/pet2_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet2_f2.png'
+    },
+    pet3: {
+      name: 'Pet 3',
+      sprite1: 'assets/pets/timelines/billaud/pet3_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet3_f2.png'
+    },
+    pet4: {
+      name: 'Pet 4',
+      evolutions: [
+        { minLevel: 1,  maxLevel: 9,  name: 'Pet 4 Forme 1', sprite1: 'assets/pets/timelines/billaud/pet4_evo1_f1.png', sprite2: 'assets/pets/timelines/billaud/pet4_evo1_f2.png' },
+        { minLevel: 10, maxLevel: 50, name: 'Pet 4 Forme 2', sprite1: 'assets/pets/timelines/billaud/pet4_evo2_f1.png', sprite2: 'assets/pets/timelines/billaud/pet4_evo2_f2.png' },
+      ],
+      sprite1: 'assets/pets/timelines/billaud/pet4_evo1_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet4_evo1_f2.png'
+    },
+    pet_dragon_legendary: {
+      name: 'Dragon legendaire',
+      sprite1: 'assets/pets/timelines/billaud/pet_dragon_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet_dragon_f2.png'
+    },
+    pet_bob: {
+      name: 'Familier Légendaire',
+      sprite1: 'assets/pets/timelines/billaud/pet_bob_f1.png',
+      sprite2: 'assets/pets/timelines/billaud/pet_bob_f2.png'
+    },
+    pet_endgame: {
+      name: 'Arme Ultime',
+      sprite1: 'assets/pets/arc_frame1.png',
+      sprite2: 'assets/pets/arc_frame2.png'
+    }
+  },
+
   // ────────────────
   // RÉCOMPENSES DE NIVEAU
   // Même structure que Dafz — remplacer skin/avatar/background par les ids Billaud
