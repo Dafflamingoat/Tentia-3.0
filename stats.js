@@ -1732,10 +1732,32 @@ function renderTitleInventory() {
 // XP VIA ECHECS
 // ────────────────
 
-// Déclenché par script.js après fetchChessElo
-window.addEventListener('tentia:eloReady', () => {
-  giveChessXP();
-});
+// Récupérer l'ELO depuis Chess.com directement dans stats.js
+async function fetchAndGiveChessXP() {
+  const chessUsername = localStorage.getItem('chessUsername');
+  if (!chessUsername) return;
+
+  try {
+    const resp = await fetch(`https://api.chess.com/pub/player/${chessUsername}/stats`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    const blitz  = data.chess_blitz?.last?.rating  || 0;
+    const rapid  = data.chess_rapid?.last?.rating   || 0;
+    const bullet = data.chess_bullet?.last?.rating  || 0;
+    const elo    = blitz || rapid || bullet || 0;
+
+    if (!elo) return;
+    localStorage.setItem('currentElo', elo);
+
+    const peak = parseInt(localStorage.getItem('peakElo')) || 0;
+    if (elo > peak) localStorage.setItem('peakElo', elo);
+
+    giveChessXP();
+  } catch (err) {
+    console.warn('Erreur ELO stats.js:', err);
+  }
+}
 
 function giveChessXP() {
   const currentElo = parseInt(localStorage.getItem('currentElo'));
@@ -2667,7 +2689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncRewardsWithCurrentLevel();
 
   giveDailyXP();
-  // giveChessXP() est appelé après fetchChessElo via l'event tentia:eloReady
+  fetchAndGiveChessXP();
 
   updateXPBar();
   updatePointsUI();
