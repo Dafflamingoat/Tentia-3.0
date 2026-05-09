@@ -1731,6 +1731,12 @@ function renderTitleInventory() {
 // ────────────────
 // XP VIA ECHECS
 // ────────────────
+
+// Déclenché par script.js après fetchChessElo
+window.addEventListener('tentia:eloReady', () => {
+  giveChessXP();
+});
+
 function giveChessXP() {
   const currentElo = parseInt(localStorage.getItem('currentElo'));
   let lastElo = parseInt(localStorage.getItem('lastElo'));
@@ -2661,7 +2667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncRewardsWithCurrentLevel();
 
   giveDailyXP();
-  giveChessXP();
+  // giveChessXP() est appelé après fetchChessElo via l'event tentia:eloReady
 
   updateXPBar();
   updatePointsUI();

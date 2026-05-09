@@ -563,6 +563,9 @@ async function fetchChessElo() {
         peak_elo:    Math.max(elo, peak)
       });
     }
+
+    // Signaler que l'ELO est prêt → stats.js peut calculer le gain XP
+    window.dispatchEvent(new CustomEvent('tentia:eloReady', { detail: { elo } }));
   } catch (err) {
     console.warn("Erreur récupération ELO :", err);
     updateEloBar(0, true);
