@@ -386,8 +386,8 @@ const REWARD_NAMES = {
   bg_marineford:   'Background : Marine Ford',
   bg_hell:         'Background : Hell',
   bg_paradis:      'Background : Paradis',
-  bg_hf_250:       'Background : Rome Antique',
-  bg_hf_300:       'Background : Royaume Céleste',
+  bg_hf_250:       'Background : Rare (à définir)',
+  bg_hf_300:       'Background : Ultime (à définir)',
   bg_end_game:     'Background : End Game',
   // Backgrounds quêtes
   bg_dofus:        'Background : Dofus',
@@ -813,6 +813,8 @@ const ACHIEVEMENT_CATEGORIES = [
       // ⚙ À COMPLÉTER — changer reward.id quand tu as trouvé les récompenses 250/300j
       { id: 'hf_login250', label: '250 jours de connexion', target: 250, reward: { type: 'background', id: 'bg_hf_250'       } },
       { id: 'hf_login300', label: '300 jours de connexion', target: 300, reward: { type: 'background', id: 'bg_hf_300'       } },
+      { id: 'hf_login400', label: '400 jours de connexion', target: 400, reward: { type: 'background', id: 'bg_japon'    } },
+      { id: 'hf_login500', label: '500 jours de connexion', target: 500, reward: { type: 'background', id: 'bg_japon'    } },
     ]
   },
 
@@ -1744,7 +1746,7 @@ function giveChessXP() {
   // Mettre à jour le peak ELO
   getPeakElo();
 
-  if (!lastElo) {
+  if (lastElo === null || isNaN(lastElo)) {
     localStorage.setItem('lastElo', currentElo);
     return;
   }
