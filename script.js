@@ -112,7 +112,10 @@ function loadSavedSkills() {
   skills.echec = 0;
   skills.argent = 0;
 
-  skills.echec = Number(savedSkills.echec || 0);
+  // Pour echec : utiliser currentElo sauvegardé plutôt que la valeur skills
+  // (la valeur skills.echec peut être 0 si loadProfile n'a pas encore tourné)
+  const storedElo = parseInt(localStorage.getItem('currentElo')) || 0;
+  skills.echec = storedElo || Number(savedSkills.echec || 0);
   skills.argent = Number(savedSkills.argent || 0);
 
   localStorage.setItem('skills', JSON.stringify(getSkillsPayload()));
@@ -152,6 +155,14 @@ function persistSkills() {
 }
 
 function updateSkillUI(name) {
+  // Echecs : géré exclusivement par updateEloBar
+  if (name === 'echec') {
+    const elo = parseInt(localStorage.getItem('currentElo')) || skills.echec || 0;
+    const hasAccount = !!localStorage.getItem('chessUsername');
+    updateEloBar(elo, !hasAccount);
+    return;
+  }
+
   const val = skills[name] || 0;
   const max = getSkillMax(name);
   const bar = document.getElementById('bar-' + name);
