@@ -640,6 +640,18 @@ function getSelectedStravaActivityType() {
   return localStorage.getItem('stravaActivityType') || 'all';
 }
 
+function initStravaActivitySelect() {
+  const select = document.getElementById('strava-activity-select');
+  if (!select || select.dataset.initialized === 'true') return;
+
+  select.value = getSelectedStravaActivityType();
+  select.dataset.initialized = 'true';
+  select.addEventListener('change', () => {
+    localStorage.setItem('stravaActivityType', select.value);
+    loadStravaSummary();
+  });
+}
+
 async function loadStravaSummary() {
   if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
     updateStravaUI({ connected: false });
@@ -658,6 +670,7 @@ async function loadStravaSummary() {
   }
 }
 
+initStravaActivitySelect();
 window.addEventListener('tentia:profileReady', loadStravaSummary);
 loadStravaSummary();
 
