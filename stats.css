@@ -574,15 +574,71 @@ body {
 
 .journal-hygiene {
   margin-top: 10px;
-  padding: 8px;
+  padding: 10px;
   border: 1px solid var(--border);
-  background: #111;
+  background: linear-gradient(180deg, #151515, #0d0d0d);
   color: #eee;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 10px;
   font-size: 11px;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.55);
+}
+
+.journal-hygiene-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.journal-hygiene-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.journal-hygiene-title {
+  color: var(--gold-light);
+  font-weight: bold;
+}
+
+.journal-hygiene-pv {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  background: #080808;
+  color: #fff;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.journal-hygiene-pv.positive {
+  color: #72e07a;
+}
+
+.journal-hygiene-pv.negative {
+  color: #ff7777;
+}
+
+.journal-hygiene-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.journal-hygiene-tag {
+  padding: 3px 6px;
+  background: #1e1e1e;
+  border: 1px solid rgba(200,163,44,0.35);
+  color: #ddd;
+  font-size: 10px;
+}
+
+.journal-hygiene-empty {
+  display: block;
+  color: #aaa;
+  padding: 5px 0;
 }
 
 .journal-hygiene-btn {

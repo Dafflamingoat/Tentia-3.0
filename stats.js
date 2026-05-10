@@ -1994,11 +1994,30 @@ function getHygieneEntryForKey(key, journal) {
 }
 
 function formatHygieneSummary(entry) {
-  if (!entry) return 'Bilan hygiene : non rempli';
+  if (!entry) return '<span class="journal-hygiene-empty">Bilan hygiene non rempli</span>';
 
   const delta = Number(entry.delta) || 0;
   const sign = delta > 0 ? '+' : '';
-  return `Bilan hygiene : ${sign}${delta} PV | Sommeil ${entry.sleep}, Nourriture ${entry.food}, Cig. ${entry.cigarettes || 0}, Alcool ${entry.alcohol || 0}`;
+  const pvClass = delta > 0 ? 'positive' : (delta < 0 ? 'negative' : '');
+  const moodLabel = (value) => {
+    const numberValue = Number(value) || 0;
+    if (numberValue > 0) return 'Bon';
+    if (numberValue < 0) return 'Pas bon';
+    return 'Moyen';
+  };
+
+  return `
+    <div class="journal-hygiene-top">
+      <span class="journal-hygiene-title">Bilan hygiene</span>
+      <span class="journal-hygiene-pv ${pvClass}">${sign}${delta} PV</span>
+    </div>
+    <div class="journal-hygiene-tags">
+      <span class="journal-hygiene-tag">Sommeil ${moodLabel(entry.sleep)}</span>
+      <span class="journal-hygiene-tag">Nourriture ${moodLabel(entry.food)}</span>
+      <span class="journal-hygiene-tag">Cigarettes ${entry.cigarettes || 0}</span>
+      <span class="journal-hygiene-tag">Alcool ${entry.alcohol || 0}</span>
+    </div>
+  `;
 }
 
 function fillDailyHealthEditForm(entry) {
@@ -2134,7 +2153,7 @@ function loadJournal() {
 
   const hygieneSummary = document.getElementById('journal-hygiene-summary');
   if (hygieneSummary) {
-    hygieneSummary.textContent = formatHygieneSummary(getHygieneEntryForKey(key, journal));
+    hygieneSummary.innerHTML = formatHygieneSummary(getHygieneEntryForKey(key, journal));
   }
   if (openDailyHealthEditBtn) {
     openDailyHealthEditBtn.style.display = isToday(currentDate) ? '' : 'none';
