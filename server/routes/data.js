@@ -28,7 +28,8 @@ router.put('/profile', async (req, res) => {
     'skills', 'selected_skin', 'selected_bg',
     'equipped_title', 'equipped_avatar', 'equipped_pet',
     'titles', 'avatars', 'skins', 'backgrounds', 'badges', 'pets',
-    'badge_slots', 'achievements_claimed', 'journal', 'quests',
+    'badge_slots', 'achievements_claimed', 'journal', 'quests', 'quest_history',
+    'dashboard_profile_photo',
     'total_login_days', 'total_quests_done', 'total_quest_xp',
     'total_chess_xp', 'peak_elo', 'last_login', 'last_elo', 'current_elo',
     'last_seen', 'chess_username'
@@ -59,6 +60,39 @@ router.put('/profile', async (req, res) => {
 
 // ── POST /api/data/import ────────────────────
 // Import du localStorage existant (migration initiale)
+router.get('/profile-photo', async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('dashboard_profile_photo')
+    .eq('user_id', req.user.id)
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ url: data?.dashboard_profile_photo || null });
+});
+
+router.post('/profile-photo', async (req, res) => {
+  const imageData = typeof req.body.imageData === 'string' ? req.body.imageData : '';
+
+  if (!imageData.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Image invalide' });
+  }
+
+  if (imageData.length > 1_500_000) {
+    return res.status(413).json({ error: 'Image trop lourde' });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .update({ dashboard_profile_photo: imageData })
+    .eq('user_id', req.user.id)
+    .select('dashboard_profile_photo')
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ url: data.dashboard_profile_photo });
+});
+
 router.post('/import', async (req, res) => {
   const ls = req.body; // tout le localStorage envoyé d'un coup
 
@@ -91,6 +125,8 @@ router.post('/import', async (req, res) => {
     achievements_claimed: safeJSON(ls.achievementsClaimed, {}),
     journal:              safeJSON(ls.journal, {}),
     quests:               safeJSON(ls.quests,  []),
+    quest_history:        safeJSON(ls.questHistory, {}),
+    dashboard_profile_photo: ls.dashboardProfilePhoto || null,
 
     total_login_days:  parseInt(ls.totalLoginDays)  || 0,
     total_quests_done: parseInt(ls.totalQuestsDone) || 0,

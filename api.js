@@ -508,6 +508,11 @@ async function loadProfile() {
   // Quêtes — charger depuis Supabase seulement si non vide
   // (évite d'écraser des quêtes locales fraîches avec un tableau vide au login)
   setIfNotEmpty('quests', data.quests);
+  setIfNotEmpty('questHistory', data.quest_history);
+
+  if (data.dashboard_profile_photo) {
+    localStorage.setItem('dashboardProfilePhoto', data.dashboard_profile_photo);
+  }
   // Journal — toujours charger depuis Supabase (source de vérité)
   // Le journal est sauvegardé à chaque modification, donc Supabase est toujours à jour
   if (data.journal !== undefined && data.journal !== null) {

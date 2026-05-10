@@ -1394,7 +1394,7 @@ function saveQuestHistory(questText) {
   history[today].push(questText);
   localStorage.setItem('questHistory', JSON.stringify(history));
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ quests }); // on piggyback sur quests pour l'instant
+    window.TentiaAPI.saveProfile({ quest_history: history });
   }
 }
 
@@ -2012,10 +2012,10 @@ function formatHygieneSummary(entry) {
       <span class="journal-hygiene-pv ${pvClass}">${sign}${delta} PV</span>
     </div>
     <div class="journal-hygiene-tags">
-      <span class="journal-hygiene-tag">Sommeil ${moodLabel(entry.sleep)}</span>
-      <span class="journal-hygiene-tag">Nourriture ${moodLabel(entry.food)}</span>
-      <span class="journal-hygiene-tag">Cigarettes ${entry.cigarettes || 0}</span>
-      <span class="journal-hygiene-tag">Alcool ${entry.alcohol || 0}</span>
+      <span class="journal-hygiene-tag">Sommeil | <span class="journal-hygiene-tag-value">${moodLabel(entry.sleep)}</span></span>
+      <span class="journal-hygiene-tag">Nourriture | <span class="journal-hygiene-tag-value">${moodLabel(entry.food)}</span></span>
+      <span class="journal-hygiene-tag">Cigarettes | <span class="journal-hygiene-tag-value">${entry.cigarettes || 0}</span></span>
+      <span class="journal-hygiene-tag">Alcool | <span class="journal-hygiene-tag-value">${entry.alcohol || 0}</span></span>
     </div>
   `;
 }
@@ -2207,26 +2207,70 @@ async function loadDashboardPhoto() {
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn() && window.TentiaAPI.loadProfilePhoto) {
     const result = await window.TentiaAPI.loadProfilePhoto();
     if (result && result.url) {
+      localStorage.setItem('dashboardProfilePhoto', result.url);
       setDashboardPhoto(result.url);
+    } else if (localPhoto && window.TentiaAPI.saveProfilePhoto) {
+      const saved = await window.TentiaAPI.saveProfilePhoto(localPhoto);
+      if (saved && saved.url) {
+        localStorage.setItem('dashboardProfilePhoto', saved.url);
+      }
     }
   }
+}
+
+function readDashboardPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('error', reject);
+    reader.addEventListener('load', () => resolve(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function prepareDashboardPhoto(file) {
+  const rawImageData = await readDashboardPhoto(file);
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const maxSize = 420;
+      const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        resolve(rawImageData);
+        return;
+      }
+      context.fillStyle = '#111';
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    image.onerror = () => resolve(rawImageData);
+    image.src = rawImageData;
+  });
 }
 
 function saveDashboardPhoto(file) {
   if (!file || !file.type.startsWith('image/')) return;
 
-  const reader = new FileReader();
-  reader.addEventListener('load', async () => {
-    const imageData = reader.result;
+  prepareDashboardPhoto(file).then(async (imageData) => {
     localStorage.setItem('dashboardProfilePhoto', imageData);
     setDashboardPhoto(imageData);
 
     if (window.TentiaAPI && window.TentiaAPI.isLoggedIn() && window.TentiaAPI.saveProfilePhoto) {
       const result = await window.TentiaAPI.saveProfilePhoto(imageData);
-      if (result && result.url) setDashboardPhoto(result.url);
+      if (result && result.url) {
+        localStorage.setItem('dashboardProfilePhoto', result.url);
+        setDashboardPhoto(result.url);
+      }
     }
   });
-  reader.readAsDataURL(file);
 }
 
 function initDashboard() {

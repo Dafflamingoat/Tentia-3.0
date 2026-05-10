@@ -55,6 +55,8 @@ create table if not exists profiles (
 
   -- Quêtes
   quests      jsonb default '[]'::jsonb,
+  quest_history jsonb default '{}'::jsonb,
+  dashboard_profile_photo text default null,
 
   -- Compteurs HF
   total_login_days  int default 0,
@@ -82,6 +84,8 @@ alter table profiles add column if not exists strava_refresh_token text default 
 alter table profiles add column if not exists strava_token_expires_at int default null;
 alter table profiles add column if not exists strava_rewarded_activities jsonb default '{}'::jsonb;
 alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;
+alter table profiles add column if not exists quest_history jsonb default '{}'::jsonb;
+alter table profiles add column if not exists dashboard_profile_photo text default null;
 
 -- ── SÉCURITÉ RLS ────────────────────────────
 -- Chaque utilisateur ne voit que ses propres données
