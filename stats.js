@@ -353,28 +353,26 @@ function loadTimelineData() {
     avatars = data.avatars || [];
   }
 
-  // Merger skins : fusionner localStorage avec TIMELINE_DATA (folder manquant)
+  // Merger skins : TIMELINE_DATA est la source de vérité pour la liste complète
   const savedSkins = JSON.parse(localStorage.getItem('skins')) || [];
-  if (savedSkins.length && data.skins) {
-    const skinMap = {};
-    data.skins.forEach(s => { skinMap[s.id] = s; });
-    skins = savedSkins.length <= 1
-      ? data.skins.map(s => { const sv = savedSkins.find(x => x.id === s.id); return sv ? { ...s, ...sv } : s; })
-      : savedSkins.map(s => (!s.folder && skinMap[s.id]) ? { ...skinMap[s.id], ...s, folder: skinMap[s.id].folder } : s);
+  if (data.skins) {
+    skins = data.skins.map(s => {
+      const sv = savedSkins.find(x => x.id === s.id);
+      return sv ? { ...s, ...sv } : s;
+    });
   } else {
-    skins = data.skins || [];
+    skins = savedSkins;
   }
 
-  // Merger backgrounds : fusionner localStorage avec TIMELINE_DATA (bg1/bg2 manquants)
+  // Merger backgrounds : même logique
   const savedBGs = JSON.parse(localStorage.getItem('backgrounds')) || [];
-  if (savedBGs.length && data.backgrounds) {
-    const bgMap = {};
-    data.backgrounds.forEach(b => { bgMap[b.id] = b; });
-    backgrounds = savedBGs.length <= 1
-      ? data.backgrounds.map(b => { const sv = savedBGs.find(x => x.id === b.id); return sv ? { ...b, ...sv } : b; })
-      : savedBGs.map(b => ((!b.bg1 || !b.bg2) && bgMap[b.id]) ? { ...bgMap[b.id], ...b, bg1: bgMap[b.id].bg1, bg2: bgMap[b.id].bg2 } : b);
+  if (data.backgrounds) {
+    backgrounds = data.backgrounds.map(b => {
+      const sv = savedBGs.find(x => x.id === b.id);
+      return sv ? { ...b, ...sv } : b;
+    });
   } else {
-    backgrounds = data.backgrounds || [];
+    backgrounds = savedBGs;
   }
 
   // Construire la map niveau → récompense pour affichage cadenas

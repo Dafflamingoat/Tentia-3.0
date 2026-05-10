@@ -77,7 +77,7 @@ window.TIMELINE_DATA.arthur = {
     { id: 'skin_titan',           name: 'Titan',          folder: 'timelines/arthur/Skin_Snk',            owned: false },
     { id: 'skin_rick',            name: 'Rick & Morty',   folder: 'timelines/arthur/Skin_RM',             owned: false },
     { id: 'skin_samourai',        name: 'Samourai',       folder: 'timelines/arthur/Skin_ronin',          owned: false },
-    { id: 'skin_don',             name: 'Don Juan',       folder: 'timelines/arthur/skin_don',            owned: false },
+    { id: 'skin_don',             name: 'Don Juan',       folder: 'timelines/arthur/Skin_don',            owned: false },
     { id: 'skin_backpacker',      name: 'Backpacker',     folder: 'timelines/arthur/Skin_backpacker',     owned: false },
     { id: 'skin_quilby',          name: 'Quilby',         folder: 'timelines/arthur/Skin_quilby',         owned: false },
     { id: 'skin_ultra_rare_zoro', name: 'Zoro',           folder: 'timelines/arthur/Skin_zoro',           owned: false },

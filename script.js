@@ -772,18 +772,10 @@ function getBackgrounds() {
   const saved = localStorage.getItem('backgrounds');
   if (saved) {
     const parsed = JSON.parse(saved);
-    // Si peu de backgrounds en localStorage (nouveau compte) → liste complète TIMELINE_DATA
-    if (parsed.length <= 2 && timelineBGs.length > 2) {
-      return timelineBGs.map(b => {
-        const sv = parsed.find(x => x.id === b.id);
-        return sv ? { ...b, ...sv } : b;
-      });
-    }
-    // Sinon merger uniquement bg1/bg2 manquants
-    return parsed.map(b => {
-      if ((!b.bg1 || !b.bg2) && bgMap[b.id]) {
-        return { ...bgMap[b.id], ...b, bg1: bgMap[b.id].bg1, bg2: bgMap[b.id].bg2 };
-      }
+    // Toujours merger avec TIMELINE_DATA pour inclure les nouveaux backgrounds
+    return timelineBGs.map(b => {
+      const sv = parsed.find(x => x.id === b.id);
+      if (sv) return { ...b, ...sv };
       return b;
     });
   }
@@ -807,18 +799,12 @@ function getSkins() {
   const saved = localStorage.getItem('skins');
   if (saved) {
     const parsed = JSON.parse(saved);
-    // Si 1 seul skin en localStorage (nouveau compte) → utiliser liste complète TIMELINE_DATA
-    if (parsed.length <= 1 && timelineSkins.length > 1) {
-      return timelineSkins.map(s => {
-        const sv = parsed.find(x => x.id === s.id);
-        return sv ? { ...s, ...sv } : s;
-      });
-    }
-    // Sinon merger uniquement les folders manquants
-    return parsed.map(s => {
-      if (!s.folder && folderMap[s.id]) {
-        return { ...folderMap[s.id], ...s, folder: folderMap[s.id].folder };
-      }
+    // Toujours merger avec TIMELINE_DATA pour inclure les nouveaux skins ajoutés
+    return timelineSkins.map(s => {
+      const sv = parsed.find(x => x.id === s.id);
+      // Si le skin existe en localStorage : garder son owned, compléter les champs manquants
+      if (sv) return { ...s, ...sv };
+      // Sinon : skin nouveau, utiliser les données de TIMELINE_DATA
       return s;
     });
   }
