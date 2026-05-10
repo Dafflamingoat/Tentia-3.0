@@ -611,29 +611,41 @@ function getTentiaAuthHeaders() {
 
 function updateStravaUI(status = {}) {
   const node = document.getElementById('skill-strava');
-  const label = document.getElementById('val-strava');
+  const metric = document.getElementById('val-strava');
   const summary = document.getElementById('strava-summary');
-  if (!node || !label) return;
+  if (!node || !metric) return;
 
   const connected = Boolean(status.connected);
   const totals = status.summary?.totals || {};
   const activities = Number(totals.activities || 0);
   const distanceKm = (Number(totals.distance || 0) / 1000);
   const movingHours = Number(totals.moving_time || 0) / 3600;
+  const elevation = Math.round(Number(totals.elevation_gain || 0));
   const activityLabel = status.summary?.activityLabel || 'Toutes';
+  const timeLabel = movingHours >= 1
+    ? `${movingHours.toFixed(1)} h`
+    : `${Math.round(movingHours * 60)} min`;
 
   node.classList.toggle('connected', connected);
 
   if (!connected) {
-    label.textContent = 'Non connecte';
+    metric.textContent = 'Non connecte';
     if (summary) summary.textContent = 'Dashboard > Parametres';
     return;
   }
 
-  label.textContent = `${distanceKm.toFixed(1)} km`;
-  if (summary) {
-    summary.textContent = `${activityLabel} - ${activities} sortie${activities > 1 ? 's' : ''} - ${movingHours.toFixed(1)} h`;
-  }
+  metric.textContent = activityLabel;
+  if (!summary) return;
+
+  const lines = [
+    `${activities} activite${activities > 1 ? 's' : ''}`,
+    timeLabel
+  ];
+
+  if (distanceKm > 0) lines.push(`${distanceKm.toFixed(1)} km`);
+  if (elevation > 0) lines.push(`D+ ${elevation} m`);
+
+  summary.innerHTML = lines.map(line => `<span>${line}</span>`).join('');
 }
 
 function getSelectedStravaActivityType() {

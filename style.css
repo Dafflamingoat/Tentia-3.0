@@ -977,7 +977,7 @@ color: #fff;
 
 .strava-metric {
   width: 100%;
-  min-height: 18px;
+  min-height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -985,18 +985,26 @@ color: #fff;
   background: rgba(252,76,2,0.12);
   color: var(--text);
   font-family: 'Press Start 2P', monospace;
-  font-size: 7px;
+  font-size: 8px;
   line-height: 1.4;
   text-align: center;
   padding: 4px;
 }
 
 .strava-summary {
-  min-height: 18px;
-  font-size: 5px;
-  color: var(--text-dim);
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  font-size: 7px;
+  color: var(--text);
   line-height: 1.5;
   text-align: center;
   word-break: break-word;
   width: 100%;
+}
+
+.strava-summary span {
+  display: block;
 }
