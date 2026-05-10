@@ -122,13 +122,16 @@ function applyTimelineStarterLocal(timelineId) {
   if (timelineId === 'billaud' || timelineId === 'arthur') {
     const tl = timelineId;
     const tlName = tl.charAt(0).toUpperCase() + tl.slice(1);
-    const skins = [{
+    const tlData = window.TIMELINE_DATA && window.TIMELINE_DATA[tl];
+
+    // Utiliser la liste complète depuis TIMELINE_DATA si disponible
+    const skins = (tlData && tlData.skins) || [{
       id: `skin_${tl}`,
       name: tlName,
       folder: `timelines/${tl}/Skin_${tlName}`,
       owned: true
     }];
-    const avatars = [{
+    const avatars = (tlData && tlData.avatars) || [{
       id: `avatar_${tl}`,
       name: tlName,
       src: `assets/avatars/timelines/${tl}/avatar_${tl}.png`,
