@@ -721,12 +721,20 @@ async function claimStravaPv() {
     if (!resp.ok) return;
 
     const result = await resp.json();
-    if (!result.connected || !result.hpDelta) return;
+    if (!result.connected) return;
 
-    hp = result.hpAfter;
-    localStorage.setItem('hp', hp);
-    updateHPUI();
-    console.log(`+${result.hpDelta} PV Strava`);
+    if (result.hpDelta) {
+      hp = result.hpAfter;
+      localStorage.setItem('hp', hp);
+      updateHPUI();
+      console.log(`+${result.hpDelta} PV Strava`);
+    }
+
+    if (result.xpDelta) {
+      const xpResult = addPlayerXPFromStudy(result.xpDelta);
+      addPetXPFromStudy(xpResult.modifiedAmount);
+      console.log(`+${xpResult.modifiedAmount} XP Strava`);
+    }
   } catch (err) {
     console.warn('Erreur attribution PV Strava :', err);
   }

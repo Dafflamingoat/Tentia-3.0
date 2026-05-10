@@ -74,7 +74,8 @@ create table if not exists profiles (
   strava_refresh_token    text default null,
   strava_token_expires_at int default null,
   strava_rewarded_activities jsonb default '{}'::jsonb,
-  strava_daily_pv jsonb default '{}'::jsonb
+  strava_daily_pv jsonb default '{}'::jsonb,
+  strava_daily_xp jsonb default '{}'::jsonb
 );
 
 -- Colonnes Strava pour une base deja creee
@@ -84,6 +85,7 @@ alter table profiles add column if not exists strava_refresh_token text default 
 alter table profiles add column if not exists strava_token_expires_at int default null;
 alter table profiles add column if not exists strava_rewarded_activities jsonb default '{}'::jsonb;
 alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;
+alter table profiles add column if not exists strava_daily_xp jsonb default '{}'::jsonb;
 alter table profiles add column if not exists quest_history jsonb default '{}'::jsonb;
 alter table profiles add column if not exists dashboard_profile_photo text default null;
 

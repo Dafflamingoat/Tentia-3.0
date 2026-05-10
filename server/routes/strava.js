@@ -10,6 +10,7 @@ const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 const STRAVA_API_URL = 'https://www.strava.com/api/v3';
 const STRAVA_SCOPES = 'read,activity:read_all';
 const STRAVA_DAILY_PV_CAP = 20;
+const STRAVA_DAILY_XP_CAP = 25;
 
 function getBaseUrl(req) {
   return process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
@@ -116,13 +117,13 @@ function buildSummary(activities, activityType = 'all') {
 async function getStravaProfile(userId) {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('hp,strava_athlete,strava_access_token,strava_refresh_token,strava_token_expires_at,strava_rewarded_activities,strava_daily_pv')
+    .select('hp,strava_athlete,strava_access_token,strava_refresh_token,strava_token_expires_at,strava_rewarded_activities,strava_daily_pv,strava_daily_xp')
     .eq('user_id', userId)
     .single();
 
   if (!error) return data;
 
-  const missingRewardColumns = /strava_rewarded_activities|strava_daily_pv/i.test(error.message || '');
+  const missingRewardColumns = /strava_rewarded_activities|strava_daily_pv|strava_daily_xp/i.test(error.message || '');
   if (!missingRewardColumns) throw error;
 
   const fallback = await supabaseAdmin
@@ -136,6 +137,7 @@ async function getStravaProfile(userId) {
     ...fallback.data,
     strava_rewarded_activities: {},
     strava_daily_pv: {},
+    strava_daily_xp: {},
     _missingStravaRewardColumns: true
   };
 }
@@ -191,6 +193,43 @@ function calculateActivityPv(activity) {
   }
 
   return Math.min(1 + Math.floor(minutes / 30), 6);
+}
+
+function calculateActivityXp(activity) {
+  const family = getActivityFamily(activity);
+  const minutes = Math.floor((activity.moving_time || 0) / 60);
+  const distanceKm = (activity.distance || 0) / 1000;
+  const elevation = activity.total_elevation_gain || 0;
+
+  if (minutes < 10) return 0;
+
+  let xp = 0;
+  if (family === 'Run') {
+    xp = Math.floor(distanceKm);
+    return Math.min(xp, 10);
+  }
+  if (family === 'Ride') {
+    xp = Math.floor(distanceKm / 5);
+    return Math.min(xp, 8);
+  }
+  if (family === 'Walk') {
+    xp = Math.floor(distanceKm / 2);
+    return Math.min(xp, 5);
+  }
+  if (family === 'Hike') {
+    xp = Math.floor(distanceKm / 2) + Math.floor(elevation / 300);
+    return Math.min(xp, 10);
+  }
+  if (family === 'Swim') {
+    xp = Math.floor(minutes / 10);
+    return Math.min(xp, 8);
+  }
+  if (family === 'WeightTraining' || family === 'Workout') {
+    xp = Math.floor(minutes / 15);
+    return Math.min(xp, 6);
+  }
+
+  return Math.min(Math.floor(minutes / 30), 4);
 }
 
 async function fetchRecentActivities(accessToken, afterSeconds) {
@@ -367,7 +406,8 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
         error: 'Migration Strava PV manquante',
         sql: [
           "alter table profiles add column if not exists strava_rewarded_activities jsonb default '{}'::jsonb;",
-          "alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;"
+          "alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;",
+          "alter table profiles add column if not exists strava_daily_xp jsonb default '{}'::jsonb;"
         ]
       });
     }
@@ -376,8 +416,10 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
     const activities = await fetchRecentActivities(accessToken, weekStart);
     const rewarded = profile.strava_rewarded_activities || {};
     const dailyPv = profile.strava_daily_pv || {};
+    const dailyXp = profile.strava_daily_xp || {};
     const claimed = [];
     let totalDelta = 0;
+    let totalXp = 0;
 
     activities
       .slice()
@@ -387,26 +429,33 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
         if (rewarded[activityId]) return;
 
         const dayKey = getActivityDayKey(activity);
-        const alreadyToday = Number(dailyPv[dayKey] || 0);
-        const remainingToday = Math.max(0, STRAVA_DAILY_PV_CAP - alreadyToday);
-        if (remainingToday <= 0) return;
+        const alreadyPvToday = Number(dailyPv[dayKey] || 0);
+        const alreadyXpToday = Number(dailyXp[dayKey] || 0);
+        const remainingPvToday = Math.max(0, STRAVA_DAILY_PV_CAP - alreadyPvToday);
+        const remainingXpToday = Math.max(0, STRAVA_DAILY_XP_CAP - alreadyXpToday);
 
         const basePv = calculateActivityPv(activity);
-        const pvAwarded = Math.min(basePv, remainingToday);
-        if (pvAwarded <= 0) return;
+        const baseXp = calculateActivityXp(activity);
+        const pvAwarded = Math.min(basePv, remainingPvToday);
+        const xpAwarded = Math.min(baseXp, remainingXpToday);
+        if (pvAwarded <= 0 && xpAwarded <= 0) return;
 
         rewarded[activityId] = {
           pv: pvAwarded,
+          xp: xpAwarded,
           basePv,
+          baseXp,
           type: activity.type,
           sport_type: activity.sport_type,
           name: activity.name,
           start_date: activity.start_date,
           claimed_at: new Date().toISOString()
         };
-        dailyPv[dayKey] = alreadyToday + pvAwarded;
+        dailyPv[dayKey] = alreadyPvToday + pvAwarded;
+        dailyXp[dayKey] = alreadyXpToday + xpAwarded;
         totalDelta += pvAwarded;
-        claimed.push({ id: activity.id, name: activity.name, pv: pvAwarded });
+        totalXp += xpAwarded;
+        claimed.push({ id: activity.id, name: activity.name, pv: pvAwarded, xp: xpAwarded });
       });
 
     const currentHp = Number(profile.hp || 0);
@@ -417,7 +466,8 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
       .update({
         hp: nextHp,
         strava_rewarded_activities: rewarded,
-        strava_daily_pv: dailyPv
+        strava_daily_pv: dailyPv,
+        strava_daily_xp: dailyXp
       })
       .eq('user_id', req.user.id);
 
@@ -428,9 +478,11 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
       hpBefore: currentHp,
       hpAfter: nextHp,
       hpDelta: nextHp - currentHp,
+      xpDelta: totalXp,
       rawPvDelta: totalDelta,
       claimed,
-      dailyCap: STRAVA_DAILY_PV_CAP
+      dailyCap: STRAVA_DAILY_PV_CAP,
+      dailyXpCap: STRAVA_DAILY_XP_CAP
     });
   } catch (error) {
     console.error('Strava claim PV error:', error);
