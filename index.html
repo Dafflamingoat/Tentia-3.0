@@ -102,7 +102,6 @@
               <span class="badge-slot-empty" id="badge-empty-Force">⚔</span>
               <span class="badge-slot-label">FOR</span>
             </div>
-            <button class="action-btn positive" id="btn-sport">💪</button>
             <div class="badge-slot" data-slot="Discipline" title="Slot Discipline">
               <img class="badge-slot-img" id="badge-img-Discipline" src="" alt="" style="display:none;">
               <span class="badge-slot-empty" id="badge-empty-Discipline">🛡</span>
@@ -122,7 +121,6 @@
               <span class="badge-slot-empty" id="badge-empty-Intelligence">✨</span>
               <span class="badge-slot-label">INT</span>
             </div>
-            <button class="action-btn negative" id="btn-smoke">🚬</button>
             <div class="badge-slot" data-slot="Focus" title="Slot Focus">
               <img class="badge-slot-img" id="badge-img-Focus" src="" alt="" style="display:none;">
               <span class="badge-slot-empty" id="badge-empty-Focus">🎯</span>
@@ -214,6 +212,48 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- POPUP Hygiene quotidienne -->
+  <div id="daily-health-modal" class="badge-modal-overlay" style="display:none;">
+    <form class="badge-modal-box daily-health-box" id="daily-health-form">
+      <div class="badge-modal-title">BILAN DU JOUR</div>
+
+      <div class="daily-health-row">
+        <span class="daily-health-label">Sommeil</span>
+        <div class="daily-health-options">
+          <label><input type="radio" name="sleep" value="-1"> Pas bon</label>
+          <label><input type="radio" name="sleep" value="0" checked> Moyen</label>
+          <label><input type="radio" name="sleep" value="1"> Bon</label>
+        </div>
+      </div>
+
+      <div class="daily-health-row">
+        <span class="daily-health-label">Nourriture</span>
+        <div class="daily-health-options">
+          <label><input type="radio" name="food" value="-1"> Pas bon</label>
+          <label><input type="radio" name="food" value="0" checked> Moyen</label>
+          <label><input type="radio" name="food" value="1"> Bon</label>
+        </div>
+      </div>
+
+      <div class="daily-health-numbers">
+        <label>
+          Cigarettes
+          <input class="daily-health-input" id="daily-cigarettes" type="number" min="0" max="99" value="0">
+        </label>
+        <label>
+          Alcool
+          <input class="daily-health-input" id="daily-alcohol" type="number" min="0" max="99" value="0">
+        </label>
+      </div>
+
+      <div class="daily-health-preview" id="daily-health-preview">Impact : 0 PV</div>
+      <div class="add-skill-actions">
+        <button class="badge-modal-close add-skill-submit" type="submit">VALIDER</button>
+        <button class="badge-modal-close" id="daily-health-later" type="button">PLUS TARD</button>
+      </div>
+    </form>
   </div>
 
   <script src="script.js"></script>

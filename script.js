@@ -775,22 +775,8 @@ function updateHPUI() {
   startAnimation();
 }
 
-function addHP() {
-  if (hp >= MAX_HP) return;
-  const force = parseInt(localStorage.getItem('Force')) || 0;
-  const bonus = Math.floor(force / 10);
-  hp = Math.min(hp + 1 + bonus, MAX_HP);
-  updateHPUI();
-  localStorage.setItem('hp', hp);
-  console.log(`+${1 + bonus} HP (Force incluse)`);
-  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ hp });
-  }
-}
-
-function removeHP() {
-  if (hp <= 0) return;
-  hp--;
+function setHP(nextHP) {
+  hp = Math.max(0, Math.min(Number(nextHP) || 0, MAX_HP));
   updateHPUI();
   localStorage.setItem('hp', hp);
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
@@ -798,21 +784,134 @@ function removeHP() {
   }
 }
 
-// Brancher les boutons sport / fumette
-document.getElementById('btn-sport').addEventListener('click', addHP);
-document.getElementById('btn-smoke').addEventListener('click', removeHP);
-
-// Hover dynamique sur les boutons HP
-function updateHPButtonTooltips() {
-  const force = parseInt(localStorage.getItem('Force')) || 0;
-  const bonus = Math.floor(force / 10);
-  const gain  = 1 + bonus;
-  const btnSport = document.getElementById('btn-sport');
-  const btnSmoke = document.getElementById('btn-smoke');
-  if (btnSport) btnSport.title = `+${gain} HP (Force ${force} → +${bonus} bonus)`;
-  if (btnSmoke) btnSmoke.title = `-1 HP`;
+function syncHPFromStorage() {
+  const storedHP = localStorage.getItem('hp');
+  if (storedHP === null) return;
+  hp = Math.max(0, Math.min(parseInt(storedHP) || 0, MAX_HP));
+  updateHPUI();
 }
-updateHPButtonTooltips();
+
+window.addEventListener('tentia:profileReady', syncHPFromStorage);
+
+// ----------------
+// BILAN QUOTIDIEN HYGIENE
+// ----------------
+const DAILY_HEALTH_KEY = 'dailyHealthLogs';
+const DAILY_HEALTH_MIN_DELTA = -20;
+
+function getTodayKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+function getDailyHealthLogs() {
+  try {
+    const logs = JSON.parse(localStorage.getItem(DAILY_HEALTH_KEY) || '{}');
+    return logs && typeof logs === 'object' ? logs : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveDailyHealthLogs(logs) {
+  localStorage.setItem(DAILY_HEALTH_KEY, JSON.stringify(logs));
+}
+
+function getCheckedDailyValue(name) {
+  const input = document.querySelector(`input[name="${name}"]:checked`);
+  return input ? Number(input.value) : 0;
+}
+
+function calculateDailyHealthImpact() {
+  const sleep = getCheckedDailyValue('sleep');
+  const food = getCheckedDailyValue('food');
+  const cigarettes = Math.max(0, parseInt(document.getElementById('daily-cigarettes')?.value, 10) || 0);
+  const alcohol = Math.max(0, parseInt(document.getElementById('daily-alcohol')?.value, 10) || 0);
+  const rawDelta = sleep + food - cigarettes - alcohol * 2;
+  const delta = Math.max(rawDelta, DAILY_HEALTH_MIN_DELTA);
+
+  return { sleep, food, cigarettes, alcohol, rawDelta, delta };
+}
+
+function updateDailyHealthPreview() {
+  const preview = document.getElementById('daily-health-preview');
+  if (!preview) return;
+  const { rawDelta, delta } = calculateDailyHealthImpact();
+  const capped = rawDelta !== delta ? ` (plafonne a ${delta})` : '';
+  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}`;
+}
+
+function closeDailyHealthModal() {
+  const modal = document.getElementById('daily-health-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function openDailyHealthModal() {
+  const modal = document.getElementById('daily-health-modal');
+  if (!modal) return;
+  updateDailyHealthPreview();
+  modal.style.display = 'flex';
+}
+
+function shouldShowDailyHealthModal() {
+  const logs = getDailyHealthLogs();
+  const today = getTodayKey();
+  const journal = (() => {
+    try { return JSON.parse(localStorage.getItem('journal') || '{}'); }
+    catch (e) { return {}; }
+  })();
+  return !logs[today] && !journal[today]?.hygiene;
+}
+
+function saveDailyHealthEntry() {
+  const today = getTodayKey();
+  const logs = getDailyHealthLogs();
+  if (logs[today]) return;
+
+  const entry = {
+    ...calculateDailyHealthImpact(),
+    hpBefore: hp,
+    createdAt: new Date().toISOString()
+  };
+  entry.hpAfter = Math.max(0, Math.min(hp + entry.delta, MAX_HP));
+
+  logs[today] = entry;
+  saveDailyHealthLogs(logs);
+
+  const journal = (() => {
+    try { return JSON.parse(localStorage.getItem('journal') || '{}'); }
+    catch (e) { return {}; }
+  })();
+  journal[today] = { ...(journal[today] || {}), hygiene: entry };
+  localStorage.setItem('journal', JSON.stringify(journal));
+
+  setHP(entry.hpAfter);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ journal });
+  }
+  closeDailyHealthModal();
+}
+
+function initDailyHealthModal() {
+  const form = document.getElementById('daily-health-form');
+  const later = document.getElementById('daily-health-later');
+  const modal = document.getElementById('daily-health-modal');
+  if (!form || !modal || modal.dataset.initialized === 'true') return;
+
+  modal.dataset.initialized = 'true';
+  form.addEventListener('input', updateDailyHealthPreview);
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveDailyHealthEntry();
+  });
+  later?.addEventListener('click', closeDailyHealthModal);
+
+  if (shouldShowDailyHealthModal()) {
+    setTimeout(openDailyHealthModal, 300);
+  }
+}
+
+window.addEventListener('tentia:profileReady', initDailyHealthModal);
 
 // ────────────────
 // POPUPS INFO (arbre + ligues)
