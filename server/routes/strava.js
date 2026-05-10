@@ -57,9 +57,39 @@ function simplifyActivity(activity) {
   };
 }
 
-function buildSummary(activities) {
+function getActivityLabel(activityType = 'all') {
+  const labels = {
+    all: 'Toutes',
+    Run: 'Course',
+    Ride: 'Velo',
+    Walk: 'Marche',
+    Hike: 'Randonnee',
+    Swim: 'Natation',
+    Workout: 'Workout',
+    WeightTraining: 'Muscu'
+  };
+  return labels[activityType] || activityType;
+}
+
+function activityMatchesType(activity, activityType = 'all') {
+  if (!activityType || activityType === 'all') return true;
+  if (activity.type === activityType || activity.sport_type === activityType) return true;
+
+  const groups = {
+    Ride: ['Ride', 'MountainBikeRide', 'GravelRide', 'VirtualRide', 'EBikeRide', 'EMountainBikeRide'],
+    Run: ['Run', 'TrailRun', 'VirtualRun'],
+    Workout: ['Workout', 'Crossfit', 'Elliptical', 'StairStepper']
+  };
+
+  return (groups[activityType] || []).includes(activity.type)
+    || (groups[activityType] || []).includes(activity.sport_type);
+}
+
+function buildSummary(activities, activityType = 'all') {
   const weekStart = getWeekStart();
-  const weekActivities = activities.filter(activity => new Date(activity.start_date) >= weekStart);
+  const weekActivities = activities
+    .filter(activity => new Date(activity.start_date) >= weekStart)
+    .filter(activity => activityMatchesType(activity, activityType));
   const totals = weekActivities.reduce((acc, activity) => {
     acc.activities += 1;
     acc.distance += activity.distance || 0;
@@ -71,8 +101,10 @@ function buildSummary(activities) {
   return {
     period: 'week',
     since: weekStart.toISOString(),
+    activityType,
+    activityLabel: getActivityLabel(activityType),
     totals,
-    lastActivity: activities[0] || null
+    lastActivity: weekActivities[0] || null
   };
 }
 
@@ -176,6 +208,7 @@ router.get('/activities', requireAuth, async (req, res) => {
     url.searchParams.set('page', '1');
     if (req.query.after) url.searchParams.set('after', req.query.after);
     if (req.query.before) url.searchParams.set('before', req.query.before);
+    const activityType = String(req.query.activity || 'all');
 
     const activitiesResp = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -183,12 +216,14 @@ router.get('/activities', requireAuth, async (req, res) => {
     const rawActivities = await activitiesResp.json();
     if (!activitiesResp.ok) return res.status(activitiesResp.status).json(rawActivities);
 
-    const activities = rawActivities.map(simplifyActivity);
+    const activities = rawActivities
+      .map(simplifyActivity)
+      .filter(activity => activityMatchesType(activity, activityType));
     res.json({
       connected: true,
       athleteName: buildAthleteName(profile.strava_athlete),
       activities,
-      summary: buildSummary(activities)
+      summary: buildSummary(activities, activityType)
     });
   } catch (error) {
     console.error('Strava activities error:', error);
@@ -207,6 +242,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     url.searchParams.set('after', String(weekStart));
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', '1');
+    const activityType = String(req.query.activity || 'all');
 
     const activitiesResp = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` }
@@ -218,8 +254,8 @@ router.get('/summary', requireAuth, async (req, res) => {
     res.json({
       connected: true,
       athleteName: buildAthleteName(profile.strava_athlete),
-      summary: buildSummary(activities),
-      activities
+      summary: buildSummary(activities, activityType),
+      activities: activities.filter(activity => activityMatchesType(activity, activityType))
     });
   } catch (error) {
     console.error('Strava summary error:', error);

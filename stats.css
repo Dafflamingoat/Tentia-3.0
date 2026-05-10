@@ -1563,3 +1563,17 @@ body {
   margin-top: 4px;
   min-height: 14px;
 }
+
+.settings-strava-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 7px;
+  color: var(--text-dim);
+}
+
+.settings-strava-select {
+  max-width: 180px;
+  cursor: pointer;
+}

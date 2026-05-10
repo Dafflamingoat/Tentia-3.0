@@ -2562,9 +2562,14 @@ function setStravaSettingsState(status = {}) {
   }
 }
 
+function getSelectedStravaActivityType() {
+  return localStorage.getItem('stravaActivityType') || 'all';
+}
+
 async function loadStravaSettingsStatus() {
   try {
-    const resp = await fetch('/api/strava/summary', { headers: getSettingsAuthHeaders() });
+    const activity = encodeURIComponent(getSelectedStravaActivityType());
+    const resp = await fetch(`/api/strava/summary?activity=${activity}`, { headers: getSettingsAuthHeaders() });
     if (!resp.ok) throw new Error('Statut Strava indisponible');
     setStravaSettingsState(await resp.json());
   } catch (err) {
@@ -2577,12 +2582,19 @@ function initStravaSettings() {
   const connected = document.getElementById('settings-strava-connected');
   const connectBtn = document.getElementById('settings-strava-connect');
   const disconnectBtn = document.getElementById('settings-strava-disconnect');
+  const activitySelect = document.getElementById('settings-strava-activity');
   const feedback = document.getElementById('settings-strava-feedback');
   if (!connected || !connectBtn) return;
 
+  if (activitySelect) activitySelect.value = getSelectedStravaActivityType();
   loadStravaSettingsStatus();
   if (connected.dataset.initialized === 'true') return;
   connected.dataset.initialized = 'true';
+
+  activitySelect?.addEventListener('change', () => {
+    localStorage.setItem('stravaActivityType', activitySelect.value);
+    loadStravaSettingsStatus();
+  });
 
   connectBtn.addEventListener('click', async () => {
     connectBtn.disabled = true;

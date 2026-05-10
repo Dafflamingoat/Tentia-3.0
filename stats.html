@@ -317,6 +317,19 @@
         <!-- Connexion Strava -->
         <div class="settings-section">
           <div class="settings-label">Strava</div>
+          <div class="settings-strava-filter">
+            <span>Activite</span>
+            <select class="friends-input settings-strava-select" id="settings-strava-activity">
+              <option value="all">Toutes</option>
+              <option value="Run">Course</option>
+              <option value="Ride">Velo</option>
+              <option value="Walk">Marche</option>
+              <option value="Hike">Randonnee</option>
+              <option value="Swim">Natation</option>
+              <option value="Workout">Workout</option>
+              <option value="WeightTraining">Muscu</option>
+            </select>
+          </div>
           <div class="settings-chess-connected" id="settings-strava-connected" style="display:none;">
             <span id="settings-strava-athlete"></span>
             <button class="settings-chess-disconnect" id="settings-strava-disconnect">Deconnecter</button>

@@ -611,20 +611,18 @@ function getTentiaAuthHeaders() {
 
 function updateStravaUI(status = {}) {
   const node = document.getElementById('skill-strava');
-  const bar = document.getElementById('bar-strava');
   const label = document.getElementById('val-strava');
   const summary = document.getElementById('strava-summary');
-  if (!node || !bar || !label) return;
+  if (!node || !label) return;
 
   const connected = Boolean(status.connected);
   const totals = status.summary?.totals || {};
   const activities = Number(totals.activities || 0);
   const distanceKm = (Number(totals.distance || 0) / 1000);
   const movingHours = Number(totals.moving_time || 0) / 3600;
-  const progress = connected ? Math.min((distanceKm / 50) * 100, 100) : 0;
+  const activityLabel = status.summary?.activityLabel || 'Toutes';
 
   node.classList.toggle('connected', connected);
-  bar.style.width = `${progress}%`;
 
   if (!connected) {
     label.textContent = 'Non connecte';
@@ -634,8 +632,12 @@ function updateStravaUI(status = {}) {
 
   label.textContent = `${distanceKm.toFixed(1)} km`;
   if (summary) {
-    summary.textContent = `${activities} sortie${activities > 1 ? 's' : ''} cette semaine - ${movingHours.toFixed(1)} h`;
+    summary.textContent = `${activityLabel} - ${activities} sortie${activities > 1 ? 's' : ''} - ${movingHours.toFixed(1)} h`;
   }
+}
+
+function getSelectedStravaActivityType() {
+  return localStorage.getItem('stravaActivityType') || 'all';
 }
 
 async function loadStravaSummary() {
@@ -645,7 +647,8 @@ async function loadStravaSummary() {
   }
 
   try {
-    const resp = await fetch('/api/strava/summary', { headers: getTentiaAuthHeaders() });
+    const activity = encodeURIComponent(getSelectedStravaActivityType());
+    const resp = await fetch(`/api/strava/summary?activity=${activity}`, { headers: getTentiaAuthHeaders() });
     if (!resp.ok) throw new Error('Statut Strava indisponible');
     const status = await resp.json();
     updateStravaUI(status);
