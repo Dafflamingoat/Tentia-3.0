@@ -831,10 +831,10 @@ function applyBG(bg1, bg2) {
   localStorage.setItem('selectedBG', JSON.stringify([bg1, bg2]));
   bgFrameIndex = 0;
   charFrame.style.backgroundImage = `url(${bg1})`;
-  // Retirer le filtre et le cadenas de prévisualisation
+  // Retirer le filtre et le cadenas BG de prévisualisation
   charFrame.style.filter = '';
-  const lockEl = charFrame.querySelector('.bg-preview-lock');
-  if (lockEl) lockEl.remove();
+  const bgLockEl = charFrame.querySelector('.bg-preview-lock');
+  if (bgLockEl) bgLockEl.remove();
   bgInterval = setInterval(() => {
     bgFrameIndex = (bgFrameIndex + 1) % bgFrames.length;
     charFrame.style.backgroundImage = `url(${bgFrames[bgFrameIndex]})`;
@@ -986,9 +986,9 @@ function renderSkinThumbs() {
         document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
         thumb.classList.add('active');
         if (sprite) { sprite.style.filter = ''; }
-        // Retirer le cadenas si présent
-        const existingLock = charFrame.querySelector('.bg-preview-lock');
-        if (existingLock) existingLock.remove();
+        // Retirer le cadenas skin si présent
+        const existingSkinLock = charFrame.querySelector('.skin-preview-lock');
+        if (existingSkinLock) existingSkinLock.remove();
         setSkin(folder);
       } else {
         // Prévisualisation : stopper l'animation et figer sur moove1 grisé
@@ -997,10 +997,10 @@ function renderSkinThumbs() {
           sprite.src = `assets/character/${folder}/moove1.png`;
           sprite.style.filter = 'grayscale(80%) brightness(0.6)';
         }
-        // Ajouter cadenas sur la frame si pas déjà là
-        if (!charFrame.querySelector('.bg-preview-lock')) {
+        // Ajouter cadenas skin sur la frame si pas déjà là
+        if (!charFrame.querySelector('.skin-preview-lock')) {
           const lockEl = document.createElement('span');
-          lockEl.className = 'bg-preview-lock';
+          lockEl.className = 'skin-preview-lock';
           lockEl.textContent = '🔒';
           lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
           charFrame.appendChild(lockEl);
