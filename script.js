@@ -762,9 +762,27 @@ const DEFAULT_OWNED_BG_FILES  = ['assets/background/bg1_frame1.png', 'assets/bac
 const DEFAULT_OWNED_SKIN_FOLDERS = ['Skin_T1'];
 
 function getBackgrounds() {
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+  const timelineBGs = (timelineData && timelineData.backgrounds) || [];
+  const bgMap = {};
+  timelineBGs.forEach(b => { bgMap[b.id] = b; });
+
   const saved = localStorage.getItem('backgrounds');
-  if (saved) return JSON.parse(saved);
-  // Fallback : bg1 et bg2 owned par défaut
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    // Merger bg1/bg2 manquants depuis TIMELINE_DATA
+    return parsed.map(b => {
+      if ((!b.bg1 || !b.bg2) && bgMap[b.id]) {
+        return { ...bgMap[b.id], ...b, bg1: bgMap[b.id].bg1, bg2: bgMap[b.id].bg2 };
+      }
+      return b;
+    });
+  }
+
+  // Fallback depuis TIMELINE_DATA ou défaut
+  if (timelineBGs.length) return timelineBGs;
   return [
     { id: 'bg_default', name: 'Défaut', bg1: 'assets/background/bg1_frame1.png', bg2: 'assets/background/bg1_frame2.png', owned: true },
     { id: 'bg_white',   name: 'Blanc',  bg1: 'assets/background/bg2_frame1.png', bg2: 'assets/background/bg2_frame2.png', owned: true },
@@ -772,9 +790,29 @@ function getBackgrounds() {
 }
 
 function getSkins() {
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+
+  // Source de vérité pour les folders : TIMELINE_DATA
+  const timelineSkins = (timelineData && timelineData.skins) || [];
+  const folderMap = {};
+  timelineSkins.forEach(s => { folderMap[s.id] = s; });
+
   const saved = localStorage.getItem('skins');
-  if (saved) return JSON.parse(saved);
-  // Fallback : Skin_T1 owned par défaut
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    // Merger les folders manquants depuis TIMELINE_DATA
+    return parsed.map(s => {
+      if (!s.folder && folderMap[s.id]) {
+        return { ...folderMap[s.id], ...s, folder: folderMap[s.id].folder };
+      }
+      return s;
+    });
+  }
+
+  // Fallback depuis TIMELINE_DATA ou Skin_T1
+  if (timelineSkins.length) return timelineSkins;
   return [{ id: 'skin_t1', name: 'Skin T1', folder: 'Skin_T1', owned: true }];
 }
 

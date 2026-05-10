@@ -331,10 +331,51 @@ function loadTimelineData() {
   }
 
   titles      = JSON.parse(localStorage.getItem('titles'))      || data.titles      || [];
-  avatars     = JSON.parse(localStorage.getItem('avatars'))     || data.avatars     || [];
-  skins       = JSON.parse(localStorage.getItem('skins'))       || data.skins       || [];
-  backgrounds = JSON.parse(localStorage.getItem('backgrounds')) || data.backgrounds || [];
   levelRewards = data.levelRewards || {};
+
+  // Merger avatars : fusionner localStorage (owned) avec TIMELINE_DATA (src manquant)
+  const savedAvatars = JSON.parse(localStorage.getItem('avatars')) || [];
+  if (savedAvatars.length && data.avatars) {
+    const avatarMap = {};
+    data.avatars.forEach(a => { avatarMap[a.id] = a; });
+    avatars = savedAvatars.map(a => {
+      if (!a.src && avatarMap[a.id]) return { ...avatarMap[a.id], ...a, src: avatarMap[a.id].src };
+      return a;
+    });
+    // Si seulement 1 avatar en localStorage (compte tout neuf), utiliser la liste complète
+    if (savedAvatars.length <= 1) {
+      avatars = data.avatars.map(a => {
+        const saved = savedAvatars.find(s => s.id === a.id);
+        return saved ? { ...a, ...saved } : a;
+      });
+    }
+  } else {
+    avatars = data.avatars || [];
+  }
+
+  // Merger skins : fusionner localStorage avec TIMELINE_DATA (folder manquant)
+  const savedSkins = JSON.parse(localStorage.getItem('skins')) || [];
+  if (savedSkins.length && data.skins) {
+    const skinMap = {};
+    data.skins.forEach(s => { skinMap[s.id] = s; });
+    skins = savedSkins.length <= 1
+      ? data.skins.map(s => { const sv = savedSkins.find(x => x.id === s.id); return sv ? { ...s, ...sv } : s; })
+      : savedSkins.map(s => (!s.folder && skinMap[s.id]) ? { ...skinMap[s.id], ...s, folder: skinMap[s.id].folder } : s);
+  } else {
+    skins = data.skins || [];
+  }
+
+  // Merger backgrounds : fusionner localStorage avec TIMELINE_DATA (bg1/bg2 manquants)
+  const savedBGs = JSON.parse(localStorage.getItem('backgrounds')) || [];
+  if (savedBGs.length && data.backgrounds) {
+    const bgMap = {};
+    data.backgrounds.forEach(b => { bgMap[b.id] = b; });
+    backgrounds = savedBGs.length <= 1
+      ? data.backgrounds.map(b => { const sv = savedBGs.find(x => x.id === b.id); return sv ? { ...b, ...sv } : b; })
+      : savedBGs.map(b => ((!b.bg1 || !b.bg2) && bgMap[b.id]) ? { ...bgMap[b.id], ...b, bg1: bgMap[b.id].bg1, bg2: bgMap[b.id].bg2 } : b);
+  } else {
+    backgrounds = data.backgrounds || [];
+  }
 
   // Construire la map niveau → récompense pour affichage cadenas
   const rewardUnlockLevels = {};
