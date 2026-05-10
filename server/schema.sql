@@ -70,7 +70,9 @@ create table if not exists profiles (
   strava_athlete          jsonb default null,
   strava_access_token     text default null,
   strava_refresh_token    text default null,
-  strava_token_expires_at int default null
+  strava_token_expires_at int default null,
+  strava_rewarded_activities jsonb default '{}'::jsonb,
+  strava_daily_pv jsonb default '{}'::jsonb
 );
 
 -- Colonnes Strava pour une base deja creee
@@ -78,6 +80,8 @@ alter table profiles add column if not exists strava_athlete jsonb default null;
 alter table profiles add column if not exists strava_access_token text default null;
 alter table profiles add column if not exists strava_refresh_token text default null;
 alter table profiles add column if not exists strava_token_expires_at int default null;
+alter table profiles add column if not exists strava_rewarded_activities jsonb default '{}'::jsonb;
+alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;
 
 -- ── SÉCURITÉ RLS ────────────────────────────
 -- Chaque utilisateur ne voit que ses propres données

@@ -9,6 +9,7 @@ const STRAVA_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize';
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 const STRAVA_API_URL = 'https://www.strava.com/api/v3';
 const STRAVA_SCOPES = 'read,activity:read_all';
+const STRAVA_DAILY_PV_CAP = 20;
 
 function getBaseUrl(req) {
   return process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
@@ -78,7 +79,11 @@ function activityMatchesType(activity, activityType = 'all') {
   const groups = {
     Ride: ['Ride', 'MountainBikeRide', 'GravelRide', 'VirtualRide', 'EBikeRide', 'EMountainBikeRide'],
     Run: ['Run', 'TrailRun', 'VirtualRun'],
-    Workout: ['Workout', 'Crossfit', 'Elliptical', 'StairStepper']
+    Walk: ['Walk'],
+    Hike: ['Hike'],
+    Swim: ['Swim'],
+    WeightTraining: ['WeightTraining'],
+    Workout: ['Workout', 'Crossfit', 'Elliptical', 'StairStepper', 'WeightTraining']
   };
 
   return (groups[activityType] || []).includes(activity.type)
@@ -111,12 +116,85 @@ function buildSummary(activities, activityType = 'all') {
 async function getStravaProfile(userId) {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('strava_athlete,strava_access_token,strava_refresh_token,strava_token_expires_at')
+    .select('hp,strava_athlete,strava_access_token,strava_refresh_token,strava_token_expires_at,strava_rewarded_activities,strava_daily_pv')
     .eq('user_id', userId)
     .single();
 
   if (error) throw error;
   return data;
+}
+
+function getActivityDayKey(activity) {
+  const date = new Date(activity.start_date);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getActivityFamily(activity) {
+  if (activityMatchesType(activity, 'Run')) return 'Run';
+  if (activityMatchesType(activity, 'Ride')) return 'Ride';
+  if (activityMatchesType(activity, 'Walk')) return 'Walk';
+  if (activityMatchesType(activity, 'Hike')) return 'Hike';
+  if (activityMatchesType(activity, 'Swim')) return 'Swim';
+  if (activityMatchesType(activity, 'WeightTraining')) return 'WeightTraining';
+  if (activityMatchesType(activity, 'Workout')) return 'Workout';
+  return activity.sport_type || activity.type || 'Other';
+}
+
+function calculateActivityPv(activity) {
+  const family = getActivityFamily(activity);
+  const minutes = Math.floor((activity.moving_time || 0) / 60);
+  const distanceKm = (activity.distance || 0) / 1000;
+  const elevation = activity.total_elevation_gain || 0;
+
+  if (minutes < 10) return 0;
+
+  let pv = 0;
+  if (family === 'Run') {
+    pv = 2 + Math.floor(minutes / 15) + Math.floor(distanceKm / 3) + Math.floor(elevation / 150);
+    return Math.min(pv, 15);
+  }
+  if (family === 'Ride') {
+    pv = 2 + Math.floor(minutes / 20) + Math.floor(distanceKm / 10) + Math.floor(elevation / 250);
+    return Math.min(pv, 12);
+  }
+  if (family === 'Walk') {
+    pv = 1 + Math.floor(minutes / 25) + Math.floor(distanceKm / 4);
+    return Math.min(pv, 8);
+  }
+  if (family === 'Hike') {
+    pv = 2 + Math.floor(minutes / 25) + Math.floor(elevation / 150);
+    return Math.min(pv, 12);
+  }
+  if (family === 'Swim') {
+    pv = 2 + Math.floor(minutes / 15);
+    return Math.min(pv, 12);
+  }
+  if (family === 'WeightTraining' || family === 'Workout') {
+    pv = 2 + Math.floor(minutes / 20);
+    return Math.min(pv, 10);
+  }
+
+  return Math.min(1 + Math.floor(minutes / 30), 6);
+}
+
+async function fetchRecentActivities(accessToken, afterSeconds) {
+  const url = new URL(`${STRAVA_API_URL}/athlete/activities`);
+  url.searchParams.set('after', String(afterSeconds));
+  url.searchParams.set('per_page', '100');
+  url.searchParams.set('page', '1');
+
+  const activitiesResp = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  const rawActivities = await activitiesResp.json();
+  if (!activitiesResp.ok) {
+    const error = new Error('Activites Strava indisponibles');
+    error.status = activitiesResp.status;
+    error.payload = rawActivities;
+    throw error;
+  }
+
+  return rawActivities.map(simplifyActivity);
 }
 
 async function getValidAccessToken(userId, profile) {
@@ -260,6 +338,78 @@ router.get('/summary', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Strava summary error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/claim-pv', requireAuth, async (req, res) => {
+  try {
+    const profile = await getStravaProfile(req.user.id);
+    const accessToken = await getValidAccessToken(req.user.id, profile);
+    if (!accessToken) return res.json({ connected: false, hpDelta: 0, claimed: [] });
+
+    const weekStart = Math.floor(getWeekStart().getTime() / 1000);
+    const activities = await fetchRecentActivities(accessToken, weekStart);
+    const rewarded = profile.strava_rewarded_activities || {};
+    const dailyPv = profile.strava_daily_pv || {};
+    const claimed = [];
+    let totalDelta = 0;
+
+    activities
+      .slice()
+      .reverse()
+      .forEach((activity) => {
+        const activityId = String(activity.id);
+        if (rewarded[activityId]) return;
+
+        const dayKey = getActivityDayKey(activity);
+        const alreadyToday = Number(dailyPv[dayKey] || 0);
+        const remainingToday = Math.max(0, STRAVA_DAILY_PV_CAP - alreadyToday);
+        if (remainingToday <= 0) return;
+
+        const basePv = calculateActivityPv(activity);
+        const pvAwarded = Math.min(basePv, remainingToday);
+        if (pvAwarded <= 0) return;
+
+        rewarded[activityId] = {
+          pv: pvAwarded,
+          basePv,
+          type: activity.type,
+          sport_type: activity.sport_type,
+          name: activity.name,
+          start_date: activity.start_date,
+          claimed_at: new Date().toISOString()
+        };
+        dailyPv[dayKey] = alreadyToday + pvAwarded;
+        totalDelta += pvAwarded;
+        claimed.push({ id: activity.id, name: activity.name, pv: pvAwarded });
+      });
+
+    const currentHp = Number(profile.hp || 0);
+    const nextHp = Math.max(0, Math.min(currentHp + totalDelta, 100));
+
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        hp: nextHp,
+        strava_rewarded_activities: rewarded,
+        strava_daily_pv: dailyPv
+      })
+      .eq('user_id', req.user.id);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    res.json({
+      connected: true,
+      hpBefore: currentHp,
+      hpAfter: nextHp,
+      hpDelta: nextHp - currentHp,
+      rawPvDelta: totalDelta,
+      claimed,
+      dailyCap: STRAVA_DAILY_PV_CAP
+    });
+  } catch (error) {
+    console.error('Strava claim PV error:', error);
+    res.status(error.status || 500).json(error.payload || { error: error.message });
   }
 });
 
