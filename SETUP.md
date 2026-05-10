@@ -91,7 +91,13 @@ git push -u origin main
    - `SUPABASE_ANON_KEY` = (ta clé anon)
    - `SUPABASE_SERVICE_KEY` = (ta clé service)
    - `FRONTEND_URL` = https://ton-app.onrender.com
+   - `STRAVA_CLIENT_ID` = (Client ID de ton app Strava)
+   - `STRAVA_CLIENT_SECRET` = (Client Secret de ton app Strava)
+   - `PUBLIC_URL` = https://ton-app.onrender.com
 5. Clique **Deploy**
+
+Pour Strava, ajoute aussi dans ton app Strava cette URL de callback :
+`https://ton-app.onrender.com/api/strava/callback`
 
 ---
 

@@ -47,6 +47,10 @@
           <div class="info-skill-title">ARGENT</div>
           <div class="info-skill-desc">Clique + pour progresser. Represente tes economies.</div>
         </div>
+        <div class="info-skill-block">
+          <div class="info-skill-title">STRAVA</div>
+          <div class="info-skill-desc">Connecte ton compte Strava. Les activites et l'XP seront definies dans la prochaine etape.</div>
+        </div>
       </div>
       <button class="badge-modal-close" id="close-skill-info">FERMER</button>
     </div>
@@ -187,6 +191,18 @@
           <div class="skill-buttons">
             <button class="skill-btn" onclick="increment('argent')">＋</button>
             <button class="skill-btn reset-btn" onclick="resetSkill('argent')">↺</button>
+          </div>
+        </div>
+
+        <div class="skill-node strava-skill-node" id="skill-strava">
+          <div class="skill-icon strava-icon">S</div>
+          <div class="skill-name">Strava</div>
+          <div class="skill-bar-wrap">
+            <div class="skill-bar strava-bar" id="bar-strava" style="width:0%"></div>
+            <span class="skill-val" id="val-strava">Non connecte</span>
+          </div>
+          <div class="skill-buttons">
+            <button class="skill-btn strava-connect-btn" id="btn-strava-connect" type="button">Connexion</button>
           </div>
         </div>
 

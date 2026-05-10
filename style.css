@@ -930,3 +930,43 @@ color: #fff;
   border-color: #4caf50;
   color: #4caf50;
 }
+
+.strava-skill-node {
+  border-color: #fc4c02;
+}
+
+.strava-skill-node:hover {
+  border-color: #ff7a3d;
+  box-shadow: 0 0 10px rgba(252,76,2,0.45), inset 0 0 10px rgba(0,0,0,0.6);
+}
+
+.strava-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fc4c02;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 2px 2px 0 #000, 0 0 8px rgba(252,76,2,0.45);
+}
+
+.strava-bar {
+  background: linear-gradient(90deg, #fc4c02, #ffb088);
+}
+
+.strava-connect-btn {
+  font-size: 6px;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.strava-skill-node.connected #val-strava {
+  color: #fff;
+}
+
+.strava-skill-node.connected .strava-connect-btn {
+  border-color: #fc4c02;
+  color: #fff;
+}

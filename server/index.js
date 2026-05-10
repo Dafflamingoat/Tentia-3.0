@@ -6,6 +6,7 @@ const path    = require('path');
 const authRoutes    = require('./routes/auth');
 const dataRoutes    = require('./routes/data');
 const friendsRoutes = require('./routes/friends');
+const stravaRoutes  = require('./routes/strava');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, '..')));
 app.use('/api/auth',    authRoutes);
 app.use('/api/data',    dataRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/strava',  stravaRoutes);
 
 // ── Fallback : toutes les routes non-API → index.html ──
 app.get('*', (req, res) => {

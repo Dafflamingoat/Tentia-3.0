@@ -597,6 +597,77 @@ if (localStorage.getItem('chessUsername')) {
   startChessPolling();
 }
 
+// ----------------
+// STRAVA
+// ----------------
+
+function getTentiaAuthHeaders() {
+  const token = localStorage.getItem('_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+function updateStravaUI(status = {}) {
+  const node = document.getElementById('skill-strava');
+  const bar = document.getElementById('bar-strava');
+  const label = document.getElementById('val-strava');
+  const button = document.getElementById('btn-strava-connect');
+  if (!node || !bar || !label || !button) return;
+
+  const connected = Boolean(status.connected);
+  node.classList.toggle('connected', connected);
+  bar.style.width = connected ? '100%' : '0%';
+  label.textContent = connected ? (status.athleteName || 'Connecte') : 'Non connecte';
+  button.textContent = connected ? 'Reconnecter' : 'Connexion';
+  button.disabled = false;
+}
+
+async function loadStravaStatus() {
+  if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
+    updateStravaUI({ connected: false });
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/strava/status', { headers: getTentiaAuthHeaders() });
+    if (!resp.ok) throw new Error('Statut Strava indisponible');
+    const status = await resp.json();
+    updateStravaUI(status);
+  } catch (err) {
+    console.warn('Erreur statut Strava :', err);
+    updateStravaUI({ connected: false });
+  }
+}
+
+async function connectStrava() {
+  const button = document.getElementById('btn-strava-connect');
+  if (button) {
+    button.disabled = true;
+    button.textContent = '...';
+  }
+
+  try {
+    const resp = await fetch('/api/strava/connect-url', {
+      method: 'POST',
+      headers: getTentiaAuthHeaders()
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.url) throw new Error(data.error || 'Connexion Strava impossible');
+    window.location.href = data.url;
+  } catch (err) {
+    console.warn('Erreur connexion Strava :', err);
+    alert(err.message || 'Connexion Strava impossible.');
+    updateStravaUI({ connected: false });
+  }
+}
+
+const stravaButton = document.getElementById('btn-strava-connect');
+if (stravaButton) stravaButton.addEventListener('click', connectStrava);
+window.addEventListener('tentia:profileReady', loadStravaStatus);
+loadStravaStatus();
+
 function updateEloBar(elo, noAccount = false) {
   const maxElo = MAX_LEVELS.echec || 1000;
   const bar = document.getElementById('bar-echec');

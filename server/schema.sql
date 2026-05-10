@@ -64,8 +64,20 @@ create table if not exists profiles (
   peak_elo          int default 0,
   last_login        text default null,
   last_elo          int default 0,
-  current_elo       int default 0
+  current_elo       int default 0,
+
+  -- Strava
+  strava_athlete          jsonb default null,
+  strava_access_token     text default null,
+  strava_refresh_token    text default null,
+  strava_token_expires_at int default null
 );
+
+-- Colonnes Strava pour une base deja creee
+alter table profiles add column if not exists strava_athlete jsonb default null;
+alter table profiles add column if not exists strava_access_token text default null;
+alter table profiles add column if not exists strava_refresh_token text default null;
+alter table profiles add column if not exists strava_token_expires_at int default null;
 
 -- ── SÉCURITÉ RLS ────────────────────────────
 -- Chaque utilisateur ne voit que ses propres données
