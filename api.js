@@ -35,9 +35,9 @@ const TIMELINES = {
   arthur: {
     id: 'arthur',
     name: 'Arthur',
-    skinPreview: 'assets/character/timelines/arthur/Skin_Arthur/moove1.png',
+    skinPreview: 'assets/character/timelines/arthur/Skin_arthur/moove1.png',
     starter: {
-      selectedSkin: 'timelines/arthur/Skin_Arthur',
+      selectedSkin: 'timelines/arthur/Skin_arthur',
       equippedAvatarId: 'avatar_arthur',
       selectedBG: [
         'assets/background/timelines/arthur/bg1_frame1.png',
