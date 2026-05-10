@@ -1260,11 +1260,32 @@ function checkLevelUp() {
   checkAllAchievements();
 }
 
+function getHpXpMultiplier() {
+  const currentHP = parseInt(localStorage.getItem('hp')) || 0;
+  if (currentHP >= 80) return 1.1;
+  if (currentHP <= 20) return 0.9;
+  return 1;
+}
+
+function applyHpXpModifier(amount) {
+  const baseAmount = Math.max(0, Number(amount) || 0);
+  const multiplier = getHpXpMultiplier();
+  const modifiedAmount = Math.max(0, Math.round(baseAmount * multiplier));
+
+  localStorage.setItem('lastHpXpMultiplier', multiplier);
+  return {
+    baseAmount,
+    multiplier,
+    modifiedAmount
+  };
+}
+
 function addXP(amount) {
   const equippedPet = getEquippedPet();
   const share = equippedPet ? (equippedPet.share || 0.1) : 0;
+  const xpModifier = applyHpXpModifier(amount);
 
-  const playerXP = Math.floor(amount * (1 - share));
+  const playerXP = Math.floor(xpModifier.modifiedAmount * (1 - share));
 
   xp += playerXP;
   localStorage.setItem('xp', xp);
@@ -1272,13 +1293,15 @@ function addXP(amount) {
   checkLevelUp();
   updateXPBar();
 
-  addPetXP(amount);
+  addPetXP(xpModifier.modifiedAmount);
   updateProfilePanel();
 
   // Sync Supabase
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     window.TentiaAPI.saveProfile({ xp, level: parseInt(localStorage.getItem('level')) || 1 });
   }
+
+  return { playerXP, ...xpModifier };
 }
 
 // ────────────────
@@ -2110,8 +2133,8 @@ if (validateBtn) {
       quests = quests.filter(q => !q.claimed);
 
       trackQuestStats(newlyClaimed, gainedXP);
-      addXP(gainedXP);
-      alert(`+${gainedXP} XP gagné !`);
+      const xpResult = addXP(gainedXP);
+      alert(`+${xpResult.modifiedAmount} XP gagne !`);
       saveQuests();
       renderQuests();
       checkAllAchievements();

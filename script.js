@@ -234,6 +234,26 @@ function getPetXpNeeded(currentLevel) {
   return 80 + currentLevel * 8;
 }
 
+function getHpXpMultiplier() {
+  const currentHP = parseInt(localStorage.getItem('hp')) || 0;
+  if (currentHP >= 80) return 1.1;
+  if (currentHP <= 20) return 0.9;
+  return 1;
+}
+
+function applyHpXpModifier(amount) {
+  const baseAmount = Math.max(0, Number(amount) || 0);
+  const multiplier = getHpXpMultiplier();
+  const modifiedAmount = Math.max(0, Math.round(baseAmount * multiplier));
+
+  localStorage.setItem('lastHpXpMultiplier', multiplier);
+  return {
+    baseAmount,
+    multiplier,
+    modifiedAmount
+  };
+}
+
 function getStoredPets() {
   try {
     const pets = JSON.parse(localStorage.getItem('pets') || '[]');
@@ -279,7 +299,8 @@ function addPlayerXPFromStudy(totalXP) {
   let currentLevel = parseInt(localStorage.getItem('level')) || 1;
   const equippedPet = getEquippedPetForXP();
   const share = equippedPet ? (typeof equippedPet.share === 'number' ? equippedPet.share : 0.1) : 0;
-  const playerXP = Math.floor(totalXP * (1 - share));
+  const xpModifier = applyHpXpModifier(totalXP);
+  const playerXP = Math.floor(xpModifier.modifiedAmount * (1 - share));
 
   currentXP += playerXP;
 
@@ -308,7 +329,7 @@ function addPlayerXPFromStudy(totalXP) {
     });
   }
 
-  return { playerXP, currentLevel, levelsGained };
+  return { playerXP, currentLevel, levelsGained, ...xpModifier };
 }
 
 function calculateStudyXP(sessionMs) {
@@ -324,13 +345,13 @@ function awardStudyXP(skill, sessionMs) {
   const totalXP = calculateStudyXP(sessionMs);
   if (totalXP <= 0) return 0;
 
-  addPlayerXPFromStudy(totalXP);
-  addPetXPFromStudy(totalXP);
+  const xpResult = addPlayerXPFromStudy(totalXP);
+  addPetXPFromStudy(xpResult.modifiedAmount);
 
-  const totalSkillXP = (parseInt(localStorage.getItem('totalSkillXP')) || 0) + totalXP;
+  const totalSkillXP = (parseInt(localStorage.getItem('totalSkillXP')) || 0) + xpResult.modifiedAmount;
   localStorage.setItem('totalSkillXP', totalSkillXP);
 
-  return totalXP;
+  return xpResult.modifiedAmount;
 }
 
 function getCustomSkillElapsed(skill) {
