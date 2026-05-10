@@ -6,7 +6,10 @@
   <title>Fiche Personnage</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="login.css">
-  <script src="api.js" defer></script>
+  <script src="api.js"></script>
+  <script src="timeline_dafz.js"></script>
+  <script src="timeline_billaud.js"></script>
+  <script src="timeline_arthur.js"></script>
 </head>
 <body>
 
@@ -134,23 +137,6 @@
         <div class="skin-selector">
           <button class="skin-toggle" onclick="toggleSkinMenu()">SKINS ▼</button>
           <div class="skin-thumbs-wrap hidden">
-            <div class="skin-thumb" data-skin="Skin_T1" style="background-image:url('assets/character/Skin_T1/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_Eminem" style="background-image:url('assets/character/Skin_Eminem/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_Pokemon" style="background-image:url('assets/character/Skin_Pokemon/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_JJK" style="background-image:url('assets/character/Skin_JJK/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_OP" style="background-image:url('assets/character/Skin_OP/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_Snk" style="background-image:url('assets/character/Skin_Snk/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_RM" style="background-image:url('assets/character/Skin_RM/moove1.png')"></div>
-            <div class="skin-thumb" data-skin="Skin_ronin" style="background-image:url('assets/character/Skin_ronin/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_got" style="background-image:url('assets/character/Skin_got/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_backpacker" style="background-image:url('assets/character/Skin_backpacker/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_quilby" style="background-image:url('assets/character/Skin_quilby/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_zoro" style="background-image:url('assets/character/Skin_zoro/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_liche" style="background-image:url('assets/character/Skin_liche/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_imu" style="background-image:url('assets/character/Skin_imu/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_carlsen" style="background-image:url('assets/character/Skin_carlsen/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_iop" style="background-image:url('assets/character/Skin_iop/moove1.png')"></div>
-			<div class="skin-thumb" data-skin="Skin_xelor" style="background-image:url('assets/character/Skin_xelor/moove1.png')"></div>
           </div>
         </div>
 
@@ -158,30 +144,6 @@
         <div class="bg-selector">
           <button class="bg-toggle-btn" onclick="toggleBGMenu()">Background ▼</button>
           <div class="bg-thumbs-wrap hidden">
-            <div class="bg-thumb" data-bg1="assets/background/bg1_frame1.png" data-bg2="assets/background/bg1_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg2_frame1.png" data-bg2="assets/background/bg2_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg3_frame1.png" data-bg2="assets/background/bg3_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg4_frame1.png" data-bg2="assets/background/bg4_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg5_frame1.png" data-bg2="assets/background/bg5_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg6_frame1.png" data-bg2="assets/background/bg6_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg7_frame1.png" data-bg2="assets/background/bg7_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg8_frame1.png" data-bg2="assets/background/bg8_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg9_frame1.png" data-bg2="assets/background/bg9_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg10_frame1.png" data-bg2="assets/background/bg10_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg11_frame1.png" data-bg2="assets/background/bg11_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg12_frame1.png" data-bg2="assets/background/bg12_frame2.png"></div>
-            <div class="bg-thumb" data-bg1="assets/background/bg13_frame1.png" data-bg2="assets/background/bg13_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg14_frame1.png" data-bg2="assets/background/bg14_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg15_frame1.png" data-bg2="assets/background/bg15_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg16_frame1.png" data-bg2="assets/background/bg16_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg17_frame1.png" data-bg2="assets/background/bg17_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg18_frame1.png" data-bg2="assets/background/bg18_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg19_frame1.png" data-bg2="assets/background/bg19_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg20_frame1.png" data-bg2="assets/background/bg20_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg21_frame1.png" data-bg2="assets/background/bg21_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg22_frame1.png" data-bg2="assets/background/bg22_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg23_frame1.png" data-bg2="assets/background/bg23_frame2.png"></div>
-			<div class="bg-thumb" data-bg1="assets/background/bg24_frame1.png" data-bg2="assets/background/bg24_frame2.png"></div>
           </div>
         </div>
 
