@@ -1236,3 +1236,10 @@ window.addEventListener('load', async () => {
     if (savedSkin) setSkin(savedSkin);
   }
 });
+
+// Afficher le pseudo du joueur dans le name tag
+const nameTag = document.getElementById('char-name-tag');
+if (nameTag) {
+  const username = localStorage.getItem('_username') || 'Joueur';
+  nameTag.textContent = username;
+}
