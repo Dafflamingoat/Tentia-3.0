@@ -572,6 +572,25 @@ body {
   align-items: center;
 }
 
+.journal-hygiene {
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: #111;
+  color: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.journal-hygiene-btn {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
 #journal-games {
   width: 60px;
   text-align: center;
@@ -635,6 +654,71 @@ body {
 #journal-date {
 	min-width: 120px;
 	text-align: center;
+}
+
+.daily-health-edit-content {
+  gap: 10px;
+}
+
+.daily-health-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #111;
+  border: 1px solid var(--border);
+}
+
+.daily-health-edit-label {
+  color: var(--gold-light);
+  font-weight: bold;
+}
+
+.daily-health-edit-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.daily-health-edit-options label,
+.daily-health-edit-numbers label {
+  color: #eee;
+  font-size: 10px;
+}
+
+.daily-health-edit-numbers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daily-health-edit-input {
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px;
+  background: #111;
+  border: 1px solid var(--border);
+  color: #fff;
+  font-family: monospace;
+}
+
+.daily-health-edit-preview {
+  padding: 8px;
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  color: var(--gold-light);
+  text-align: center;
+  font-weight: bold;
+}
+
+.daily-health-edit-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daily-health-edit-submit {
+  background: #4caf50;
 }
 
 /* PET */

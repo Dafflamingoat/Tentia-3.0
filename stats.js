@@ -1190,6 +1190,10 @@ const resetSkillsBtn = document.getElementById('reset-skills');
 const journalBtn = document.getElementById('open-journal');
 const journalPopup = document.getElementById('journal-popup');
 const closeJournal = document.getElementById('close-journal');
+const openDailyHealthEditBtn = document.getElementById('open-daily-health-edit');
+const dailyHealthEditPopup = document.getElementById('daily-health-edit-popup');
+const dailyHealthEditForm = document.getElementById('daily-health-edit-form');
+const closeDailyHealthEditBtn = document.getElementById('close-daily-health-edit');
 
 const petBtn = document.getElementById('open-pet');
 const petPopup = document.getElementById('pet-popup');
@@ -1934,6 +1938,137 @@ function isToday(date) {
   return formatDate(date) === formatDate(new Date());
 }
 
+const DAILY_HEALTH_KEY = 'dailyHealthLogs';
+const DAILY_HEALTH_MIN_DELTA = -20;
+const MAX_HP = 100;
+
+function readJSONStorage(key, fallback = {}) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function getDailyHealthLogs() {
+  return readJSONStorage(DAILY_HEALTH_KEY, {});
+}
+
+function saveDailyHealthLogs(logs) {
+  localStorage.setItem(DAILY_HEALTH_KEY, JSON.stringify(logs));
+}
+
+function getCheckedDailyHealthEditValue(name) {
+  const input = document.querySelector(`input[name="${name}"]:checked`);
+  return input ? Number(input.value) : 0;
+}
+
+function calculateDailyHealthEditImpact() {
+  const sleep = getCheckedDailyHealthEditValue('edit-sleep');
+  const food = getCheckedDailyHealthEditValue('edit-food');
+  const cigarettes = Math.max(0, parseInt(document.getElementById('edit-daily-cigarettes')?.value, 10) || 0);
+  const alcohol = Math.max(0, parseInt(document.getElementById('edit-daily-alcohol')?.value, 10) || 0);
+  const rawDelta = sleep + food - cigarettes - alcohol * 2;
+  const delta = Math.max(rawDelta, DAILY_HEALTH_MIN_DELTA);
+
+  return { sleep, food, cigarettes, alcohol, rawDelta, delta };
+}
+
+function setDailyHealthEditRadio(name, value) {
+  const radio = document.querySelector(`input[name="${name}"][value="${Number(value) || 0}"]`);
+  if (radio) radio.checked = true;
+}
+
+function updateDailyHealthEditPreview() {
+  const preview = document.getElementById('daily-health-edit-preview');
+  if (!preview) return;
+
+  const { rawDelta, delta } = calculateDailyHealthEditImpact();
+  const capped = rawDelta !== delta ? ` (plafonne a ${delta})` : '';
+  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}`;
+}
+
+function getHygieneEntryForKey(key, journal) {
+  const logs = getDailyHealthLogs();
+  return journal[key]?.hygiene || logs[key] || null;
+}
+
+function formatHygieneSummary(entry) {
+  if (!entry) return 'Bilan hygiene : non rempli';
+
+  const delta = Number(entry.delta) || 0;
+  const sign = delta > 0 ? '+' : '';
+  return `Bilan hygiene : ${sign}${delta} PV | Sommeil ${entry.sleep}, Nourriture ${entry.food}, Cig. ${entry.cigarettes || 0}, Alcool ${entry.alcohol || 0}`;
+}
+
+function fillDailyHealthEditForm(entry) {
+  setDailyHealthEditRadio('edit-sleep', entry?.sleep ?? 0);
+  setDailyHealthEditRadio('edit-food', entry?.food ?? 0);
+
+  const cigarettesInput = document.getElementById('edit-daily-cigarettes');
+  const alcoholInput = document.getElementById('edit-daily-alcohol');
+  if (cigarettesInput) cigarettesInput.value = Math.max(0, parseInt(entry?.cigarettes, 10) || 0);
+  if (alcoholInput) alcoholInput.value = Math.max(0, parseInt(entry?.alcohol, 10) || 0);
+
+  updateDailyHealthEditPreview();
+}
+
+function openDailyHealthEditPopup() {
+  if (!dailyHealthEditPopup) return;
+  if (!isToday(currentDate)) return;
+
+  saveJournal();
+  const key = formatDate(currentDate);
+  const journal = readJSONStorage('journal', {});
+  const entry = getHygieneEntryForKey(key, journal);
+
+  fillDailyHealthEditForm(entry);
+  dailyHealthEditPopup.classList.add('active');
+}
+
+function closeDailyHealthEditPopup() {
+  if (dailyHealthEditPopup) dailyHealthEditPopup.classList.remove('active');
+}
+
+function saveDailyHealthEditEntry() {
+  const key = formatDate(currentDate);
+  const journal = readJSONStorage('journal', {});
+  updateCurrentDayElo(journal);
+  const entry = ensureJournalEntry(journal, key);
+  const logs = getDailyHealthLogs();
+  const previousEntry = entry.hygiene || logs[key] || null;
+  const previousDelta = Number(previousEntry?.delta) || 0;
+  const impact = calculateDailyHealthEditImpact();
+  const currentHP = Math.max(0, Math.min(parseInt(localStorage.getItem('hp'), 10) || 0, MAX_HP));
+  const hpCorrection = impact.delta - previousDelta;
+  const hpAfterEdit = Math.max(0, Math.min(currentHP + hpCorrection, MAX_HP));
+
+  const hygieneEntry = {
+    ...impact,
+    hpCorrection,
+    previousDelta,
+    hpBeforeEdit: currentHP,
+    hpAfter: hpAfterEdit,
+    createdAt: previousEntry?.createdAt || new Date().toISOString(),
+    editedAt: new Date().toISOString()
+  };
+
+  entry.hygiene = hygieneEntry;
+  journal[key] = entry;
+  logs[key] = hygieneEntry;
+
+  localStorage.setItem('hp', hpAfterEdit);
+  localStorage.setItem('journal', JSON.stringify(journal));
+  saveDailyHealthLogs(logs);
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ hp: hpAfterEdit, journal });
+  }
+
+  loadJournal();
+  closeDailyHealthEditPopup();
+}
+
 function ensureJournalEntry(journal, key) {
   if (journal[key]) {
     if (typeof journal[key].eloEnd !== 'number') {
@@ -1996,6 +2131,14 @@ function loadJournal() {
     `${entry.eloStart} → ${eloEnd} (${diff >= 0 ? '+' : ''}${diff})`;
 
   document.getElementById('journal-date').textContent = displayDate(currentDate);
+
+  const hygieneSummary = document.getElementById('journal-hygiene-summary');
+  if (hygieneSummary) {
+    hygieneSummary.textContent = formatHygieneSummary(getHygieneEntryForKey(key, journal));
+  }
+  if (openDailyHealthEditBtn) {
+    openDailyHealthEditBtn.style.display = isToday(currentDate) ? '' : 'none';
+  }
 
   updateNextDayButton();
   localStorage.setItem('journal', JSON.stringify(journal));
@@ -2250,6 +2393,30 @@ if (journalText) {
 if (journalGames) {
   journalGames.addEventListener('input', saveJournal);
   journalGames.addEventListener('change', saveJournal);
+}
+
+if (openDailyHealthEditBtn) {
+  openDailyHealthEditBtn.addEventListener('click', openDailyHealthEditPopup);
+}
+
+if (dailyHealthEditForm) {
+  dailyHealthEditForm.addEventListener('input', updateDailyHealthEditPreview);
+  dailyHealthEditForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveDailyHealthEditEntry();
+  });
+}
+
+if (closeDailyHealthEditBtn) {
+  closeDailyHealthEditBtn.addEventListener('click', closeDailyHealthEditPopup);
+}
+
+if (dailyHealthEditPopup) {
+  dailyHealthEditPopup.addEventListener('click', (event) => {
+    if (event.target === dailyHealthEditPopup) {
+      closeDailyHealthEditPopup();
+    }
+  });
 }
 
 // Sauvegarder aussi à la fermeture du popup journal

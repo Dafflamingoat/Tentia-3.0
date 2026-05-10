@@ -86,8 +86,56 @@
       📈 Elo : <span id="journal-elo"></span>
     </div>
 
+    <div class="journal-hygiene">
+      <span id="journal-hygiene-summary">Bilan hygiene : non rempli</span>
+      <button class="profile-btn journal-hygiene-btn" id="open-daily-health-edit" type="button">Modifier</button>
+    </div>
+
     <button class="popup-close" id="close-journal">Fermer</button>
   </div>
+</div>
+
+<!-- POPUP Bilan hygiene -->
+<div class="popup-overlay" id="daily-health-edit-popup">
+  <form class="popup-content daily-health-edit-content" id="daily-health-edit-form">
+    <h3>Bilan hygiene</h3>
+
+    <div class="daily-health-edit-row">
+      <span class="daily-health-edit-label">Sommeil</span>
+      <div class="daily-health-edit-options">
+        <label><input type="radio" name="edit-sleep" value="-1"> Pas bon</label>
+        <label><input type="radio" name="edit-sleep" value="0" checked> Moyen</label>
+        <label><input type="radio" name="edit-sleep" value="1"> Bon</label>
+      </div>
+    </div>
+
+    <div class="daily-health-edit-row">
+      <span class="daily-health-edit-label">Nourriture</span>
+      <div class="daily-health-edit-options">
+        <label><input type="radio" name="edit-food" value="-1"> Pas bon</label>
+        <label><input type="radio" name="edit-food" value="0" checked> Moyen</label>
+        <label><input type="radio" name="edit-food" value="1"> Bon</label>
+      </div>
+    </div>
+
+    <div class="daily-health-edit-numbers">
+      <label>
+        Cigarettes
+        <input class="daily-health-edit-input" id="edit-daily-cigarettes" type="number" min="0" max="99" value="0">
+      </label>
+      <label>
+        Alcool
+        <input class="daily-health-edit-input" id="edit-daily-alcohol" type="number" min="0" max="99" value="0">
+      </label>
+    </div>
+
+    <div class="daily-health-edit-preview" id="daily-health-edit-preview">Impact : 0 PV</div>
+
+    <div class="daily-health-edit-actions">
+      <button class="popup-close" id="close-daily-health-edit" type="button">Fermer</button>
+      <button class="popup-close daily-health-edit-submit" type="submit">Valider</button>
+    </div>
+  </form>
 </div>
 
 <!-- POPUP Familier -->
