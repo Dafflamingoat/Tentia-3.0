@@ -120,8 +120,24 @@ async function getStravaProfile(userId) {
     .eq('user_id', userId)
     .single();
 
-  if (error) throw error;
-  return data;
+  if (!error) return data;
+
+  const missingRewardColumns = /strava_rewarded_activities|strava_daily_pv/i.test(error.message || '');
+  if (!missingRewardColumns) throw error;
+
+  const fallback = await supabaseAdmin
+    .from('profiles')
+    .select('hp,strava_athlete,strava_access_token,strava_refresh_token,strava_token_expires_at')
+    .eq('user_id', userId)
+    .single();
+
+  if (fallback.error) throw fallback.error;
+  return {
+    ...fallback.data,
+    strava_rewarded_activities: {},
+    strava_daily_pv: {},
+    _missingStravaRewardColumns: true
+  };
 }
 
 function getActivityDayKey(activity) {
@@ -346,6 +362,15 @@ router.post('/claim-pv', requireAuth, async (req, res) => {
     const profile = await getStravaProfile(req.user.id);
     const accessToken = await getValidAccessToken(req.user.id, profile);
     if (!accessToken) return res.json({ connected: false, hpDelta: 0, claimed: [] });
+    if (profile._missingStravaRewardColumns) {
+      return res.status(409).json({
+        error: 'Migration Strava PV manquante',
+        sql: [
+          "alter table profiles add column if not exists strava_rewarded_activities jsonb default '{}'::jsonb;",
+          "alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;"
+        ]
+      });
+    }
 
     const weekStart = Math.floor(getWeekStart().getTime() / 1000);
     const activities = await fetchRecentActivities(accessToken, weekStart);

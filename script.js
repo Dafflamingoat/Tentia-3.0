@@ -706,8 +706,37 @@ async function loadStravaSummary() {
   }
 }
 
+async function claimStravaPv() {
+  if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) return;
+
+  try {
+    const resp = await fetch('/api/strava/claim-pv', {
+      method: 'POST',
+      headers: getTentiaAuthHeaders()
+    });
+    if (resp.status === 409) {
+      console.warn('Migration PV Strava manquante.');
+      return;
+    }
+    if (!resp.ok) return;
+
+    const result = await resp.json();
+    if (!result.connected || !result.hpDelta) return;
+
+    hp = result.hpAfter;
+    localStorage.setItem('hp', hp);
+    updateHPUI();
+    console.log(`+${result.hpDelta} PV Strava`);
+  } catch (err) {
+    console.warn('Erreur attribution PV Strava :', err);
+  }
+}
+
 initStravaActivitySelect();
-window.addEventListener('tentia:profileReady', loadStravaSummary);
+window.addEventListener('tentia:profileReady', () => {
+  loadStravaSummary();
+  claimStravaPv();
+});
 loadStravaSummary();
 
 function updateEloBar(elo, noAccount = false) {
