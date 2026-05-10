@@ -613,25 +613,39 @@ function updateStravaUI(status = {}) {
   const node = document.getElementById('skill-strava');
   const bar = document.getElementById('bar-strava');
   const label = document.getElementById('val-strava');
-  const button = document.getElementById('btn-strava-connect');
-  if (!node || !bar || !label || !button) return;
+  const summary = document.getElementById('strava-summary');
+  if (!node || !bar || !label) return;
 
   const connected = Boolean(status.connected);
+  const totals = status.summary?.totals || {};
+  const activities = Number(totals.activities || 0);
+  const distanceKm = (Number(totals.distance || 0) / 1000);
+  const movingHours = Number(totals.moving_time || 0) / 3600;
+  const progress = connected ? Math.min((distanceKm / 50) * 100, 100) : 0;
+
   node.classList.toggle('connected', connected);
-  bar.style.width = connected ? '100%' : '0%';
-  label.textContent = connected ? (status.athleteName || 'Connecte') : 'Non connecte';
-  button.textContent = connected ? 'Reconnecter' : 'Connexion';
-  button.disabled = false;
+  bar.style.width = `${progress}%`;
+
+  if (!connected) {
+    label.textContent = 'Non connecte';
+    if (summary) summary.textContent = 'Dashboard > Parametres';
+    return;
+  }
+
+  label.textContent = `${distanceKm.toFixed(1)} km`;
+  if (summary) {
+    summary.textContent = `${activities} sortie${activities > 1 ? 's' : ''} cette semaine - ${movingHours.toFixed(1)} h`;
+  }
 }
 
-async function loadStravaStatus() {
+async function loadStravaSummary() {
   if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
     updateStravaUI({ connected: false });
     return;
   }
 
   try {
-    const resp = await fetch('/api/strava/status', { headers: getTentiaAuthHeaders() });
+    const resp = await fetch('/api/strava/summary', { headers: getTentiaAuthHeaders() });
     if (!resp.ok) throw new Error('Statut Strava indisponible');
     const status = await resp.json();
     updateStravaUI(status);
@@ -641,32 +655,8 @@ async function loadStravaStatus() {
   }
 }
 
-async function connectStrava() {
-  const button = document.getElementById('btn-strava-connect');
-  if (button) {
-    button.disabled = true;
-    button.textContent = '...';
-  }
-
-  try {
-    const resp = await fetch('/api/strava/connect-url', {
-      method: 'POST',
-      headers: getTentiaAuthHeaders()
-    });
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || !data.url) throw new Error(data.error || 'Connexion Strava impossible');
-    window.location.href = data.url;
-  } catch (err) {
-    console.warn('Erreur connexion Strava :', err);
-    alert(err.message || 'Connexion Strava impossible.');
-    updateStravaUI({ connected: false });
-  }
-}
-
-const stravaButton = document.getElementById('btn-strava-connect');
-if (stravaButton) stravaButton.addEventListener('click', connectStrava);
-window.addEventListener('tentia:profileReady', loadStravaStatus);
-loadStravaStatus();
+window.addEventListener('tentia:profileReady', loadStravaSummary);
+loadStravaSummary();
 
 function updateEloBar(elo, noAccount = false) {
   const maxElo = MAX_LEVELS.echec || 1000;

@@ -2462,6 +2462,8 @@ function initChessSettings() {
   const disconnectBtn = document.getElementById('settings-chess-disconnect');
 
   if (!connected) return;
+  if (connected.dataset.initialized === 'true') return;
+  connected.dataset.initialized = 'true';
 
   // Afficher l'état actuel
   const saved = localStorage.getItem('chessUsername');
@@ -2522,8 +2524,118 @@ function initChessSettings() {
 }
 
 // Initialiser quand l'onglet Paramètres est ouvert
+function getSettingsAuthHeaders() {
+  const token = localStorage.getItem('_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
+function setStravaSettingsState(status = {}) {
+  const connected = document.getElementById('settings-strava-connected');
+  const form = document.getElementById('settings-strava-form');
+  const athleteEl = document.getElementById('settings-strava-athlete');
+  const feedback = document.getElementById('settings-strava-feedback');
+  if (!connected || !form || !athleteEl) return;
+
+  if (status.connected) {
+    connected.style.display = 'flex';
+    form.style.display = 'none';
+    athleteEl.textContent = status.athleteName || 'Compte Strava connecte';
+
+    if (feedback && status.summary?.totals) {
+      const totals = status.summary.totals;
+      const km = (Number(totals.distance || 0) / 1000).toFixed(1);
+      feedback.textContent = `${km} km cette semaine - ${totals.activities || 0} sortie(s)`;
+      feedback.style.color = '#fc4c02';
+    }
+  } else {
+    connected.style.display = 'none';
+    form.style.display = 'flex';
+    athleteEl.textContent = '';
+
+    if (feedback) {
+      feedback.textContent = status.message || '';
+      feedback.style.color = 'var(--gold-dark)';
+    }
+  }
+}
+
+async function loadStravaSettingsStatus() {
+  try {
+    const resp = await fetch('/api/strava/summary', { headers: getSettingsAuthHeaders() });
+    if (!resp.ok) throw new Error('Statut Strava indisponible');
+    setStravaSettingsState(await resp.json());
+  } catch (err) {
+    console.warn('Erreur statut Strava :', err);
+    setStravaSettingsState({ connected: false, message: 'Statut Strava indisponible' });
+  }
+}
+
+function initStravaSettings() {
+  const connected = document.getElementById('settings-strava-connected');
+  const connectBtn = document.getElementById('settings-strava-connect');
+  const disconnectBtn = document.getElementById('settings-strava-disconnect');
+  const feedback = document.getElementById('settings-strava-feedback');
+  if (!connected || !connectBtn) return;
+
+  loadStravaSettingsStatus();
+  if (connected.dataset.initialized === 'true') return;
+  connected.dataset.initialized = 'true';
+
+  connectBtn.addEventListener('click', async () => {
+    connectBtn.disabled = true;
+    if (feedback) {
+      feedback.textContent = 'Redirection vers Strava...';
+      feedback.style.color = 'var(--gold-light)';
+    }
+
+    try {
+      const resp = await fetch('/api/strava/connect-url', {
+        method: 'POST',
+        headers: getSettingsAuthHeaders()
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.url) throw new Error(data.error || 'Connexion Strava impossible');
+      window.location.href = data.url;
+    } catch (err) {
+      connectBtn.disabled = false;
+      if (feedback) {
+        feedback.textContent = err.message || 'Connexion Strava impossible';
+        feedback.style.color = '#f44336';
+      }
+    }
+  });
+
+  disconnectBtn?.addEventListener('click', async () => {
+    if (!confirm('Deconnecter Strava ?')) return;
+    if (feedback) {
+      feedback.textContent = 'Deconnexion...';
+      feedback.style.color = 'var(--gold-light)';
+    }
+
+    try {
+      const resp = await fetch('/api/strava/disconnect', {
+        method: 'DELETE',
+        headers: getSettingsAuthHeaders()
+      });
+      if (!resp.ok) throw new Error('Deconnexion Strava impossible');
+      setStravaSettingsState({ connected: false, message: 'Compte Strava deconnecte' });
+    } catch (err) {
+      if (feedback) {
+        feedback.textContent = err.message || 'Deconnexion Strava impossible';
+        feedback.style.color = '#f44336';
+      }
+    }
+  });
+}
+
 document.querySelectorAll('[data-dashboard-tab="settings"]').forEach(btn => {
-  btn.addEventListener('click', initChessSettings);
+  btn.addEventListener('click', () => {
+    initChessSettings();
+    initStravaSettings();
+  });
 });
 
 // ────────────────

@@ -956,17 +956,16 @@ color: #fff;
   background: linear-gradient(90deg, #fc4c02, #ffb088);
 }
 
-.strava-connect-btn {
-  font-size: 6px;
-  padding: 6px 8px;
-  white-space: nowrap;
-}
-
 .strava-skill-node.connected #val-strava {
   color: #fff;
 }
 
-.strava-skill-node.connected .strava-connect-btn {
-  border-color: #fc4c02;
-  color: #fff;
+.strava-summary {
+  min-height: 18px;
+  font-size: 5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  text-align: center;
+  word-break: break-word;
+  width: 100%;
 }

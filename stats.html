@@ -314,6 +314,19 @@
           <div class="settings-chess-feedback" id="settings-chess-feedback"></div>
         </div>
 
+        <!-- Connexion Strava -->
+        <div class="settings-section">
+          <div class="settings-label">Strava</div>
+          <div class="settings-chess-connected" id="settings-strava-connected" style="display:none;">
+            <span id="settings-strava-athlete"></span>
+            <button class="settings-chess-disconnect" id="settings-strava-disconnect">Deconnecter</button>
+          </div>
+          <div class="settings-chess-form" id="settings-strava-form">
+            <button class="friends-add-btn strava-settings-connect" id="settings-strava-connect" type="button">Connecter Strava</button>
+          </div>
+          <div class="settings-chess-feedback" id="settings-strava-feedback"></div>
+        </div>
+
         <button class="profile-btn" id="btn-logout" style="margin-top:12px; background:#3a0a0a; border-color:#8b1a1a; color:#ff6b6b;" onclick="if(confirm('Se déconnecter ?')) window.TentiaAPI.logout()">🚪 Se déconnecter</button>
       </div>
 
