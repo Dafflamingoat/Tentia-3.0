@@ -621,10 +621,13 @@ function updateStravaUI(status = {}) {
   const distanceKm = (Number(totals.distance || 0) / 1000);
   const movingHours = Number(totals.moving_time || 0) / 3600;
   const elevation = Math.round(Number(totals.elevation_gain || 0));
+  const activityType = status.summary?.activityType || getSelectedStravaActivityType();
   const activityLabel = status.summary?.activityLabel || 'Toutes';
   const timeLabel = movingHours >= 1
     ? `${movingHours.toFixed(1)} h`
     : `${Math.round(movingHours * 60)} min`;
+  const distanceActivities = ['all', 'Run', 'Ride', 'Walk', 'Hike', 'Swim'];
+  const shouldShowDistance = distanceActivities.includes(activityType) || distanceKm > 0;
 
   node.classList.toggle('connected', connected);
 
@@ -642,7 +645,7 @@ function updateStravaUI(status = {}) {
     timeLabel
   ];
 
-  if (distanceKm > 0) lines.push(`${distanceKm.toFixed(1)} km`);
+  if (shouldShowDistance) lines.push(`${distanceKm.toFixed(1)} km`);
   if (elevation > 0) lines.push(`D+ ${elevation} m`);
 
   summary.innerHTML = lines.map(line => `<span>${line}</span>`).join('');
