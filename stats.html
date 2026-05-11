@@ -381,21 +381,20 @@
       </div>
 
       <div class="dashboard-panel" id="dashboard-tab-quests">
-        <div class="quest-dashboard">
-          <div class="quest-dashboard-card">
-            <div class="quest-dashboard-title">Validation</div>
-            <div class="quest-dashboard-stat">XP immediate : 20%</div>
-            <div class="quest-dashboard-stat">Amis : 40%</div>
-            <div class="quest-dashboard-stat">Public : 40%</div>
+        <div class="quest-validation-tabs">
+          <button class="quest-validation-tab active" type="button" data-quest-validation-tab="friends">Quetes amis</button>
+          <button class="quest-validation-tab" type="button" data-quest-validation-tab="public">Quetes publiques</button>
+        </div>
+
+        <div class="quest-validation-panel active" id="quest-validation-friends">
+          <div class="quest-validation-list" id="quest-friends-list">
+            <div class="quest-validation-empty">Aucune quete ami a valider.</div>
           </div>
-          <div class="quest-dashboard-card">
-            <div class="quest-dashboard-title">Reputation</div>
-            <div class="quest-dashboard-stat" id="quest-reputation-summary">Nouveau</div>
-            <div class="quest-dashboard-stat" id="quest-moderator-summary">Moderateur : non eligible</div>
-          </div>
-          <div class="quest-dashboard-card quest-dashboard-wide">
-            <div class="quest-dashboard-title">En attente</div>
-            <div class="quest-dashboard-stat" id="quest-pending-summary">Aucune quete soumise pour le moment.</div>
+        </div>
+
+        <div class="quest-validation-panel" id="quest-validation-public">
+          <div class="quest-validation-list" id="quest-public-list">
+            <div class="quest-validation-empty">Aucune quete publique a valider.</div>
           </div>
         </div>
       </div>

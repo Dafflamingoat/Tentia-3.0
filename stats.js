@@ -1228,6 +1228,8 @@ const questPublicSlots = document.getElementById('quest-public-slots');
 const questSubmitCancel = document.getElementById('quest-submit-cancel');
 const questSubmitConfirm = document.getElementById('quest-submit-confirm');
 const questSubmitFeedback = document.getElementById('quest-submit-feedback');
+const questValidationTabs = document.querySelectorAll('.quest-validation-tab');
+const questValidationPanels = document.querySelectorAll('.quest-validation-panel');
 
 // ────────────────
 // XP JOUEUR
@@ -1454,34 +1456,13 @@ function saveQuestPendingValidations(items) {
 }
 
 function updateQuestDashboard() {
-  const reputationSummary = document.getElementById('quest-reputation-summary');
-  const moderatorSummary = document.getElementById('quest-moderator-summary');
-  const pendingSummary = document.getElementById('quest-pending-summary');
-  const reputation = (() => {
-    try { return JSON.parse(localStorage.getItem('questReputation') || '{}'); }
-    catch (e) { return {}; }
-  })();
-  const submitted = Number(reputation.submitted || 0);
-  const accepted = Number(reputation.accepted || 0);
-  const rejected = Number(reputation.rejected || 0);
-  const totalResolved = accepted + rejected;
-  const score = totalResolved > 0 ? Math.round((accepted / totalResolved) * 100) : null;
-  const levelValue = parseInt(localStorage.getItem('level')) || 1;
-  const eligible = levelValue >= 5 && (score === null || score >= 75);
-  const pendingCount = getQuestPendingValidations().filter(item => item.status === 'pending').length;
-
-  if (reputationSummary) {
-    reputationSummary.textContent = score === null
-      ? `Nouveau | ${submitted} soumise(s)`
-      : `${score}% | ${submitted} soumise(s)`;
+  const friendsList = document.getElementById('quest-friends-list');
+  const publicList = document.getElementById('quest-public-list');
+  if (friendsList) {
+    friendsList.innerHTML = '<div class="quest-validation-empty">Aucune quete ami a valider.</div>';
   }
-  if (moderatorSummary) {
-    moderatorSummary.textContent = eligible ? 'Moderateur : eligible' : 'Moderateur : non eligible';
-  }
-  if (pendingSummary) {
-    pendingSummary.textContent = pendingCount > 0
-      ? `${pendingCount} quete(s) en attente de validation.`
-      : 'Aucune quete soumise pour le moment.';
+  if (publicList) {
+    publicList.innerHTML = '<div class="quest-validation-empty">Aucune quete publique a valider.</div>';
   }
 }
 
@@ -2626,6 +2607,16 @@ if (questSubmitPopup) {
     if (event.target === questSubmitPopup) closeQuestSubmitPopup();
   });
 }
+
+questValidationTabs.forEach((tab) => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.questValidationTab;
+    questValidationTabs.forEach(item => item.classList.toggle('active', item === tab));
+    questValidationPanels.forEach((panel) => {
+      panel.classList.toggle('active', panel.id === `quest-validation-${target}`);
+    });
+  });
+});
 
 if (statsToggle && statsBox) {
   statsToggle.addEventListener('click', () => {
