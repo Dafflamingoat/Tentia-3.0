@@ -5,6 +5,9 @@ const { requireAuth } = require('../middleware/auth');
 
 router.use(requireAuth);
 
+const FRIEND_UNLOCK_DELAY_MS = 48 * 60 * 60 * 1000;
+const AUTO_CLOSE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
+
 function normalizePublicSlots(value) {
   const slots = parseInt(value, 10) || 0;
   return Math.max(0, Math.min(slots, 4));
@@ -197,12 +200,19 @@ async function getValidationVotes(validationId) {
   return data || [];
 }
 
-async function evaluateValidation(validation) {
+function isOlderThan(value, delayMs) {
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && Date.now() - time >= delayMs;
+}
+
+async function evaluateValidation(validation, options = {}) {
   const votes = await getValidationVotes(validation.id);
   const friendVotes = votes.filter(vote => vote.vote_scope === 'friend');
   const publicVotes = votes.filter(vote => vote.vote_scope === 'public');
   const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
   const publicSlots = Number(validation.public_slots || 0);
+  const forceFriend = options.forceFriend === true;
+  const forcePublic = options.forcePublic === true;
   const updates = {};
   let xpDelta = 0;
 
@@ -210,17 +220,19 @@ async function evaluateValidation(validation) {
     const yes = friendVotes.filter(vote => vote.vote_value).length;
     const no = friendVotes.filter(vote => !vote.vote_value).length;
     const majority = Math.floor(friendCount / 2) + 1;
-    const closed = yes >= majority || no >= majority || yes + no >= friendCount;
+    const closed = forceFriend || yes >= majority || no >= majority || yes + no >= friendCount;
 
     if (closed) {
-      updates.friend_status = yes >= majority ? 'accepted' : 'rejected';
+      updates.friend_status = forceFriend
+        ? (yes > no ? 'accepted' : 'rejected')
+        : (yes >= majority ? 'accepted' : 'rejected');
       xpDelta += updates.friend_status === 'accepted'
         ? Number(validation.friend_xp || 0)
         : Number(validation.fallback_xp || 0);
     }
   }
 
-  if (publicSlots > 0 && validation.public_status === 'pending' && publicVotes.length >= publicSlots) {
+  if (publicSlots > 0 && validation.public_status === 'pending' && (forcePublic || publicVotes.length >= publicSlots)) {
     const publicAward = calculatePublicAwardXP(validation, publicVotes);
     updates.public_status = publicAward > 0 ? 'accepted' : 'rejected';
     xpDelta += publicAward;
@@ -250,6 +262,21 @@ async function evaluateValidation(validation) {
   }
 
   return { updates, finalized, award };
+}
+
+async function closeExpiredPendingValidations() {
+  const expiryDate = new Date(Date.now() - AUTO_CLOSE_DELAY_MS).toISOString();
+  const { data, error } = await supabaseAdmin
+    .from('quest_validations')
+    .select('*')
+    .eq('status', 'pending')
+    .lte('created_at', expiryDate)
+    .limit(50);
+
+  if (error) throw error;
+  for (const validation of data || []) {
+    await evaluateValidation(validation, { forceFriend: true, forcePublic: true });
+  }
 }
 
 router.post('/validations', async (req, res) => {
@@ -300,6 +327,7 @@ router.post('/validations', async (req, res) => {
 
 router.get('/friends', async (req, res) => {
   try {
+    await closeExpiredPendingValidations();
     const votedIds = await getVotesForUser(req.user.id);
     const { data, error } = await supabaseAdmin
       .from('quest_validations')
@@ -321,6 +349,7 @@ router.get('/friends', async (req, res) => {
 
 router.get('/public', async (req, res) => {
   try {
+    await closeExpiredPendingValidations();
     const votedIds = await getVotesForUser(req.user.id);
     const { data, error } = await supabaseAdmin
       .from('quest_validations')
@@ -347,6 +376,7 @@ router.get('/public', async (req, res) => {
 
 router.get('/mine', async (req, res) => {
   try {
+    await closeExpiredPendingValidations();
     const { data, error } = await supabaseAdmin
       .from('quest_validations')
       .select('*')
@@ -384,6 +414,8 @@ router.get('/mine', async (req, res) => {
       const no = validationVotes.filter(vote => !vote.vote_value).length;
       return {
         ...validation,
+        unlock_available: isOlderThan(validation.created_at, FRIEND_UNLOCK_DELAY_MS),
+        auto_close_at: new Date(new Date(validation.created_at).getTime() + AUTO_CLOSE_DELAY_MS).toISOString(),
         votes: {
           yes,
           no,
@@ -423,6 +455,10 @@ router.post('/validations/:id/vote', async (req, res) => {
     .single();
 
   if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
+  if (isOlderThan(validation.created_at, AUTO_CLOSE_DELAY_MS)) {
+    const evaluation = await evaluateValidation(validation, { forceFriend: true, forcePublic: true });
+    return res.status(409).json({ error: 'Cette quete vient d etre cloturee automatiquement', ...evaluation });
+  }
   if (validation.owner_user_id === req.user.id) return res.status(400).json({ error: 'Impossible de voter pour sa propre quete' });
 
   if (scope === 'friend') {
@@ -465,6 +501,61 @@ router.post('/validations/:id/vote', async (req, res) => {
     const yes = scopeVotes.filter(item => item.vote_value).length;
     const no = scopeVotes.filter(item => !item.vote_value).length;
     res.json({ vote, tally: { yes, no }, ...evaluation });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/validations/:id/open-public', async (req, res) => {
+  const validationId = req.params.id;
+
+  const { data: validation, error: validationError } = await supabaseAdmin
+    .from('quest_validations')
+    .select('*')
+    .eq('id', validationId)
+    .eq('owner_user_id', req.user.id)
+    .eq('status', 'pending')
+    .single();
+
+  if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
+  if (!isOlderThan(validation.created_at, FRIEND_UNLOCK_DELAY_MS)) {
+    return res.status(403).json({ error: 'Deblocage disponible apres 48h' });
+  }
+
+  try {
+    const votes = await getValidationVotes(validationId);
+    const friendVotes = votes.filter(vote => vote.vote_scope === 'friend').length;
+    const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
+    const missingFriendVotes = Math.max(0, friendCount - friendVotes);
+    const publicVotes = votes.filter(vote => vote.vote_scope === 'public').length;
+    const nextPublicSlots = Math.max(
+      publicVotes,
+      Math.min(4, Number(validation.public_slots || 0) + missingFriendVotes)
+    );
+    const publicStatus = nextPublicSlots > publicVotes ? 'pending' : validation.public_status;
+    const updatedValidation = {
+      ...validation,
+      public_slots: nextPublicSlots,
+      public_status: nextPublicSlots > 0 ? publicStatus : 'none'
+    };
+
+    const { error } = await supabaseAdmin
+      .from('quest_validations')
+      .update({
+        public_slots: updatedValidation.public_slots,
+        public_status: updatedValidation.public_status
+      })
+      .eq('id', validationId);
+
+    if (error) throw error;
+
+    const evaluation = await evaluateValidation(updatedValidation, { forceFriend: true });
+    res.json({
+      validation: updatedValidation,
+      missing_friend_votes: missingFriendVotes,
+      added_public_slots: nextPublicSlots - Number(validation.public_slots || 0),
+      ...evaluation
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
