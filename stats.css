@@ -1531,26 +1531,51 @@ body {
   gap: 12px;
 }
 
-.quest-submit-friends {
+.quest-submit-friends,
+.quest-submit-moderators {
   display: flex;
   flex-direction: column;
   gap: 6px;
   height: 74px;
   padding: 6px;
   overflow-y: auto;
-  border: 1px solid rgba(255, 40, 40, 0.55);
-  background: #151515;
+  border: 1px solid rgba(200,163,44,0.3);
+  background: #111;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) #111;
 }
 
 .quest-submit-friend {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px;
-  background: #1b1b1b;
-  border: 1px solid rgba(200,163,44,0.25);
+  gap: 8px;
+  min-height: 22px;
+  padding: 5px 6px;
+  background: #1a1a1a;
+  border: 1px solid rgba(200,163,44,0.28);
   color: #eee;
   font-size: 9px;
+}
+
+.quest-submit-friend input {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  flex: 0 0 12px;
+  background: #050505;
+  border: 2px solid #000;
+  box-shadow: inset 0 0 0 1px #444;
+  cursor: pointer;
+}
+
+.quest-submit-friend input:checked {
+  background: var(--gold-light);
+  box-shadow: inset 0 0 0 2px #111, 0 0 5px rgba(255,215,0,0.45);
+}
+
+.quest-submit-friend input:disabled {
+  cursor: not-allowed;
 }
 
 .quest-submit-friend.disabled {
@@ -1566,14 +1591,12 @@ body {
 
 .quest-submit-select {
   width: 100%;
-  height: 88px;
   background: #111;
-  border: 1px solid rgba(255,215,0,0.65);
+  border: 1px solid var(--border);
   color: #fff;
   padding: 7px;
   font-family: inherit;
   font-size: 10px;
-  overflow-y: auto;
 }
 
 .quest-submit-select:disabled {

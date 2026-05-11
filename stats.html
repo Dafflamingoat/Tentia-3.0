@@ -422,16 +422,20 @@
           <div class="quest-submit-friends" id="quest-submit-friends"></div>
         </div>
         <div>
-          <label class="quest-submit-label" for="quest-public-slots">Moderateurs publics</label>
-          <select class="quest-submit-select" id="quest-public-slots" size="4">
-            <option value="1">1 public</option>
-            <option value="2">2 publics</option>
-            <option value="3">3 publics</option>
-            <option value="4">4 publics</option>
-          </select>
+          <div class="quest-submit-label">Moderateurs</div>
+          <div class="quest-submit-moderators" id="quest-submit-moderators">
+            <div class="quest-submit-note">Aucun moderateur eligible pour le moment.</div>
+          </div>
         </div>
       </div>
-      <div class="quest-submit-note">Choisis soit des amis, soit des moderateurs publics. Le second choix se verrouille automatiquement.</div>
+      <label class="quest-submit-label" for="quest-public-slots">Nombre de votes publics</label>
+      <select class="quest-submit-select" id="quest-public-slots">
+        <option value="1">1 public</option>
+        <option value="2">2 publics</option>
+        <option value="3">3 publics</option>
+        <option value="4">4 publics</option>
+      </select>
+      <div class="quest-submit-note">Choisis soit des amis, soit une validation publique/moderateur. Le second choix se verrouille automatiquement.</div>
     </div>
 
     <div class="quest-submit-actions">

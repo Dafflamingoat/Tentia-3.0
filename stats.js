@@ -1224,6 +1224,7 @@ const dashboardPhotoPlaceholder = document.getElementById('dashboard-photo-place
 const questSubmitPopup = document.getElementById('quest-submit-popup');
 const questSubmitSummary = document.getElementById('quest-submit-summary');
 const questSubmitFriends = document.getElementById('quest-submit-friends');
+const questSubmitModerators = document.getElementById('quest-submit-moderators');
 const questPublicSlots = document.getElementById('quest-public-slots');
 const questSubmitCancel = document.getElementById('quest-submit-cancel');
 const questSubmitConfirm = document.getElementById('quest-submit-confirm');
@@ -1689,20 +1690,54 @@ function renderQuestSubmitFriends(friends = []) {
   });
 }
 
+function renderQuestSubmitModerators(moderators = []) {
+  if (!questSubmitModerators) return;
+  questSubmitModerators.innerHTML = '';
+
+  if (!moderators.length) {
+    questSubmitModerators.innerHTML = '<div class="quest-submit-note">Aucun moderateur eligible pour le moment.</div>';
+    return;
+  }
+
+  moderators.forEach((moderator) => {
+    const label = document.createElement('label');
+    label.className = 'quest-submit-friend quest-submit-moderator';
+    label.innerHTML = `
+      <input type="checkbox" value="${moderator.user_id}">
+      <span>${escapeHTML(moderator.username)}</span>
+    `;
+    questSubmitModerators.appendChild(label);
+  });
+
+  questSubmitModerators.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', updateQuestSubmitPublicState);
+  });
+}
+
 function updateQuestSubmitPublicState() {
   const selectedFriends = getSelectedQuestSubmitFriendIds();
   const publicSelected = questPublicSlots && parseInt(questPublicSlots.value, 10) > 0;
   const friendInputs = questSubmitFriends
     ? [...questSubmitFriends.querySelectorAll('input[type="checkbox"]')]
     : [];
+  const moderatorInputs = questSubmitModerators
+    ? [...questSubmitModerators.querySelectorAll('input[type="checkbox"]')]
+    : [];
+  const selectedModerators = moderatorInputs.filter(input => input.checked);
 
   if (questPublicSlots) {
-    questPublicSlots.disabled = selectedFriends.length > 0;
-    if (selectedFriends.length > 0) questPublicSlots.selectedIndex = -1;
+    questPublicSlots.disabled = selectedFriends.length > 0 || selectedModerators.length > 0;
+    if (questPublicSlots.disabled) questPublicSlots.selectedIndex = -1;
   }
 
   friendInputs.forEach((input) => {
-    if (!input.checked) input.disabled = Boolean(publicSelected);
+    if (!input.checked) input.disabled = Boolean(publicSelected || selectedModerators.length);
+    const label = input.closest('.quest-submit-friend');
+    if (label) label.classList.toggle('disabled', input.disabled);
+  });
+
+  moderatorInputs.forEach((input) => {
+    if (!input.checked) input.disabled = selectedFriends.length > 0 || Boolean(publicSelected);
     const label = input.closest('.quest-submit-friend');
     if (label) label.classList.toggle('disabled', input.disabled);
   });
@@ -1728,6 +1763,7 @@ async function openQuestSubmitPopup() {
     questPublicSlots.disabled = false;
   }
   renderQuestSubmitFriends([]);
+  renderQuestSubmitModerators([]);
   questSubmitPopup.classList.add('active');
 
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
