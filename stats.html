@@ -323,10 +323,53 @@
       </div>
 
       <div class="dashboard-panel active" id="dashboard-tab-profile">
-        <div class="dashboard-lines">
-          <div class="dashboard-line"></div>
-          <div class="dashboard-line short"></div>
-          <div class="dashboard-line"></div>
+        <div class="profile-subtabs">
+          <button class="profile-subtab active" type="button" data-profile-subtab="info">Informations</button>
+          <button class="profile-subtab" type="button" data-profile-subtab="reputation">Reputations</button>
+        </div>
+
+        <div class="profile-subpanel active" id="profile-subtab-info">
+          <div class="dashboard-lines">
+            <div class="dashboard-line"></div>
+            <div class="dashboard-line short"></div>
+            <div class="dashboard-line"></div>
+          </div>
+        </div>
+
+        <div class="profile-subpanel" id="profile-subtab-reputation">
+          <div class="reputation-card">
+            <div class="reputation-tier">
+              <img id="reputation-tier-img" src="assets/paliers/palier1.png" alt="Palier reputation">
+              <div>
+                <div class="reputation-title">Reputation globale</div>
+                <div class="reputation-score" id="reputation-score">0%</div>
+              </div>
+            </div>
+
+            <div class="reputation-bars">
+              <div class="reputation-line">
+                <div class="reputation-line-top">
+                  <span>Taux de validation</span>
+                  <span id="reputation-accept-rate">0%</span>
+                </div>
+                <div class="reputation-bar-wrap">
+                  <div class="reputation-bar reputation-bar-accept" id="reputation-accept-bar"></div>
+                </div>
+              </div>
+
+              <div class="reputation-line">
+                <div class="reputation-line-top">
+                  <span>Taux de refus</span>
+                  <span id="reputation-reject-rate">0%</span>
+                </div>
+                <div class="reputation-bar-wrap">
+                  <div class="reputation-bar reputation-bar-reject" id="reputation-reject-bar"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="reputation-meta" id="reputation-meta">0 quete jugee</div>
+          </div>
         </div>
       </div>
 

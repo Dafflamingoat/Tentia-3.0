@@ -147,6 +147,36 @@ async function appendQuestHistory(userId, questText, statusLabel) {
   return history;
 }
 
+async function updateQuestReputation(userId, accepted) {
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('quest_reputation')
+    .eq('user_id', userId)
+    .single();
+
+  if (profileError) throw profileError;
+
+  const current = profile.quest_reputation && typeof profile.quest_reputation === 'object'
+    ? profile.quest_reputation
+    : {};
+  const next = {
+    submitted: Number(current.submitted || 0),
+    accepted: Number(current.accepted || 0) + (accepted ? 1 : 0),
+    rejected: Number(current.rejected || 0) + (accepted ? 0 : 1),
+    score: null
+  };
+  const judged = next.accepted + next.rejected;
+  next.score = judged ? Number(((next.accepted / judged) * 100).toFixed(2)) : null;
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ quest_reputation: next })
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  return next;
+}
+
 async function attachOwnerNames(validations) {
   if (!validations.length) return [];
   const ownerIds = [...new Set(validations.map(item => item.owner_user_id))];
@@ -186,7 +216,8 @@ async function finalizeValidation(validation, status, statusLabel, extraUpdates 
 
   if (error) throw error;
   const quest_history = await appendQuestHistory(validation.owner_user_id, validation.quest_text, statusLabel);
-  return { validation: data, quest_history };
+  const quest_reputation = await updateQuestReputation(validation.owner_user_id, status === 'accepted');
+  return { validation: data, quest_history, quest_reputation };
 }
 
 async function getValidationVotes(validationId) {

@@ -1217,6 +1217,8 @@ const closeAvatarPopup = document.getElementById('close-avatar-popup');
 
 const dashboardTabs = document.querySelectorAll('.dashboard-tab');
 const dashboardPanels = document.querySelectorAll('.dashboard-panel');
+const profileSubtabs = document.querySelectorAll('.profile-subtab');
+const profileSubpanels = document.querySelectorAll('.profile-subpanel');
 const dashboardPhotoBtn = document.getElementById('dashboard-photo');
 const dashboardPhotoInput = document.getElementById('dashboard-photo-input');
 const dashboardPhotoImg = document.getElementById('dashboard-photo-img');
@@ -1438,6 +1440,12 @@ function syncQuestHistoryFromServer(history) {
   localStorage.setItem('questHistory', JSON.stringify(history));
 }
 
+function syncQuestReputationFromServer(reputation) {
+  if (!reputation || typeof reputation !== 'object') return;
+  localStorage.setItem('questReputation', JSON.stringify(reputation));
+  updateReputationPanel();
+}
+
 function getQuestTotalXP() {
   const discipline = parseInt(localStorage.getItem('Discipline')) || 0;
   return 5 + Math.floor(discipline / 8);
@@ -1644,6 +1652,7 @@ async function completeQuestValidationNow(validationId) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'Validation impossible');
   syncQuestHistoryFromServer(result.quest_history);
+  syncQuestReputationFromServer(result.quest_reputation);
   return result;
 }
 
@@ -2066,6 +2075,53 @@ function updateProfilePanel() {
       if (popup) popup.classList.add('active');
     };
   }
+
+  updateReputationPanel();
+}
+
+function getQuestReputation() {
+  try {
+    const reputation = JSON.parse(localStorage.getItem('questReputation') || '{}');
+    return reputation && typeof reputation === 'object' ? reputation : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function getReputationTier(score) {
+  if (score >= 90) return 4;
+  if (score >= 75) return 3;
+  if (score >= 50) return 2;
+  return 1;
+}
+
+function updateReputationPanel() {
+  const reputation = getQuestReputation();
+  const accepted = Number(reputation.accepted || 0);
+  const rejected = Number(reputation.rejected || 0);
+  const judged = accepted + rejected;
+  const acceptRate = judged ? Math.round((accepted / judged) * 100) : 0;
+  const rejectRate = judged ? Math.round((rejected / judged) * 100) : 0;
+  const score = reputation.score !== null && reputation.score !== undefined
+    ? Math.round(Number(reputation.score) || 0)
+    : acceptRate;
+  const tier = getReputationTier(score);
+
+  const tierImg = document.getElementById('reputation-tier-img');
+  const scoreEl = document.getElementById('reputation-score');
+  const acceptRateEl = document.getElementById('reputation-accept-rate');
+  const rejectRateEl = document.getElementById('reputation-reject-rate');
+  const acceptBar = document.getElementById('reputation-accept-bar');
+  const rejectBar = document.getElementById('reputation-reject-bar');
+  const meta = document.getElementById('reputation-meta');
+
+  if (tierImg) tierImg.src = `assets/paliers/palier${tier}.png`;
+  if (scoreEl) scoreEl.textContent = `${score}%`;
+  if (acceptRateEl) acceptRateEl.textContent = `${acceptRate}%`;
+  if (rejectRateEl) rejectRateEl.textContent = `${rejectRate}%`;
+  if (acceptBar) acceptBar.style.width = `${acceptRate}%`;
+  if (rejectBar) rejectBar.style.width = `${rejectRate}%`;
+  if (meta) meta.textContent = `${judged} quete${judged > 1 ? 's' : ''} jugee${judged > 1 ? 's' : ''}`;
 }
 
 // ────────────────
@@ -2778,6 +2834,18 @@ function initDashboard() {
       dashboardPanels.forEach((panel) => {
         panel.classList.toggle('active', panel.id === `dashboard-tab-${target}`);
       });
+      if (target === 'profile') updateReputationPanel();
+    });
+  });
+
+  profileSubtabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.profileSubtab;
+      profileSubtabs.forEach(item => item.classList.toggle('active', item === tab));
+      profileSubpanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === `profile-subtab-${target}`);
+      });
+      if (target === 'reputation') updateReputationPanel();
     });
   });
 
