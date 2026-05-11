@@ -1432,6 +1432,11 @@ function saveQuestHistory(questText) {
   }
 }
 
+function syncQuestHistoryFromServer(history) {
+  if (!history || typeof history !== 'object') return;
+  localStorage.setItem('questHistory', JSON.stringify(history));
+}
+
 function getQuestTotalXP() {
   const discipline = parseInt(localStorage.getItem('Discipline')) || 0;
   return 5 + Math.floor(discipline / 8);
@@ -1555,6 +1560,9 @@ function renderMyQuestValidationList(items) {
           <span>Refus ${no}</span>
         </div>
       </div>
+      <div class="quest-validation-actions">
+        <button class="quest-vote-btn yes quest-complete-now" data-id="${item.id}">Valider de suite</button>
+      </div>
     `;
     list.appendChild(row);
   });
@@ -1593,6 +1601,21 @@ async function voteQuestValidation(validationId, scope, value) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'Vote impossible');
+  if (result.finalized?.quest_history) {
+    syncQuestHistoryFromServer(result.finalized.quest_history);
+  }
+  return result;
+}
+
+async function completeQuestValidationNow(validationId) {
+  const token = localStorage.getItem('_token');
+  const response = await fetch(`/api/quests/validations/${validationId}/complete-now`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Validation impossible');
+  syncQuestHistoryFromServer(result.quest_history);
   return result;
 }
 
@@ -2722,6 +2745,19 @@ questValidationTabs.forEach((tab) => {
 
 questValidationPanels.forEach((panel) => {
   panel.addEventListener('click', async (event) => {
+    const completeButton = event.target.closest('.quest-complete-now');
+    if (completeButton) {
+      completeButton.disabled = true;
+      try {
+        await completeQuestValidationNow(completeButton.dataset.id);
+        await loadQuestValidationLists();
+      } catch (error) {
+        alert(error.message || 'Validation impossible');
+        completeButton.disabled = false;
+      }
+      return;
+    }
+
     const button = event.target.closest('.quest-vote-btn');
     if (!button) return;
 

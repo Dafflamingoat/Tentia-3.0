@@ -82,6 +82,7 @@ body {
   gap: 20px;
   padding: 20px;
   margin-top: 20px;
+  height: 430px;
 }
 
 .quest-box { flex: 0 0 35% !important; min-width: 0 !important; max-width: 35% !important; }
@@ -96,13 +97,17 @@ body {
   border: 2px solid var(--border);
   padding: 16px;
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 /* Dashboard */
 .dashboard-box {
   flex: 1;
   min-width: 300px;
-  min-height: 180px;
+  min-height: 0;
+  height: 100%;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
@@ -112,7 +117,8 @@ body {
 }
 
 .dashboard-photo {
-  min-height: 220px;
+  min-height: 0;
+  height: 100%;
   background: #111;
   border: 0;
   border-right: 2px solid var(--border);
@@ -148,6 +154,7 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .dashboard-tabs {
@@ -182,6 +189,8 @@ body {
   flex: 1;
   padding: 26px 36px;
   background: linear-gradient(180deg, #242424 0%, #1b1b1b 100%);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dashboard-panel.active {

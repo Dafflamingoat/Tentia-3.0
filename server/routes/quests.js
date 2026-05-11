@@ -26,6 +26,41 @@ function calculateQuestXpParts(totalXp) {
   };
 }
 
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getExpectedVotes(validation) {
+  const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
+  return Math.max(Number(validation.public_slots || 0), friendCount, 1);
+}
+
+async function appendQuestHistory(userId, questText, statusLabel) {
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('quest_history')
+    .eq('user_id', userId)
+    .single();
+
+  if (profileError) throw profileError;
+
+  const history = profile.quest_history && typeof profile.quest_history === 'object'
+    ? profile.quest_history
+    : {};
+  const today = getTodayKey();
+  const label = statusLabel ? `${questText} (${statusLabel})` : questText;
+  history[today] = Array.isArray(history[today]) ? history[today] : [];
+  history[today].push(label);
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ quest_history: history })
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  return history;
+}
+
 async function attachOwnerNames(validations) {
   if (!validations.length) return [];
   const ownerIds = [...new Set(validations.map(item => item.owner_user_id))];
@@ -48,6 +83,23 @@ async function getVotesForUser(userId) {
 
   if (error) throw error;
   return new Set((data || []).map(vote => vote.validation_id));
+}
+
+async function finalizeValidation(validation, status, statusLabel) {
+  const { data, error } = await supabaseAdmin
+    .from('quest_validations')
+    .update({
+      status,
+      resolved_at: new Date().toISOString()
+    })
+    .eq('id', validation.id)
+    .eq('owner_user_id', validation.owner_user_id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  const quest_history = await appendQuestHistory(validation.owner_user_id, validation.quest_text, statusLabel);
+  return { validation: data, quest_history };
 }
 
 router.post('/validations', async (req, res) => {
@@ -238,9 +290,11 @@ router.post('/validations/:id/vote', async (req, res) => {
   const yes = (votes || []).filter(item => item.vote_value).length;
   const no = (votes || []).filter(item => !item.vote_value).length;
   const updates = {};
+  let expectedVotes = 1;
 
   if (scope === 'friend') {
     const needed = (validation.friend_validator_ids || []).length;
+    expectedVotes = Math.max(needed, 1);
     if (yes + no >= needed) {
       updates.friend_status = yes > no ? 'accepted' : 'rejected';
     }
@@ -248,19 +302,44 @@ router.post('/validations/:id/vote', async (req, res) => {
 
   if (scope === 'public') {
     const needed = Number(validation.public_slots || 0);
+    expectedVotes = Math.max(needed, 1);
     if (yes + no >= needed) {
       updates.public_status = yes > no ? 'accepted' : 'rejected';
     }
   }
 
-  if (Object.keys(updates).length) {
+  let finalized = null;
+  if (yes + no >= expectedVotes) {
+    finalized = await finalizeValidation(validation, yes > no ? 'accepted' : 'rejected', yes > no ? 'acceptee' : 'refusee');
+  } else if (Object.keys(updates).length) {
     await supabaseAdmin
       .from('quest_validations')
       .update(updates)
       .eq('id', validationId);
   }
 
-  res.json({ vote, tally: { yes, no }, updates });
+  res.json({ vote, tally: { yes, no }, updates, finalized });
+});
+
+router.post('/validations/:id/complete-now', async (req, res) => {
+  const validationId = req.params.id;
+
+  const { data: validation, error: validationError } = await supabaseAdmin
+    .from('quest_validations')
+    .select('*')
+    .eq('id', validationId)
+    .eq('owner_user_id', req.user.id)
+    .eq('status', 'pending')
+    .single();
+
+  if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
+
+  try {
+    const finalized = await finalizeValidation(validation, 'accepted', 'validee de suite');
+    res.json(finalized);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;
