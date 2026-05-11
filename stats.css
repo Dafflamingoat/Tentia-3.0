@@ -325,6 +325,10 @@ body {
   background: linear-gradient(90deg, #7f1d1d, #ff7777);
 }
 
+.reputation-bar-judge {
+  background: linear-gradient(90deg, #8a6f16, #f1d66b);
+}
+
 .reputation-meta {
   grid-column: 1 / -1;
   color: var(--text-dim);

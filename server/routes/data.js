@@ -128,7 +128,7 @@ router.post('/import', async (req, res) => {
     journal:              safeJSON(ls.journal, {}),
     quests:               safeJSON(ls.quests,  []),
     quest_history:        safeJSON(ls.questHistory, {}),
-    quest_reputation:     safeJSON(ls.questReputation, { submitted: 0, accepted: 0, rejected: 0, score: null }),
+    quest_reputation:     safeJSON(ls.questReputation, { submitted: 0, accepted: 0, rejected: 0, player_score: null, judge_total: 0, judge_aligned: 0, judge_score: null, score: null }),
     dashboard_profile_photo: ls.dashboardProfilePhoto || null,
 
     total_login_days:  parseInt(ls.totalLoginDays)  || 0,

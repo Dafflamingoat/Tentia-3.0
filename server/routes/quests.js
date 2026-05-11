@@ -147,6 +147,31 @@ async function appendQuestHistory(userId, questText, statusLabel) {
   return history;
 }
 
+function normalizeQuestReputation(current = {}) {
+  const submitted = Number(current.submitted || 0);
+  const accepted = Number(current.accepted || 0);
+  const rejected = Number(current.rejected || 0);
+  const judgeTotal = Number(current.judge_total || 0);
+  const judgeAligned = Number(current.judge_aligned || 0);
+  const playerTotal = accepted + rejected;
+  const playerScore = playerTotal ? Number(((accepted / playerTotal) * 100).toFixed(2)) : null;
+  const judgeScore = judgeTotal ? Number(((judgeAligned / judgeTotal) * 100).toFixed(2)) : null;
+  const scores = [playerScore, judgeScore].filter(score => score !== null);
+
+  return {
+    submitted,
+    accepted,
+    rejected,
+    player_score: playerScore,
+    judge_total: judgeTotal,
+    judge_aligned: judgeAligned,
+    judge_score: judgeScore,
+    score: scores.length
+      ? Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2))
+      : null
+  };
+}
+
 async function updateQuestReputation(userId, accepted) {
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
@@ -159,14 +184,11 @@ async function updateQuestReputation(userId, accepted) {
   const current = profile.quest_reputation && typeof profile.quest_reputation === 'object'
     ? profile.quest_reputation
     : {};
-  const next = {
-    submitted: Number(current.submitted || 0),
+  const next = normalizeQuestReputation({
+    ...current,
     accepted: Number(current.accepted || 0) + (accepted ? 1 : 0),
-    rejected: Number(current.rejected || 0) + (accepted ? 0 : 1),
-    score: null
-  };
-  const judged = next.accepted + next.rejected;
-  next.score = judged ? Number(((next.accepted / judged) * 100).toFixed(2)) : null;
+    rejected: Number(current.rejected || 0) + (accepted ? 0 : 1)
+  });
 
   const { error } = await supabaseAdmin
     .from('profiles')
@@ -175,6 +197,56 @@ async function updateQuestReputation(userId, accepted) {
 
   if (error) throw error;
   return next;
+}
+
+async function updateJudgeReputations(validationId, accepted) {
+  const { data: votes, error: votesError } = await supabaseAdmin
+    .from('quest_validation_votes')
+    .select('voter_user_id, vote_value')
+    .eq('validation_id', validationId);
+
+  if (votesError) throw votesError;
+  if (!votes?.length) return {};
+
+  const grouped = new Map();
+  votes.forEach((vote) => {
+    if (!vote.voter_user_id) return;
+    const current = grouped.get(vote.voter_user_id) || { total: 0, aligned: 0 };
+    current.total += 1;
+    if (vote.vote_value === accepted) current.aligned += 1;
+    grouped.set(vote.voter_user_id, current);
+  });
+
+  const userIds = [...grouped.keys()];
+  const { data: profiles, error: profilesError } = await supabaseAdmin
+    .from('profiles')
+    .select('user_id, quest_reputation')
+    .in('user_id', userIds);
+
+  if (profilesError) throw profilesError;
+
+  const result = {};
+  for (const profile of profiles || []) {
+    const delta = grouped.get(profile.user_id);
+    const current = profile.quest_reputation && typeof profile.quest_reputation === 'object'
+      ? profile.quest_reputation
+      : {};
+    const next = normalizeQuestReputation({
+      ...current,
+      judge_total: Number(current.judge_total || 0) + delta.total,
+      judge_aligned: Number(current.judge_aligned || 0) + delta.aligned
+    });
+
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ quest_reputation: next })
+      .eq('user_id', profile.user_id);
+
+    if (error) throw error;
+    result[profile.user_id] = next;
+  }
+
+  return result;
 }
 
 async function attachOwnerNames(validations) {
@@ -216,8 +288,10 @@ async function finalizeValidation(validation, status, statusLabel, extraUpdates 
 
   if (error) throw error;
   const quest_history = await appendQuestHistory(validation.owner_user_id, validation.quest_text, statusLabel);
-  const quest_reputation = await updateQuestReputation(validation.owner_user_id, status === 'accepted');
-  return { validation: data, quest_history, quest_reputation };
+  const accepted = status === 'accepted';
+  const quest_reputation = await updateQuestReputation(validation.owner_user_id, accepted);
+  const judge_reputations = await updateJudgeReputations(validation.id, accepted);
+  return { validation: data, quest_history, quest_reputation, judge_reputations };
 }
 
 async function getValidationVotes(validationId) {
@@ -532,7 +606,8 @@ router.post('/validations/:id/vote', async (req, res) => {
     const scopeVotes = votes.filter(item => item.vote_scope === scope);
     const yes = scopeVotes.filter(item => item.vote_value).length;
     const no = scopeVotes.filter(item => !item.vote_value).length;
-    res.json({ vote, tally: { yes, no }, ...evaluation });
+    const voter_reputation = evaluation.finalized?.judge_reputations?.[req.user.id] || null;
+    res.json({ vote, tally: { yes, no }, voter_reputation, ...evaluation });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

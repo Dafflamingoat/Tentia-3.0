@@ -1640,6 +1640,9 @@ async function voteQuestValidation(validationId, scope, value) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'Vote impossible');
+  if (result.voter_reputation) {
+    syncQuestReputationFromServer(result.voter_reputation);
+  }
   return result;
 }
 
@@ -1856,9 +1859,12 @@ async function submitQuestValidation() {
       catch (e) { return {}; }
     })();
     const nextReputation = {
+      ...reputation,
       submitted: Number(reputation.submitted || 0) + selectedQuests.length,
       accepted: Number(reputation.accepted || 0),
       rejected: Number(reputation.rejected || 0),
+      judge_total: Number(reputation.judge_total || 0),
+      judge_aligned: Number(reputation.judge_aligned || 0),
       score: reputation.score ?? null
     };
     localStorage.setItem('questReputation', JSON.stringify(nextReputation));
@@ -2099,29 +2105,41 @@ function updateReputationPanel() {
   const reputation = getQuestReputation();
   const accepted = Number(reputation.accepted || 0);
   const rejected = Number(reputation.rejected || 0);
-  const judged = accepted + rejected;
-  const acceptRate = judged ? Math.round((accepted / judged) * 100) : 0;
-  const rejectRate = judged ? Math.round((rejected / judged) * 100) : 0;
+  const playerJudged = accepted + rejected;
+  const judgeTotal = Number(reputation.judge_total || 0);
+  const judgeAligned = Number(reputation.judge_aligned || 0);
+  const acceptRate = playerJudged ? Math.round((accepted / playerJudged) * 100) : 0;
+  const rejectRate = playerJudged ? Math.round((rejected / playerJudged) * 100) : 0;
+  const judgeRate = judgeTotal ? Math.round((judgeAligned / judgeTotal) * 100) : 0;
+  const fallbackScores = [playerJudged ? acceptRate : null, judgeTotal ? judgeRate : null].filter(value => value !== null);
   const score = reputation.score !== null && reputation.score !== undefined
     ? Math.round(Number(reputation.score) || 0)
-    : acceptRate;
+    : (fallbackScores.length
+      ? Math.round(fallbackScores.reduce((sum, value) => sum + value, 0) / fallbackScores.length)
+      : 0);
   const tier = getReputationTier(score);
 
   const tierImg = document.getElementById('reputation-tier-img');
   const scoreEl = document.getElementById('reputation-score');
   const acceptRateEl = document.getElementById('reputation-accept-rate');
   const rejectRateEl = document.getElementById('reputation-reject-rate');
+  const judgeRateEl = document.getElementById('reputation-judge-rate');
   const acceptBar = document.getElementById('reputation-accept-bar');
   const rejectBar = document.getElementById('reputation-reject-bar');
+  const judgeBar = document.getElementById('reputation-judge-bar');
   const meta = document.getElementById('reputation-meta');
 
   if (tierImg) tierImg.src = `assets/paliers/palier${tier}.png`;
   if (scoreEl) scoreEl.textContent = `${score}%`;
   if (acceptRateEl) acceptRateEl.textContent = `${acceptRate}%`;
   if (rejectRateEl) rejectRateEl.textContent = `${rejectRate}%`;
+  if (judgeRateEl) judgeRateEl.textContent = `${judgeRate}%`;
   if (acceptBar) acceptBar.style.width = `${acceptRate}%`;
   if (rejectBar) rejectBar.style.width = `${rejectRate}%`;
-  if (meta) meta.textContent = `${judged} quete${judged > 1 ? 's' : ''} jugee${judged > 1 ? 's' : ''}`;
+  if (judgeBar) judgeBar.style.width = `${judgeRate}%`;
+  if (meta) {
+    meta.textContent = `${playerJudged} quete${playerJudged > 1 ? 's' : ''} cloturee${playerJudged > 1 ? 's' : ''} | ${judgeTotal} vote${judgeTotal > 1 ? 's' : ''} juge${judgeTotal > 1 ? 's' : ''}`;
+  }
 }
 
 // ────────────────

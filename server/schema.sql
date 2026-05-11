@@ -57,7 +57,7 @@ create table if not exists profiles (
   -- Quêtes
   quests      jsonb default '[]'::jsonb,
   quest_history jsonb default '{}'::jsonb,
-  quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"score":null}'::jsonb,
+  quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"player_score":null,"judge_total":0,"judge_aligned":0,"judge_score":null,"score":null}'::jsonb,
   dashboard_profile_photo text default null,
 
   -- Compteurs HF
@@ -89,7 +89,7 @@ alter table profiles add column if not exists strava_rewarded_activities jsonb d
 alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;
 alter table profiles add column if not exists strava_daily_xp jsonb default '{}'::jsonb;
 alter table profiles add column if not exists quest_history jsonb default '{}'::jsonb;
-alter table profiles add column if not exists quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"score":null}'::jsonb;
+alter table profiles add column if not exists quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"player_score":null,"judge_total":0,"judge_aligned":0,"judge_score":null,"score":null}'::jsonb;
 alter table profiles add column if not exists xp_buffer numeric default 0;
 alter table profiles alter column total_quest_xp type numeric using total_quest_xp::numeric;
 alter table profiles add column if not exists dashboard_profile_photo text default null;
