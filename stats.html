@@ -416,20 +416,22 @@
     <div class="quest-submit-summary" id="quest-submit-summary"></div>
 
     <div class="quest-submit-section">
-      <div class="quest-submit-label">Amis validateurs</div>
-      <div class="quest-submit-friends" id="quest-submit-friends"></div>
-      <div class="quest-submit-note">Les amis valident jusqu'a 40% de l'XP. Tu peux aussi ajouter des validateurs publics.</div>
-    </div>
-
-    <div class="quest-submit-section">
-      <label class="quest-submit-label" for="quest-public-slots">Validateurs publics</label>
-      <select class="quest-submit-select" id="quest-public-slots">
-        <option value="0">0 public</option>
-        <option value="1">1 public</option>
-        <option value="2">2 publics</option>
-        <option value="3">3 publics</option>
-        <option value="4">4 publics</option>
-      </select>
+      <div class="quest-submit-validator-grid">
+        <div>
+          <div class="quest-submit-label">Amis validateurs</div>
+          <div class="quest-submit-friends" id="quest-submit-friends"></div>
+        </div>
+        <div>
+          <label class="quest-submit-label" for="quest-public-slots">Moderateurs publics</label>
+          <select class="quest-submit-select" id="quest-public-slots" size="4">
+            <option value="1">1 public</option>
+            <option value="2">2 publics</option>
+            <option value="3">3 publics</option>
+            <option value="4">4 publics</option>
+          </select>
+        </div>
+      </div>
+      <div class="quest-submit-note">Choisis soit des amis, soit des moderateurs publics. Le second choix se verrouille automatiquement.</div>
     </div>
 
     <div class="quest-submit-actions">

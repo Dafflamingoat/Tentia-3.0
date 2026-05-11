@@ -1690,8 +1690,22 @@ function renderQuestSubmitFriends(friends = []) {
 }
 
 function updateQuestSubmitPublicState() {
-  if (!questPublicSlots) return;
-  questPublicSlots.disabled = false;
+  const selectedFriends = getSelectedQuestSubmitFriendIds();
+  const publicSelected = questPublicSlots && parseInt(questPublicSlots.value, 10) > 0;
+  const friendInputs = questSubmitFriends
+    ? [...questSubmitFriends.querySelectorAll('input[type="checkbox"]')]
+    : [];
+
+  if (questPublicSlots) {
+    questPublicSlots.disabled = selectedFriends.length > 0;
+    if (selectedFriends.length > 0) questPublicSlots.selectedIndex = -1;
+  }
+
+  friendInputs.forEach((input) => {
+    if (!input.checked) input.disabled = Boolean(publicSelected);
+    const label = input.closest('.quest-submit-friend');
+    if (label) label.classList.toggle('disabled', input.disabled);
+  });
 }
 
 async function openQuestSubmitPopup() {
@@ -1710,7 +1724,7 @@ async function openQuestSubmitPopup() {
   }
   if (questSubmitFeedback) questSubmitFeedback.textContent = '';
   if (questPublicSlots) {
-    questPublicSlots.value = '1';
+    questPublicSlots.selectedIndex = -1;
     questPublicSlots.disabled = false;
   }
   renderQuestSubmitFriends([]);
@@ -1731,6 +1745,11 @@ function getSelectedQuestSubmitFriendIds() {
   return [...questSubmitFriends.querySelectorAll('input[type="checkbox"]:checked')]
     .map(input => input.value)
     .filter(Boolean);
+}
+
+function getSelectedQuestPublicSlots() {
+  if (!questPublicSlots || questPublicSlots.disabled) return 0;
+  return parseInt(questPublicSlots.value, 10) || 0;
 }
 
 async function submitQuestValidation() {
@@ -1756,7 +1775,7 @@ async function submitQuestValidation() {
 
   try {
     const friendValidatorIds = getSelectedQuestSubmitFriendIds();
-    const publicSlots = parseInt(questPublicSlots?.value, 10) || 0;
+    const publicSlots = friendValidatorIds.length ? 0 : getSelectedQuestPublicSlots();
     if (!friendValidatorIds.length && publicSlots <= 0) {
       throw new Error('Selectionne au moins un ami ou un validateur public.');
     }
@@ -2774,6 +2793,10 @@ if (questSubmitCancel) {
 
 if (questSubmitConfirm) {
   questSubmitConfirm.addEventListener('click', submitQuestValidation);
+}
+
+if (questPublicSlots) {
+  questPublicSlots.addEventListener('change', updateQuestSubmitPublicState);
 }
 
 if (questSubmitPopup) {
