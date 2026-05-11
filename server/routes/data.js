@@ -23,12 +23,13 @@ router.get('/profile', async (req, res) => {
 // Met à jour une ou plusieurs clés du profil
 router.put('/profile', async (req, res) => {
   const allowed = [
-    'xp', 'level', 'hp', 'points_left',
+    'xp', 'xp_buffer', 'level', 'hp', 'points_left',
     'force', 'intelligence', 'discipline', 'focus',
     'skills', 'selected_skin', 'selected_bg',
     'equipped_title', 'equipped_avatar', 'equipped_pet',
     'titles', 'avatars', 'skins', 'backgrounds', 'badges', 'pets',
     'badge_slots', 'achievements_claimed', 'journal', 'quests', 'quest_history',
+    'quest_reputation',
     'dashboard_profile_photo',
     'total_login_days', 'total_quests_done', 'total_quest_xp',
     'total_chess_xp', 'peak_elo', 'last_login', 'last_elo', 'current_elo',
@@ -98,6 +99,7 @@ router.post('/import', async (req, res) => {
 
   const updates = {
     xp:          parseInt(ls.xp)     || 0,
+    xp_buffer:   parseFloat(ls.xpBuffer) || 0,
     level:       parseInt(ls.level)  || 1,
     hp:          parseInt(ls.hp)     || 50,
     points_left: parseInt(ls.pointsLeft) || 0,
@@ -126,6 +128,7 @@ router.post('/import', async (req, res) => {
     journal:              safeJSON(ls.journal, {}),
     quests:               safeJSON(ls.quests,  []),
     quest_history:        safeJSON(ls.questHistory, {}),
+    quest_reputation:     safeJSON(ls.questReputation, { submitted: 0, accepted: 0, rejected: 0, score: null }),
     dashboard_profile_photo: ls.dashboardProfilePhoto || null,
 
     total_login_days:  parseInt(ls.totalLoginDays)  || 0,

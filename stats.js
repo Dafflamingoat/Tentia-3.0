@@ -1274,7 +1274,7 @@ function getHpXpMultiplier() {
 function applyHpXpModifier(amount) {
   const baseAmount = Math.max(0, Number(amount) || 0);
   const multiplier = getHpXpMultiplier();
-  const modifiedAmount = Math.max(0, Math.round(baseAmount * multiplier));
+  const modifiedAmount = Math.max(0, Number((baseAmount * multiplier).toFixed(4)));
 
   localStorage.setItem('lastHpXpMultiplier', multiplier);
   return {
@@ -1289,13 +1289,28 @@ function syncPlayerProgressFromStorage() {
   level = parseInt(localStorage.getItem('level')) || 1;
 }
 
+function storeXpBuffer(value) {
+  const normalized = Number((Math.max(0, Number(value) || 0)).toFixed(4));
+  localStorage.setItem('xpBuffer', normalized);
+  return normalized;
+}
+
+function convertBufferedXP(amount) {
+  const buffer = parseFloat(localStorage.getItem('xpBuffer')) || 0;
+  const total = buffer + Math.max(0, Number(amount) || 0);
+  const visibleXP = Math.floor(total);
+  const nextBuffer = storeXpBuffer(total - visibleXP);
+  return { visibleXP, buffer: nextBuffer };
+}
+
 function addXP(amount) {
   syncPlayerProgressFromStorage();
   const equippedPet = getEquippedPet();
   const share = equippedPet ? (equippedPet.share || 0.1) : 0;
   const xpModifier = applyHpXpModifier(amount);
 
-  const playerXP = Math.floor(xpModifier.modifiedAmount * (1 - share));
+  const buffered = convertBufferedXP(xpModifier.modifiedAmount * (1 - share));
+  const playerXP = buffered.visibleXP;
 
   xp += playerXP;
   localStorage.setItem('xp', xp);
@@ -1308,10 +1323,14 @@ function addXP(amount) {
 
   // Sync Supabase
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ xp, level: parseInt(localStorage.getItem('level')) || 1 });
+    window.TentiaAPI.saveProfile({
+      xp,
+      xp_buffer: buffered.buffer,
+      level: parseInt(localStorage.getItem('level')) || 1
+    });
   }
 
-  return { playerXP, ...xpModifier };
+  return { playerXP, xpBuffer: buffered.buffer, ...xpModifier };
 }
 
 // ────────────────

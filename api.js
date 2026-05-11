@@ -457,6 +457,7 @@ async function loadProfile() {
 
   // Valeurs simples — toujours charger
   setIfDefined('xp',            data.xp);
+  setIfDefined('xpBuffer',      data.xp_buffer);
   setIfDefined('level',         data.level);
   setIfDefined('hp',            data.hp);
   setIfDefined('Force',         data.force);
@@ -509,6 +510,7 @@ async function loadProfile() {
   // (évite d'écraser des quêtes locales fraîches avec un tableau vide au login)
   setIfNotEmpty('quests', data.quests);
   setIfNotEmpty('questHistory', data.quest_history);
+  setIfNotEmpty('questReputation', data.quest_reputation);
 
   if (data.dashboard_profile_photo) {
     localStorage.setItem('dashboardProfilePhoto', data.dashboard_profile_photo);

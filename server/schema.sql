@@ -16,6 +16,7 @@ create table if not exists profiles (
 
   -- Progression principale
   xp          int default 0,
+  xp_buffer   numeric default 0,
   level       int default 1,
   hp          int default 50,
   points_left int default 0,
@@ -56,6 +57,7 @@ create table if not exists profiles (
   -- Quêtes
   quests      jsonb default '[]'::jsonb,
   quest_history jsonb default '{}'::jsonb,
+  quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"score":null}'::jsonb,
   dashboard_profile_photo text default null,
 
   -- Compteurs HF
@@ -87,7 +89,46 @@ alter table profiles add column if not exists strava_rewarded_activities jsonb d
 alter table profiles add column if not exists strava_daily_pv jsonb default '{}'::jsonb;
 alter table profiles add column if not exists strava_daily_xp jsonb default '{}'::jsonb;
 alter table profiles add column if not exists quest_history jsonb default '{}'::jsonb;
+alter table profiles add column if not exists quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"score":null}'::jsonb;
+alter table profiles add column if not exists xp_buffer numeric default 0;
 alter table profiles add column if not exists dashboard_profile_photo text default null;
+
+-- Rework quetes : validations sociales / publiques / moderation
+create table if not exists quest_validations (
+  id uuid primary key default uuid_generate_v4(),
+  owner_user_id uuid references auth.users(id) on delete cascade not null,
+  quest_id text not null,
+  quest_text text not null,
+  total_xp numeric not null default 5,
+  immediate_xp numeric not null default 0,
+  friend_xp numeric not null default 0,
+  public_xp numeric not null default 0,
+  fallback_xp numeric not null default 0,
+  public_slots int not null default 0 check (public_slots between 0 and 4),
+  friend_validator_ids uuid[] default '{}',
+  moderator_required boolean default false,
+  status text not null default 'pending' check (status in ('pending','accepted','rejected','cancelled')),
+  friend_status text not null default 'pending' check (friend_status in ('none','pending','accepted','rejected')),
+  public_status text not null default 'pending' check (public_status in ('none','pending','accepted','rejected')),
+  moderator_status text not null default 'none' check (moderator_status in ('none','pending','accepted','rejected')),
+  xp_awarded numeric not null default 0,
+  created_at timestamptz default now(),
+  resolved_at timestamptz default null
+);
+
+create table if not exists quest_validation_votes (
+  id uuid primary key default uuid_generate_v4(),
+  validation_id uuid references quest_validations(id) on delete cascade not null,
+  voter_user_id uuid references auth.users(id) on delete cascade not null,
+  vote_scope text not null check (vote_scope in ('friend','public','moderator')),
+  vote_value boolean not null,
+  vote_weight numeric not null default 1,
+  created_at timestamptz default now(),
+  unique(validation_id, voter_user_id)
+);
+
+alter table quest_validations enable row level security;
+alter table quest_validation_votes enable row level security;
 
 -- ── SÉCURITÉ RLS ────────────────────────────
 -- Chaque utilisateur ne voit que ses propres données
