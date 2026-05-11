@@ -724,10 +724,9 @@ async function claimStravaPv() {
     if (!result.connected) return;
 
     if (result.hpDelta) {
-      hp = result.hpAfter;
-      localStorage.setItem('hp', hp);
-      updateHPUI();
-      console.log(`+${result.hpDelta} PV Strava`);
+      const forceBonus = getForceHpBonus(result.hpDelta);
+      setHP(result.hpAfter + forceBonus);
+      console.log(`+${result.hpDelta + forceBonus} PV Strava${forceBonus ? ` (Force +${forceBonus})` : ''}`);
     }
 
     if (result.xpDelta) {
@@ -805,6 +804,70 @@ let hp = 50;
 
 const savedHP = localStorage.getItem('hp');
 if (savedHP !== null) hp = parseInt(savedHP);
+
+function getEquippedPetForceBonus() {
+  const pet = getEquippedPetForXP();
+  if (!pet || pet.active === false) return 0;
+  const levelValue = Math.min(pet.level || 1, 50);
+
+  if (pet.stat === 'Force') return levelValue;
+  if (pet.stat === 'ForceIntelligence') return Math.floor(levelValue / 2);
+
+  if (pet.id === 'pet_endgame') {
+    const form = pet.forms?.[pet.endgameForm || 'arc'];
+    const dominant = form?.dominant;
+    if (levelValue <= 25) return dominant === 'Force' ? 10 : 5;
+    if (levelValue <= 49) return dominant === 'Force' ? 12 : 10;
+    return dominant === 'Force' ? 20 : 15;
+  }
+
+  return 0;
+}
+
+function getBadgeForceBonus(flatValue) {
+  let flat = 0;
+  let multiplier = 1;
+  let badges = [];
+
+  try {
+    badges = JSON.parse(localStorage.getItem('badges') || '[]');
+  } catch (e) {
+    badges = [];
+  }
+
+  badges.forEach((badge) => {
+    if (!badge.owned || !badge.equippedSlot || !badge.stats?.Force) return;
+    const statDef = badge.stats.Force;
+    if (badge.multiplier) {
+      multiplier *= statDef.dominant;
+    } else {
+      flat += badge.equippedSlot === 'Force' ? statDef.dominant : statDef.base;
+    }
+  });
+
+  return Math.floor((flatValue + flat) * multiplier) - flatValue;
+}
+
+function getEffectiveForceForHp() {
+  const baseForce = parseInt(localStorage.getItem('Force'), 10) || 0;
+  const petBonus = getEquippedPetForceBonus();
+  return baseForce + petBonus + getBadgeForceBonus(baseForce + petBonus);
+}
+
+function getForceHpBonus(delta) {
+  if (delta <= 0) return 0;
+  return Math.min(5, Math.floor(getEffectiveForceForHp() / 20));
+}
+
+function applyForceHpBonus(impact) {
+  const forceBonus = getForceHpBonus(impact.delta);
+  return {
+    ...impact,
+    baseDelta: impact.delta,
+    forceBonus,
+    delta: impact.delta + forceBonus
+  };
+}
 
 function updateHPUI() {
   document.getElementById('hp').textContent = hp;
@@ -894,9 +957,11 @@ function calculateDailyHealthImpact() {
 function updateDailyHealthPreview() {
   const preview = document.getElementById('daily-health-preview');
   if (!preview) return;
-  const { rawDelta, delta } = calculateDailyHealthImpact();
-  const capped = rawDelta !== delta ? ` (plafonne a ${delta})` : '';
-  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}`;
+  const baseImpact = calculateDailyHealthImpact();
+  const { delta, forceBonus } = applyForceHpBonus(baseImpact);
+  const capped = baseImpact.rawDelta !== baseImpact.delta ? ` (plafonne a ${baseImpact.delta})` : '';
+  const forceText = forceBonus > 0 ? ` | Force +${forceBonus}` : '';
+  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}${forceText}`;
 }
 
 function closeDailyHealthModal() {
@@ -927,7 +992,7 @@ function saveDailyHealthEntry() {
   if (logs[today]) return;
 
   const entry = {
-    ...calculateDailyHealthImpact(),
+    ...applyForceHpBonus(calculateDailyHealthImpact()),
     hpBefore: hp,
     createdAt: new Date().toISOString()
   };

@@ -1284,7 +1284,13 @@ function applyHpXpModifier(amount) {
   };
 }
 
+function syncPlayerProgressFromStorage() {
+  xp = parseInt(localStorage.getItem('xp')) || 0;
+  level = parseInt(localStorage.getItem('level')) || 1;
+}
+
 function addXP(amount) {
+  syncPlayerProgressFromStorage();
   const equippedPet = getEquippedPet();
   const share = equippedPet ? (equippedPet.share || 0.1) : 0;
   const xpModifier = applyHpXpModifier(amount);
@@ -1974,6 +1980,27 @@ function calculateDailyHealthEditImpact() {
   return { sleep, food, cigarettes, alcohol, rawDelta, delta };
 }
 
+function getEffectiveForceForHp() {
+  const baseForce = parseInt(localStorage.getItem('Force'), 10) || 0;
+  const petBonus = getPetBonus('Force');
+  return baseForce + petBonus + getBadgeBonus('Force', baseForce + petBonus);
+}
+
+function getForceHpBonus(delta) {
+  if (delta <= 0) return 0;
+  return Math.min(5, Math.floor(getEffectiveForceForHp() / 20));
+}
+
+function applyForceHpBonus(impact) {
+  const forceBonus = getForceHpBonus(impact.delta);
+  return {
+    ...impact,
+    baseDelta: impact.delta,
+    forceBonus,
+    delta: impact.delta + forceBonus
+  };
+}
+
 function setDailyHealthEditRadio(name, value) {
   const radio = document.querySelector(`input[name="${name}"][value="${Number(value) || 0}"]`);
   if (radio) radio.checked = true;
@@ -1983,9 +2010,11 @@ function updateDailyHealthEditPreview() {
   const preview = document.getElementById('daily-health-edit-preview');
   if (!preview) return;
 
-  const { rawDelta, delta } = calculateDailyHealthEditImpact();
-  const capped = rawDelta !== delta ? ` (plafonne a ${delta})` : '';
-  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}`;
+  const baseImpact = calculateDailyHealthEditImpact();
+  const { delta, forceBonus } = applyForceHpBonus(baseImpact);
+  const capped = baseImpact.rawDelta !== baseImpact.delta ? ` (plafonne a ${baseImpact.delta})` : '';
+  const forceText = forceBonus > 0 ? ` | Force +${forceBonus}` : '';
+  preview.textContent = `Impact : ${delta > 0 ? '+' : ''}${delta} PV${capped}${forceText}`;
 }
 
 function getHygieneEntryForKey(key, journal) {
@@ -2057,7 +2086,7 @@ function saveDailyHealthEditEntry() {
   const logs = getDailyHealthLogs();
   const previousEntry = entry.hygiene || logs[key] || null;
   const previousDelta = Number(previousEntry?.delta) || 0;
-  const impact = calculateDailyHealthEditImpact();
+  const impact = applyForceHpBonus(calculateDailyHealthEditImpact());
   const currentHP = Math.max(0, Math.min(parseInt(localStorage.getItem('hp'), 10) || 0, MAX_HP));
   const hpCorrection = impact.delta - previousDelta;
   const hpAfterEdit = Math.max(0, Math.min(currentHP + hpCorrection, MAX_HP));
@@ -3114,6 +3143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await window.TentiaAPI.loadProfile();
 
     // Resynchroniser les variables globales depuis le localStorage mis à jour
+    syncPlayerProgressFromStorage();
     quests = JSON.parse(localStorage.getItem('quests')) || [];
   }
 
