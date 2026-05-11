@@ -124,7 +124,7 @@ create table if not exists quest_validation_votes (
   vote_value boolean not null,
   vote_weight numeric not null default 1,
   created_at timestamptz default now(),
-  unique(validation_id, voter_user_id)
+  unique(validation_id, voter_user_id, vote_scope)
 );
 
 alter table quest_validations enable row level security;

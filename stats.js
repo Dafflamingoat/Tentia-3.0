@@ -1080,9 +1080,9 @@ function checkAllAchievements() {
 // ────────────────
 function trackQuestStats(count, xpGained) {
   const total = (parseInt(localStorage.getItem('totalQuestsDone')) || 0) + count;
-  const totalXP = (parseInt(localStorage.getItem('totalQuestXP')) || 0) + xpGained;
+  const totalXP = (parseFloat(localStorage.getItem('totalQuestXP')) || 0) + (Number(xpGained) || 0);
   localStorage.setItem('totalQuestsDone', total);
-  localStorage.setItem('totalQuestXP', totalXP);
+  localStorage.setItem('totalQuestXP', Number(totalXP.toFixed(4)));
 }
 
 // ────────────────
@@ -1221,6 +1221,13 @@ const dashboardPhotoBtn = document.getElementById('dashboard-photo');
 const dashboardPhotoInput = document.getElementById('dashboard-photo-input');
 const dashboardPhotoImg = document.getElementById('dashboard-photo-img');
 const dashboardPhotoPlaceholder = document.getElementById('dashboard-photo-placeholder');
+const questSubmitPopup = document.getElementById('quest-submit-popup');
+const questSubmitSummary = document.getElementById('quest-submit-summary');
+const questSubmitFriends = document.getElementById('quest-submit-friends');
+const questPublicSlots = document.getElementById('quest-public-slots');
+const questSubmitCancel = document.getElementById('quest-submit-cancel');
+const questSubmitConfirm = document.getElementById('quest-submit-confirm');
+const questSubmitFeedback = document.getElementById('quest-submit-feedback');
 
 // ────────────────
 // XP JOUEUR
@@ -1420,6 +1427,196 @@ function saveQuestHistory(questText) {
   localStorage.setItem('questHistory', JSON.stringify(history));
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     window.TentiaAPI.saveProfile({ quest_history: history });
+  }
+}
+
+function getQuestTotalXP() {
+  const discipline = parseInt(localStorage.getItem('Discipline')) || 0;
+  return 5 + Math.floor(discipline / 8);
+}
+
+function getSelectedQuestsForSubmit() {
+  return quests.filter(quest => quest.completed && !quest.claimed);
+}
+
+function getQuestPendingValidations() {
+  try {
+    const pending = JSON.parse(localStorage.getItem('questPendingValidations') || '[]');
+    return Array.isArray(pending) ? pending : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveQuestPendingValidations(items) {
+  localStorage.setItem('questPendingValidations', JSON.stringify(items));
+  updateQuestDashboard();
+}
+
+function updateQuestDashboard() {
+  const reputationSummary = document.getElementById('quest-reputation-summary');
+  const moderatorSummary = document.getElementById('quest-moderator-summary');
+  const pendingSummary = document.getElementById('quest-pending-summary');
+  const reputation = (() => {
+    try { return JSON.parse(localStorage.getItem('questReputation') || '{}'); }
+    catch (e) { return {}; }
+  })();
+  const submitted = Number(reputation.submitted || 0);
+  const accepted = Number(reputation.accepted || 0);
+  const rejected = Number(reputation.rejected || 0);
+  const totalResolved = accepted + rejected;
+  const score = totalResolved > 0 ? Math.round((accepted / totalResolved) * 100) : null;
+  const levelValue = parseInt(localStorage.getItem('level')) || 1;
+  const eligible = levelValue >= 5 && (score === null || score >= 75);
+  const pendingCount = getQuestPendingValidations().filter(item => item.status === 'pending').length;
+
+  if (reputationSummary) {
+    reputationSummary.textContent = score === null
+      ? `Nouveau | ${submitted} soumise(s)`
+      : `${score}% | ${submitted} soumise(s)`;
+  }
+  if (moderatorSummary) {
+    moderatorSummary.textContent = eligible ? 'Moderateur : eligible' : 'Moderateur : non eligible';
+  }
+  if (pendingSummary) {
+    pendingSummary.textContent = pendingCount > 0
+      ? `${pendingCount} quete(s) en attente de validation.`
+      : 'Aucune quete soumise pour le moment.';
+  }
+}
+
+function renderQuestSubmitFriends(friends = []) {
+  if (!questSubmitFriends) return;
+  questSubmitFriends.innerHTML = '';
+
+  if (!friends.length) {
+    questSubmitFriends.innerHTML = '<div class="quest-submit-note">Aucun ami disponible.</div>';
+    return;
+  }
+
+  friends.forEach((friend) => {
+    const label = document.createElement('label');
+    label.className = 'quest-submit-friend';
+    label.innerHTML = `
+      <input type="checkbox" value="${friend.user_id}">
+      <span>${friend.username}</span>
+    `;
+    questSubmitFriends.appendChild(label);
+  });
+}
+
+async function openQuestSubmitPopup() {
+  const selectedQuests = getSelectedQuestsForSubmit();
+  if (!selectedQuests.length) {
+    alert('Aucune quete valide ou deja validee.');
+    return;
+  }
+  if (!questSubmitPopup) return;
+
+  const totalQuestXP = selectedQuests.length * getQuestTotalXP();
+  const immediateXP = Number((totalQuestXP * 0.2).toFixed(4));
+  questSubmitPopup.dataset.questIds = JSON.stringify(selectedQuests.map(quest => quest.id));
+  if (questSubmitSummary) {
+    questSubmitSummary.textContent = `${selectedQuests.length} quete(s) selectionnee(s) | XP total ${totalQuestXP} | XP immediat ${immediateXP}`;
+  }
+  if (questSubmitFeedback) questSubmitFeedback.textContent = '';
+  if (questPublicSlots) questPublicSlots.value = '0';
+  renderQuestSubmitFriends([]);
+  questSubmitPopup.classList.add('active');
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    const friends = await friendsRequest('GET', '/list');
+    renderQuestSubmitFriends(Array.isArray(friends) ? friends : []);
+  }
+}
+
+function closeQuestSubmitPopup() {
+  if (questSubmitPopup) questSubmitPopup.classList.remove('active');
+}
+
+function getSelectedQuestSubmitFriendIds() {
+  if (!questSubmitFriends) return [];
+  return [...questSubmitFriends.querySelectorAll('input[type="checkbox"]:checked')]
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
+async function submitQuestValidation() {
+  if (!questSubmitPopup || !window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
+    if (questSubmitFeedback) questSubmitFeedback.textContent = 'Connexion requise.';
+    return;
+  }
+
+  const ids = (() => {
+    try { return JSON.parse(questSubmitPopup.dataset.questIds || '[]'); }
+    catch (e) { return []; }
+  })();
+  const selectedQuests = quests
+    .filter(quest => ids.includes(quest.id) && quest.completed && !quest.claimed)
+    .map(quest => ({ id: quest.id, text: quest.text, total_xp: getQuestTotalXP() }));
+  if (!selectedQuests.length) {
+    closeQuestSubmitPopup();
+    return;
+  }
+
+  if (questSubmitConfirm) questSubmitConfirm.disabled = true;
+  if (questSubmitFeedback) questSubmitFeedback.textContent = 'Soumission...';
+
+  try {
+    const token = localStorage.getItem('_token');
+    const response = await fetch('/api/quests/validations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        quests: selectedQuests,
+        friend_validator_ids: getSelectedQuestSubmitFriendIds(),
+        public_slots: parseInt(questPublicSlots?.value, 10) || 0
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Soumission impossible');
+
+    const submittedIds = selectedQuests.map(quest => quest.id);
+    quests = quests.filter(quest => !submittedIds.includes(quest.id));
+    const pending = getQuestPendingValidations();
+    saveQuestPendingValidations([...result.validations, ...pending]);
+
+    trackQuestStats(selectedQuests.length, result.immediate_xp || 0);
+    const xpResult = addXP(result.immediate_xp || 0);
+    saveQuests();
+    renderQuests();
+    checkAllAchievements();
+
+    const reputation = (() => {
+      try { return JSON.parse(localStorage.getItem('questReputation') || '{}'); }
+      catch (e) { return {}; }
+    })();
+    const nextReputation = {
+      submitted: Number(reputation.submitted || 0) + selectedQuests.length,
+      accepted: Number(reputation.accepted || 0),
+      rejected: Number(reputation.rejected || 0),
+      score: reputation.score ?? null
+    };
+    localStorage.setItem('questReputation', JSON.stringify(nextReputation));
+
+    if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+        window.TentiaAPI.saveProfile({
+          quests,
+          quest_reputation: nextReputation,
+          total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0,
+          total_quest_xp: parseFloat(localStorage.getItem('totalQuestXP')) || 0
+        });
+      }
+
+    alert(`+${xpResult.modifiedAmount} XP immediat !`);
+    closeQuestSubmitPopup();
+  } catch (error) {
+    if (questSubmitFeedback) questSubmitFeedback.textContent = error.message || 'Erreur de soumission.';
+  } finally {
+    if (questSubmitConfirm) questSubmitConfirm.disabled = false;
   }
 }
 
@@ -2322,6 +2519,14 @@ function saveDashboardPhoto(file) {
 }
 
 function initDashboard() {
+  const questBox = document.querySelector('.quest-box');
+  const questPanel = document.getElementById('dashboard-tab-quests');
+  const questDashboard = questPanel?.querySelector('.quest-dashboard');
+  if (questBox && questPanel && questDashboard && questBox.parentElement !== questPanel) {
+    questBox.style.display = '';
+    questPanel.insertBefore(questBox, questDashboard);
+  }
+
   dashboardTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.dashboardTab;
@@ -2366,6 +2571,12 @@ if (addQuestBtn) {
 }
 
 if (validateBtn) {
+  validateBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openQuestSubmitPopup();
+  }, true);
+
   validateBtn.addEventListener('click', () => {
     let gainedXP = 0;
     let newlyClaimed = 0;
@@ -2410,6 +2621,20 @@ if (validateBtn) {
 // ────────────────
 // EVENTS STATS / RESET
 // ────────────────
+if (questSubmitCancel) {
+  questSubmitCancel.addEventListener('click', closeQuestSubmitPopup);
+}
+
+if (questSubmitConfirm) {
+  questSubmitConfirm.addEventListener('click', submitQuestValidation);
+}
+
+if (questSubmitPopup) {
+  questSubmitPopup.addEventListener('click', (event) => {
+    if (event.target === questSubmitPopup) closeQuestSubmitPopup();
+  });
+}
+
 if (statsToggle && statsBox) {
   statsToggle.addEventListener('click', () => {
     const isOpen = statsBox.classList.toggle('open');
@@ -3176,6 +3401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateStatsUI();
   updateProfilePanel();
   initDashboard();
+  updateQuestDashboard();
   updatePetUI();
   renderPetInventory();
   renderQuests();
