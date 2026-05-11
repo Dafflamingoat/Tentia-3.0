@@ -1375,6 +1375,63 @@ body {
   line-height: 1.6;
 }
 
+.quest-validation-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid rgba(200,163,44,0.3);
+  background: #181818;
+  margin-bottom: 8px;
+}
+
+.quest-validation-item-main {
+  min-width: 0;
+}
+
+.quest-validation-item-title {
+  color: #eee;
+  font-size: 10px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.quest-validation-item-meta {
+  margin-top: 5px;
+  color: var(--text-dim);
+  font-size: 8px;
+}
+
+.quest-validation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 0 0 74px;
+}
+
+.quest-vote-btn {
+  border: 1px solid var(--border);
+  background: #111;
+  color: #eee;
+  padding: 5px;
+  font-family: inherit;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.quest-vote-btn.yes {
+  color: #72e07a;
+}
+
+.quest-vote-btn.no {
+  color: #ff7777;
+}
+
+.quest-vote-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .quest-submit-label {
   color: var(--gold-light);
   font-weight: bold;

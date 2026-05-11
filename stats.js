@@ -1459,11 +1459,90 @@ function updateQuestDashboard() {
   const friendsList = document.getElementById('quest-friends-list');
   const publicList = document.getElementById('quest-public-list');
   if (friendsList) {
-    friendsList.innerHTML = '<div class="quest-validation-empty">Aucune quete ami a valider.</div>';
+    friendsList.innerHTML = '<div class="quest-validation-empty">Chargement...</div>';
   }
   if (publicList) {
-    publicList.innerHTML = '<div class="quest-validation-empty">Aucune quete publique a valider.</div>';
+    publicList.innerHTML = '<div class="quest-validation-empty">Chargement...</div>';
   }
+  loadQuestValidationLists();
+}
+
+async function fetchQuestValidationList(type) {
+  const token = localStorage.getItem('_token');
+  const response = await fetch(`/api/quests/${type}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!response.ok) return [];
+  const data = await response.json().catch(() => []);
+  return Array.isArray(data) ? data : [];
+}
+
+function formatQuestValidationDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+
+function renderQuestValidationList(targetId, items, scope) {
+  const list = document.getElementById(targetId);
+  if (!list) return;
+
+  if (!items.length) {
+    list.innerHTML = `<div class="quest-validation-empty">Aucune quete ${scope === 'friend' ? 'ami' : 'publique'} a valider.</div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  items.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'quest-validation-item';
+    row.innerHTML = `
+      <div class="quest-validation-item-main">
+        <div class="quest-validation-item-title">${item.quest_text}</div>
+        <div class="quest-validation-item-meta">${item.owner_username || 'Joueur'} | ${formatQuestValidationDate(item.created_at)} | ${Number(item.total_xp || 0)} XP</div>
+      </div>
+      <div class="quest-validation-actions">
+        <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${scope}" data-value="true">Valider</button>
+        <button class="quest-vote-btn no" data-id="${item.id}" data-scope="${scope}" data-value="false">Refuser</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+async function loadQuestValidationLists() {
+  if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
+    renderQuestValidationList('quest-friends-list', [], 'friend');
+    renderQuestValidationList('quest-public-list', [], 'public');
+    return;
+  }
+
+  const [friendItems, publicItems] = await Promise.all([
+    fetchQuestValidationList('friends'),
+    fetchQuestValidationList('public')
+  ]);
+
+  renderQuestValidationList('quest-friends-list', friendItems, 'friend');
+  renderQuestValidationList('quest-public-list', publicItems, 'public');
+}
+
+async function voteQuestValidation(validationId, scope, value) {
+  const token = localStorage.getItem('_token');
+  const response = await fetch(`/api/quests/validations/${validationId}/vote`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({
+      vote_scope: scope,
+      vote_value: value
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Vote impossible');
+  return result;
 }
 
 function renderQuestSubmitFriends(friends = []) {
@@ -1484,6 +1563,17 @@ function renderQuestSubmitFriends(friends = []) {
     `;
     questSubmitFriends.appendChild(label);
   });
+
+  questSubmitFriends.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', updateQuestSubmitPublicState);
+  });
+}
+
+function updateQuestSubmitPublicState() {
+  const hasFriend = getSelectedQuestSubmitFriendIds().length > 0;
+  if (!questPublicSlots) return;
+  questPublicSlots.disabled = hasFriend;
+  questPublicSlots.value = hasFriend ? '0' : (questPublicSlots.value === '0' ? '1' : questPublicSlots.value);
 }
 
 async function openQuestSubmitPopup() {
@@ -1501,7 +1591,10 @@ async function openQuestSubmitPopup() {
     questSubmitSummary.textContent = `${selectedQuests.length} quete(s) selectionnee(s) | XP total ${totalQuestXP} | XP immediat ${immediateXP}`;
   }
   if (questSubmitFeedback) questSubmitFeedback.textContent = '';
-  if (questPublicSlots) questPublicSlots.value = '0';
+  if (questPublicSlots) {
+    questPublicSlots.value = '1';
+    questPublicSlots.disabled = false;
+  }
   renderQuestSubmitFriends([]);
   questSubmitPopup.classList.add('active');
 
@@ -1554,7 +1647,7 @@ async function submitQuestValidation() {
       body: JSON.stringify({
         quests: selectedQuests,
         friend_validator_ids: getSelectedQuestSubmitFriendIds(),
-        public_slots: parseInt(questPublicSlots?.value, 10) || 0
+        public_slots: getSelectedQuestSubmitFriendIds().length > 0 ? 0 : (parseInt(questPublicSlots?.value, 10) || 1)
       })
     });
     const result = await response.json().catch(() => ({}));
@@ -2548,52 +2641,9 @@ if (validateBtn) {
     event.preventDefault();
     event.stopImmediatePropagation();
     openQuestSubmitPopup();
-  }, true);
-
-  validateBtn.addEventListener('click', () => {
-    let gainedXP = 0;
-    let newlyClaimed = 0;
-
-    quests.forEach((q) => {
-      if (q.completed && !q.claimed) {
-        const discipline = parseInt(localStorage.getItem('Discipline')) || 0;
-        gainedXP += 5 + Math.floor(discipline / 8);
-        q.claimed = true;
-        newlyClaimed++;
-      }
-    });
-
-    if (gainedXP > 0) {
-      // Sauvegarder les quêtes validées dans l'historique
-      quests.filter(q => q.claimed).forEach(q => saveQuestHistory(q.text));
-
-      // Supprimer les quêtes validées définitivement
-      quests = quests.filter(q => !q.claimed);
-
-      trackQuestStats(newlyClaimed, gainedXP);
-      const xpResult = addXP(gainedXP);
-      alert(`+${xpResult.modifiedAmount} XP gagne !`);
-      saveQuests();
-      renderQuests();
-      checkAllAchievements();
-
-      // Sync Supabase
-      if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-        window.TentiaAPI.saveProfile({
-          quests,
-          total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0,
-          total_quest_xp:    parseInt(localStorage.getItem('totalQuestXP'))    || 0,
-        });
-      }
-    } else {
-      alert('Aucune quête valide ou déjà validée.');
-    }
   });
 }
 
-// ────────────────
-// EVENTS STATS / RESET
-// ────────────────
 if (questSubmitCancel) {
   questSubmitCancel.addEventListener('click', closeQuestSubmitPopup);
 }
@@ -2615,6 +2665,23 @@ questValidationTabs.forEach((tab) => {
     questValidationPanels.forEach((panel) => {
       panel.classList.toggle('active', panel.id === `quest-validation-${target}`);
     });
+    loadQuestValidationLists();
+  });
+});
+
+questValidationPanels.forEach((panel) => {
+  panel.addEventListener('click', async (event) => {
+    const button = event.target.closest('.quest-vote-btn');
+    if (!button) return;
+
+    button.disabled = true;
+    try {
+      await voteQuestValidation(button.dataset.id, button.dataset.scope, button.dataset.value === 'true');
+      await loadQuestValidationLists();
+    } catch (error) {
+      alert(error.message || 'Vote impossible');
+      button.disabled = false;
+    }
   });
 });
 
