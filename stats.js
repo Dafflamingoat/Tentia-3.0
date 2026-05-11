@@ -1455,20 +1455,6 @@ function getSelectedQuestsForSubmit() {
   return quests.filter(quest => quest.completed && !quest.claimed);
 }
 
-function getQuestPendingValidations() {
-  try {
-    const pending = JSON.parse(localStorage.getItem('questPendingValidations') || '[]');
-    return Array.isArray(pending) ? pending : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveQuestPendingValidations(items) {
-  localStorage.setItem('questPendingValidations', JSON.stringify(items));
-  updateQuestDashboard();
-}
-
 function updateQuestDashboard() {
   const friendsList = document.getElementById('quest-friends-list');
   const publicList = document.getElementById('quest-public-list');
@@ -1845,8 +1831,6 @@ async function submitQuestValidation() {
 
     const submittedIds = selectedQuests.map(quest => quest.id);
     quests = quests.filter(quest => !submittedIds.includes(quest.id));
-    const pending = getQuestPendingValidations();
-    saveQuestPendingValidations([...result.validations, ...pending]);
 
     trackQuestStats(selectedQuests.length, result.immediate_xp || 0);
     const xpResult = addXP(result.immediate_xp || 0);

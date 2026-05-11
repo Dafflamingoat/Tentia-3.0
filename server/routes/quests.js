@@ -273,6 +273,30 @@ async function getVotesForUser(userId) {
   return new Set((data || []).map(vote => vote.validation_id));
 }
 
+async function getFriendOwnerIdsForUser(userId, ownerIds) {
+  if (!ownerIds.length) return new Set();
+  const { data, error } = await supabaseAdmin
+    .from('friends')
+    .select('friend_id')
+    .eq('user_id', userId)
+    .in('friend_id', ownerIds);
+
+  if (error) throw error;
+  return new Set((data || []).map(row => row.friend_id));
+}
+
+async function areUsersFriends(userId, otherUserId) {
+  const { data, error } = await supabaseAdmin
+    .from('friends')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('friend_id', otherUserId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
 async function finalizeValidation(validation, status, statusLabel, extraUpdates = {}) {
   const { data, error } = await supabaseAdmin
     .from('quest_validations')
@@ -405,10 +429,10 @@ router.post('/validations', async (req, res) => {
         ...xpParts,
         public_slots: publicSlots,
         friend_validator_ids: friendValidatorIds,
-        moderator_required: friendValidatorIds.length === 0 && publicSlots === 0,
+        moderator_required: false,
         friend_status: friendValidatorIds.length ? 'pending' : 'none',
         public_status: publicSlots > 0 ? 'pending' : 'none',
-        moderator_status: friendValidatorIds.length === 0 && publicSlots === 0 ? 'pending' : 'none',
+        moderator_status: 'none',
         xp_awarded: xpParts.immediate_xp
       };
     });
@@ -468,12 +492,11 @@ router.get('/public', async (req, res) => {
       .limit(50);
 
     if (error) return res.status(500).json({ error: error.message });
+    const ownerIds = [...new Set((data || []).map(item => item.owner_user_id))];
+    const friendOwnerIds = await getFriendOwnerIdsForUser(req.user.id, ownerIds);
     const items = (data || [])
       .filter(item => !votedIds.has(item.id))
-      .filter(item => {
-        const friendIds = Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids : [];
-        return !friendIds.includes(req.user.id);
-      });
+      .filter(item => !friendOwnerIds.has(item.owner_user_id));
     res.json(await attachOwnerNames(items));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -575,6 +598,10 @@ router.post('/validations/:id/vote', async (req, res) => {
   if (scope === 'public') {
     if (Number(validation.public_slots || 0) <= 0 || validation.public_status !== 'pending') {
       return res.status(403).json({ error: 'Vote public non autorise' });
+    }
+    const ownerIsFriend = await areUsersFriends(req.user.id, validation.owner_user_id);
+    if (ownerIsFriend) {
+      return res.status(403).json({ error: 'Les amis ne peuvent pas voter en public sur cette quete' });
     }
   }
 
