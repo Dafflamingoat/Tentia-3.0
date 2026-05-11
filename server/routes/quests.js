@@ -321,12 +321,36 @@ async function finalizeValidation(validation, status, statusLabel, extraUpdates 
 async function getValidationVotes(validationId) {
   const { data, error } = await supabaseAdmin
     .from('quest_validation_votes')
-    .select('vote_value, vote_scope, created_at')
+    .select('id, voter_user_id, vote_value, vote_scope, created_at')
     .eq('validation_id', validationId)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
   return data || [];
+}
+
+async function ensurePublicVoteStillHasSlot(validation, vote) {
+  const votes = await getValidationVotes(validation.id);
+  const publicVotes = votes
+    .filter(item => item.vote_scope === 'public')
+    .sort((a, b) => {
+      const dateDiff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return String(a.id).localeCompare(String(b.id));
+    });
+  const voteIndex = publicVotes.findIndex(item => item.id === vote.id);
+  const slots = Number(validation.public_slots || 0);
+
+  if (voteIndex >= 0 && voteIndex < slots) return;
+
+  await supabaseAdmin
+    .from('quest_validation_votes')
+    .delete()
+    .eq('id', vote.id);
+
+  const error = new Error('Votes publics deja complets');
+  error.status = 409;
+  throw error;
 }
 
 function isOlderThan(value, delayMs) {
@@ -628,6 +652,9 @@ router.post('/validations/:id/vote', async (req, res) => {
   if (voteError) return res.status(500).json({ error: voteError.message });
 
   try {
+    if (scope === 'public') {
+      await ensurePublicVoteStillHasSlot(validation, vote);
+    }
     const evaluation = await evaluateValidation(validation);
     const votes = await getValidationVotes(validationId);
     const scopeVotes = votes.filter(item => item.vote_scope === scope);
@@ -636,7 +663,7 @@ router.post('/validations/:id/vote', async (req, res) => {
     const voter_reputation = evaluation.finalized?.judge_reputations?.[req.user.id] || null;
     res.json({ vote, tally: { yes, no }, voter_reputation, ...evaluation });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(error.status || 500).json({ error: error.message });
   }
 });
 
@@ -709,7 +736,14 @@ router.post('/validations/:id/complete-now', async (req, res) => {
   if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
 
   try {
-    const finalized = await finalizeValidation(validation, 'accepted', 'validee de suite');
+    const hasAcceptedBlock = validation.friend_status === 'accepted' || validation.public_status === 'accepted';
+    const hasAwardedBeyondImmediate = Number(validation.xp_awarded || 0) > Number(validation.immediate_xp || 0);
+    const accepted = hasAcceptedBlock || hasAwardedBeyondImmediate;
+    const finalized = await finalizeValidation(
+      validation,
+      accepted ? 'accepted' : 'rejected',
+      accepted ? 'cloturee manuellement' : 'cloturee sans validation'
+    );
     res.json(finalized);
   } catch (error) {
     res.status(500).json({ error: error.message });

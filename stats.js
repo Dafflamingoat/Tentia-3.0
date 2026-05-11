@@ -1231,6 +1231,9 @@ const questPublicSlots = document.getElementById('quest-public-slots');
 const questSubmitCancel = document.getElementById('quest-submit-cancel');
 const questSubmitConfirm = document.getElementById('quest-submit-confirm');
 const questSubmitFeedback = document.getElementById('quest-submit-feedback');
+const questCompleteWarningPopup = document.getElementById('quest-complete-warning-popup');
+const questCompleteWarningCancel = document.getElementById('quest-complete-warning-cancel');
+const questCompleteWarningConfirm = document.getElementById('quest-complete-warning-confirm');
 const questValidationTabs = document.querySelectorAll('.quest-validation-tab');
 const questValidationPanels = document.querySelectorAll('.quest-validation-panel');
 
@@ -1643,6 +1646,33 @@ async function completeQuestValidationNow(validationId) {
   syncQuestHistoryFromServer(result.quest_history);
   syncQuestReputationFromServer(result.quest_reputation);
   return result;
+}
+
+function confirmQuestCompleteNow() {
+  if (!questCompleteWarningPopup || !questCompleteWarningCancel || !questCompleteWarningConfirm) {
+    return Promise.resolve(confirm("Cloturer maintenant ? Tu recupereras uniquement l'XP deja validee."));
+  }
+
+  questCompleteWarningPopup.classList.add('active');
+
+  return new Promise((resolve) => {
+    const cleanup = (value) => {
+      questCompleteWarningPopup.classList.remove('active');
+      questCompleteWarningCancel.removeEventListener('click', onCancel);
+      questCompleteWarningConfirm.removeEventListener('click', onConfirm);
+      questCompleteWarningPopup.removeEventListener('click', onOverlay);
+      resolve(value);
+    };
+    const onCancel = () => cleanup(false);
+    const onConfirm = () => cleanup(true);
+    const onOverlay = (event) => {
+      if (event.target === questCompleteWarningPopup) cleanup(false);
+    };
+
+    questCompleteWarningCancel.addEventListener('click', onCancel);
+    questCompleteWarningConfirm.addEventListener('click', onConfirm);
+    questCompleteWarningPopup.addEventListener('click', onOverlay);
+  });
 }
 
 async function openQuestValidationPublic(validationId) {
@@ -2938,6 +2968,8 @@ questValidationPanels.forEach((panel) => {
 
     const completeButton = event.target.closest('.quest-complete-now');
     if (completeButton) {
+      const confirmed = await confirmQuestCompleteNow();
+      if (!confirmed) return;
       completeButton.disabled = true;
       try {
         await completeQuestValidationNow(completeButton.dataset.id);
