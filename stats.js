@@ -1493,6 +1493,16 @@ function formatQuestValidationDate(value) {
   return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 }
 
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[char]));
+}
+
 function renderQuestValidationList(targetId, items, scope) {
   const list = document.getElementById(targetId);
   if (!list) return;
@@ -1508,8 +1518,8 @@ function renderQuestValidationList(targetId, items, scope) {
     row.className = 'quest-validation-item';
     row.innerHTML = `
       <div class="quest-validation-item-main">
-        <div class="quest-validation-item-title">${item.quest_text}</div>
-        <div class="quest-validation-item-meta">${item.owner_username || 'Joueur'} | ${formatQuestValidationDate(item.created_at)} | ${Number(item.total_xp || 0)} XP</div>
+        <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
+        <div class="quest-validation-item-meta">${escapeHTML(item.owner_username || 'Joueur')} | ${formatQuestValidationDate(item.created_at)} | ${Number(item.total_xp || 0)} XP</div>
       </div>
       <div class="quest-validation-actions">
         <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${scope}" data-value="true">Valider</button>
@@ -1547,7 +1557,7 @@ function renderMyQuestValidationList(items) {
     row.className = 'quest-validation-item';
     row.innerHTML = `
       <div class="quest-validation-item-main">
-        <div class="quest-validation-item-title">${item.quest_text}</div>
+        <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
         <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | ${totalVotes}/${expectedVotes} vote(s)</div>
         <div class="quest-progress-wrap">
           <div class="quest-progress-fill base" style="width:20%;"></div>
@@ -1601,9 +1611,6 @@ async function voteQuestValidation(validationId, scope, value) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'Vote impossible');
-  if (result.finalized?.quest_history) {
-    syncQuestHistoryFromServer(result.finalized.quest_history);
-  }
   return result;
 }
 
