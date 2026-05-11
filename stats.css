@@ -85,7 +85,7 @@ body {
 }
 
 .quest-box { flex: 0 0 35% !important; min-width: 0 !important; max-width: 35% !important; }
-.dashboard-box { flex: 1 1 0 !important; min-width: 0 !important; max-width: 100% !important; }
+.dashboard-box { flex: 1 1 0 !important; min-width: 0 !important; max-width: 65% !important; }
 
 /* Quêtes */
 .quest-box {
@@ -96,14 +96,6 @@ body {
   border: 2px solid var(--border);
   padding: 16px;
   box-shadow: 0 0 14px rgba(200,163,44,0.15), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
-}
-
-.dashboard-panel .quest-box {
-  width: 100%;
-  max-width: none !important;
-  min-width: 0 !important;
-  margin-bottom: 12px;
-  box-sizing: border-box;
 }
 
 /* Dashboard */

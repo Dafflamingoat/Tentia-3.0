@@ -2519,14 +2519,6 @@ function saveDashboardPhoto(file) {
 }
 
 function initDashboard() {
-  const questBox = document.querySelector('.quest-box');
-  const questPanel = document.getElementById('dashboard-tab-quests');
-  const questDashboard = questPanel?.querySelector('.quest-dashboard');
-  if (questBox && questPanel && questDashboard && questBox.parentElement !== questPanel) {
-    questBox.style.display = '';
-    questPanel.insertBefore(questBox, questDashboard);
-  }
-
   dashboardTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       const target = tab.dataset.dashboardTab;
