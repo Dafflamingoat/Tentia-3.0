@@ -1570,6 +1570,7 @@ function renderMyQuestValidationList(items) {
     const publicNoPercent = Math.max(0, publicClosedPercent - publicPercent);
     const yesWidth = Math.min(80, friendWidth + publicPercent);
     const noWidth = Math.min(80 - yesWidth, friendNoWidth + publicNoPercent);
+    const canOpenPublic = item.unlock_available && friendCount > 0 && item.friend_status === 'pending';
 
     const row = document.createElement('div');
     row.className = 'quest-validation-item';
@@ -1589,6 +1590,7 @@ function renderMyQuestValidationList(items) {
         </div>
       </div>
       <div class="quest-validation-actions">
+        ${canOpenPublic ? `<button class="quest-vote-btn quest-open-public" data-id="${item.id}" title="Ouvrir les votes manquants au public">Ouvrir</button>` : ''}
         <button class="quest-vote-btn yes quest-complete-now" data-id="${item.id}">Valider de suite</button>
       </div>
     `;
@@ -1641,6 +1643,25 @@ async function completeQuestValidationNow(validationId) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'Validation impossible');
   syncQuestHistoryFromServer(result.quest_history);
+  return result;
+}
+
+async function openQuestValidationPublic(validationId) {
+  const token = localStorage.getItem('_token');
+  const response = await fetch(`/api/quests/validations/${validationId}/open-public`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'Deblocage impossible');
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    await window.TentiaAPI.loadProfile();
+    syncPlayerProgressFromStorage();
+    updateXPBar();
+    updateProfilePanel();
+  }
+
   return result;
 }
 
@@ -2774,6 +2795,19 @@ questValidationTabs.forEach((tab) => {
 
 questValidationPanels.forEach((panel) => {
   panel.addEventListener('click', async (event) => {
+    const openPublicButton = event.target.closest('.quest-open-public');
+    if (openPublicButton) {
+      openPublicButton.disabled = true;
+      try {
+        await openQuestValidationPublic(openPublicButton.dataset.id);
+        await loadQuestValidationLists();
+      } catch (error) {
+        alert(error.message || 'Deblocage impossible');
+        openPublicButton.disabled = false;
+      }
+      return;
+    }
+
     const completeButton = event.target.closest('.quest-complete-now');
     if (completeButton) {
       completeButton.disabled = true;
