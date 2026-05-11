@@ -1716,7 +1716,6 @@ function renderQuestSubmitModerators(moderators = []) {
 
 function updateQuestSubmitPublicState() {
   const selectedFriends = getSelectedQuestSubmitFriendIds();
-  const publicSelected = questPublicSlots && parseInt(questPublicSlots.value, 10) > 0;
   const friendInputs = questSubmitFriends
     ? [...questSubmitFriends.querySelectorAll('input[type="checkbox"]')]
     : [];
@@ -1726,18 +1725,18 @@ function updateQuestSubmitPublicState() {
   const selectedModerators = moderatorInputs.filter(input => input.checked);
 
   if (questPublicSlots) {
-    questPublicSlots.disabled = selectedFriends.length > 0 || selectedModerators.length > 0;
+    questPublicSlots.disabled = selectedModerators.length > 0;
     if (questPublicSlots.disabled) questPublicSlots.selectedIndex = -1;
   }
 
   friendInputs.forEach((input) => {
-    if (!input.checked) input.disabled = Boolean(publicSelected || selectedModerators.length);
+    if (!input.checked) input.disabled = selectedModerators.length > 0;
     const label = input.closest('.quest-submit-friend');
     if (label) label.classList.toggle('disabled', input.disabled);
   });
 
   moderatorInputs.forEach((input) => {
-    if (!input.checked) input.disabled = selectedFriends.length > 0 || Boolean(publicSelected);
+    if (!input.checked) input.disabled = selectedFriends.length > 0;
     const label = input.closest('.quest-submit-friend');
     if (label) label.classList.toggle('disabled', input.disabled);
   });
@@ -1785,7 +1784,7 @@ function getSelectedQuestSubmitFriendIds() {
 
 function getSelectedQuestPublicSlots() {
   if (!questPublicSlots || questPublicSlots.disabled) return 0;
-  return parseInt(questPublicSlots.value, 10) || 0;
+  return parseInt(questPublicSlots.value, 10) || 1;
 }
 
 async function submitQuestValidation() {
@@ -1811,7 +1810,7 @@ async function submitQuestValidation() {
 
   try {
     const friendValidatorIds = getSelectedQuestSubmitFriendIds();
-    const publicSlots = friendValidatorIds.length ? 0 : getSelectedQuestPublicSlots();
+    const publicSlots = getSelectedQuestPublicSlots();
     if (!friendValidatorIds.length && publicSlots <= 0) {
       throw new Error('Selectionne au moins un ami ou un validateur public.');
     }

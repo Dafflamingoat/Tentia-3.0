@@ -283,7 +283,7 @@ router.post('/validations', async (req, res) => {
   const quests = Array.isArray(req.body.quests) ? req.body.quests : [];
   const friendValidatorIds = normalizeFriendIds(req.body.friend_validator_ids);
   const requestedPublicSlots = normalizePublicSlots(req.body.public_slots);
-  const publicSlots = friendValidatorIds.length > 0 ? 0 : Math.max(1, requestedPublicSlots);
+  const publicSlots = Math.max(1, requestedPublicSlots);
 
   if (!quests.length) {
     return res.status(400).json({ error: 'Aucune quete a valider' });
