@@ -1464,6 +1464,10 @@ function updateQuestDashboard() {
   if (publicList) {
     publicList.innerHTML = '<div class="quest-validation-empty">Chargement...</div>';
   }
+  const mineList = document.getElementById('quest-mine-list');
+  if (mineList) {
+    mineList.innerHTML = '<div class="quest-validation-empty">Chargement...</div>';
+  }
   loadQuestValidationLists();
 }
 
@@ -1511,6 +1515,51 @@ function renderQuestValidationList(targetId, items, scope) {
   });
 }
 
+function renderMyQuestValidationList(items) {
+  const list = document.getElementById('quest-mine-list');
+  if (!list) return;
+
+  if (!items.length) {
+    list.innerHTML = '<div class="quest-validation-empty">Aucune quete en cours de validation.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  items.forEach((item) => {
+    const yes = Number(item.votes?.yes || 0);
+    const no = Number(item.votes?.no || 0);
+    const totalVotes = yes + no;
+    const expectedVotes = Math.max(
+      Number(item.public_slots || 0),
+      Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0,
+      1
+    );
+    const unit = 80 / expectedVotes;
+    const yesWidth = Math.min(80, yes * unit);
+    const noWidth = Math.min(80 - yesWidth, no * unit);
+
+    const row = document.createElement('div');
+    row.className = 'quest-validation-item';
+    row.innerHTML = `
+      <div class="quest-validation-item-main">
+        <div class="quest-validation-item-title">${item.quest_text}</div>
+        <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | ${totalVotes}/${expectedVotes} vote(s)</div>
+        <div class="quest-progress-wrap">
+          <div class="quest-progress-fill base" style="width:20%;"></div>
+          <div class="quest-progress-fill yes" style="left:20%;width:${yesWidth}%;"></div>
+          <div class="quest-progress-fill no" style="left:${20 + yesWidth}%;width:${noWidth}%;"></div>
+          <div class="quest-progress-label">20% acquis</div>
+        </div>
+        <div class="quest-progress-legend">
+          <span>Valides ${yes}</span>
+          <span>Refus ${no}</span>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
 async function loadQuestValidationLists() {
   if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
     renderQuestValidationList('quest-friends-list', [], 'friend');
@@ -1518,13 +1567,15 @@ async function loadQuestValidationLists() {
     return;
   }
 
-  const [friendItems, publicItems] = await Promise.all([
+  const [friendItems, publicItems, mineItems] = await Promise.all([
     fetchQuestValidationList('friends'),
-    fetchQuestValidationList('public')
+    fetchQuestValidationList('public'),
+    fetchQuestValidationList('mine')
   ]);
 
   renderQuestValidationList('quest-friends-list', friendItems, 'friend');
   renderQuestValidationList('quest-public-list', publicItems, 'public');
+  renderMyQuestValidationList(mineItems);
 }
 
 async function voteQuestValidation(validationId, scope, value) {

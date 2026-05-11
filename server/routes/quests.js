@@ -141,6 +141,49 @@ router.get('/public', async (req, res) => {
   }
 });
 
+router.get('/mine', async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('quest_validations')
+      .select('*')
+      .eq('owner_user_id', req.user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const validationIds = (data || []).map(item => item.id);
+    let votes = [];
+    if (validationIds.length) {
+      const { data: voteRows, error: voteError } = await supabaseAdmin
+        .from('quest_validation_votes')
+        .select('validation_id, vote_scope, vote_value, vote_weight')
+        .in('validation_id', validationIds);
+      if (voteError) return res.status(500).json({ error: voteError.message });
+      votes = voteRows || [];
+    }
+
+    const result = (data || []).map((validation) => {
+      const validationVotes = votes.filter(vote => vote.validation_id === validation.id);
+      const yes = validationVotes.filter(vote => vote.vote_value).length;
+      const no = validationVotes.filter(vote => !vote.vote_value).length;
+      return {
+        ...validation,
+        votes: {
+          yes,
+          no,
+          total: yes + no
+        }
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/validations/:id/vote', async (req, res) => {
   const validationId = req.params.id;
   const scope = String(req.body.vote_scope || '');
