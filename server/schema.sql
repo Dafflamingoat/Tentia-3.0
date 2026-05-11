@@ -63,7 +63,7 @@ create table if not exists profiles (
   -- Compteurs HF
   total_login_days  int default 0,
   total_quests_done int default 0,
-  total_quest_xp    int default 0,
+  total_quest_xp    numeric default 0,
   total_chess_xp    int default 0,
   peak_elo          int default 0,
   last_login        text default null,
@@ -91,6 +91,7 @@ alter table profiles add column if not exists strava_daily_xp jsonb default '{}'
 alter table profiles add column if not exists quest_history jsonb default '{}'::jsonb;
 alter table profiles add column if not exists quest_reputation jsonb default '{"submitted":0,"accepted":0,"rejected":0,"score":null}'::jsonb;
 alter table profiles add column if not exists xp_buffer numeric default 0;
+alter table profiles alter column total_quest_xp type numeric using total_quest_xp::numeric;
 alter table profiles add column if not exists dashboard_profile_photo text default null;
 
 -- Rework quetes : validations sociales / publiques / moderation

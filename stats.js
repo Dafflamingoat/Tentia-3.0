@@ -1530,6 +1530,13 @@ function renderQuestValidationList(targetId, items, scope) {
   });
 }
 
+function getPublicPercentShares(slots) {
+  const count = Math.max(1, Math.min(parseInt(slots, 10) || 1, 4));
+  const base = Math.floor(40 / count);
+  const remainder = 40 - base * count;
+  return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
+}
+
 function renderMyQuestValidationList(items) {
   const list = document.getElementById('quest-mine-list');
   if (!list) return;
@@ -1541,24 +1548,35 @@ function renderMyQuestValidationList(items) {
 
   list.innerHTML = '';
   items.forEach((item) => {
-    const yes = Number(item.votes?.yes || 0);
-    const no = Number(item.votes?.no || 0);
-    const totalVotes = yes + no;
-    const expectedVotes = Math.max(
-      Number(item.public_slots || 0),
-      Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0,
-      1
-    );
-    const unit = 80 / expectedVotes;
-    const yesWidth = Math.min(80, yes * unit);
-    const noWidth = Math.min(80 - yesWidth, no * unit);
+    const friendCount = Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0;
+    const publicSlots = Number(item.public_slots || 0);
+    const friendYes = Number(item.votes?.friend_yes || 0);
+    const friendNo = Number(item.votes?.friend_no || 0);
+    const publicYes = Number(item.votes?.public_yes || 0);
+    const publicNo = Number(item.votes?.public_no || 0);
+    const friendTotal = Number(item.votes?.friend_total || 0);
+    const publicTotal = Number(item.votes?.public_total || 0);
+    const friendMajority = Math.floor(friendCount / 2) + 1;
+    const friendClosed = !friendCount || friendYes >= friendMajority || friendNo >= friendMajority || friendTotal >= friendCount;
+    const friendAccepted = friendCount > 0 && friendYes >= friendMajority;
+    const friendRejected = friendCount > 0 && friendClosed && !friendAccepted;
+    const friendWidth = friendAccepted ? 40 : 0;
+    const friendNoWidth = friendRejected ? 40 : 0;
+    const publicShares = getPublicPercentShares(publicSlots);
+    const publicClosedPercent = Number(item.votes?.public_closed_percent ?? publicShares
+      .slice(0, publicTotal)
+      .reduce((sum, share) => sum + share, 0));
+    const publicPercent = Number(item.votes?.public_award_percent ?? 0);
+    const publicNoPercent = Math.max(0, publicClosedPercent - publicPercent);
+    const yesWidth = Math.min(80, friendWidth + publicPercent);
+    const noWidth = Math.min(80 - yesWidth, friendNoWidth + publicNoPercent);
 
     const row = document.createElement('div');
     row.className = 'quest-validation-item';
     row.innerHTML = `
       <div class="quest-validation-item-main">
         <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
-        <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | ${totalVotes}/${expectedVotes} vote(s)</div>
+        <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | Amis ${friendTotal}/${friendCount} | Public ${publicTotal}/${publicSlots}</div>
         <div class="quest-progress-wrap">
           <div class="quest-progress-fill base" style="width:20%;"></div>
           <div class="quest-progress-fill yes" style="left:20%;width:${yesWidth}%;"></div>
@@ -1566,8 +1584,8 @@ function renderMyQuestValidationList(items) {
           <div class="quest-progress-label">20% acquis</div>
         </div>
         <div class="quest-progress-legend">
-          <span>Valides ${yes}</span>
-          <span>Refus ${no}</span>
+          <span>Valides A${friendYes}/P${publicYes}</span>
+          <span>Refus A${friendNo}/P${publicNo}</span>
         </div>
       </div>
       <div class="quest-validation-actions">
@@ -1640,7 +1658,7 @@ function renderQuestSubmitFriends(friends = []) {
     label.className = 'quest-submit-friend';
     label.innerHTML = `
       <input type="checkbox" value="${friend.user_id}">
-      <span>${friend.username}</span>
+      <span>${escapeHTML(friend.username)}</span>
     `;
     questSubmitFriends.appendChild(label);
   });
@@ -1651,10 +1669,8 @@ function renderQuestSubmitFriends(friends = []) {
 }
 
 function updateQuestSubmitPublicState() {
-  const hasFriend = getSelectedQuestSubmitFriendIds().length > 0;
   if (!questPublicSlots) return;
-  questPublicSlots.disabled = hasFriend;
-  questPublicSlots.value = hasFriend ? '0' : (questPublicSlots.value === '0' ? '1' : questPublicSlots.value);
+  questPublicSlots.disabled = false;
 }
 
 async function openQuestSubmitPopup() {
@@ -1718,6 +1734,12 @@ async function submitQuestValidation() {
   if (questSubmitFeedback) questSubmitFeedback.textContent = 'Soumission...';
 
   try {
+    const friendValidatorIds = getSelectedQuestSubmitFriendIds();
+    const publicSlots = parseInt(questPublicSlots?.value, 10) || 0;
+    if (!friendValidatorIds.length && publicSlots <= 0) {
+      throw new Error('Selectionne au moins un ami ou un validateur public.');
+    }
+
     const token = localStorage.getItem('_token');
     const response = await fetch('/api/quests/validations', {
       method: 'POST',
@@ -1727,8 +1749,8 @@ async function submitQuestValidation() {
       },
       body: JSON.stringify({
         quests: selectedQuests,
-        friend_validator_ids: getSelectedQuestSubmitFriendIds(),
-        public_slots: getSelectedQuestSubmitFriendIds().length > 0 ? 0 : (parseInt(questPublicSlots?.value, 10) || 1)
+        friend_validator_ids: friendValidatorIds,
+        public_slots: publicSlots
       })
     });
     const result = await response.json().catch(() => ({}));

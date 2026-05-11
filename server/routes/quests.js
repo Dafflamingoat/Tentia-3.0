@@ -26,13 +26,96 @@ function calculateQuestXpParts(totalXp) {
   };
 }
 
-function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+function getXpToNextLevel(currentLevel) {
+  return 100 + (currentLevel - 1) * 50;
 }
 
-function getExpectedVotes(validation) {
-  const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
-  return Math.max(Number(validation.public_slots || 0), friendCount, 1);
+function getPetXpNeeded(currentLevel) {
+  return Math.floor(60 + currentLevel * 25 + currentLevel * currentLevel * 3);
+}
+
+function getHpXpMultiplier(hp) {
+  const currentHP = parseInt(hp, 10) || 0;
+  if (currentHP >= 80) return 1.1;
+  if (currentHP <= 20) return 0.9;
+  return 1;
+}
+
+function getPublicPercentShares(slots) {
+  const count = Math.max(1, Math.min(parseInt(slots, 10) || 1, 4));
+  const base = Math.floor(40 / count);
+  const remainder = 40 - base * count;
+  return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
+}
+
+function calculatePublicAwardXP(validation, publicVotes) {
+  const shares = getPublicPercentShares(validation.public_slots);
+  const totalXp = Number(validation.total_xp || 0);
+  const percent = publicVotes
+    .slice(0, shares.length)
+    .reduce((sum, vote, index) => sum + (vote.vote_value ? shares[index] : 0), 0);
+  return Number(((totalXp * percent) / 100).toFixed(4));
+}
+
+async function awardQuestXpToOwner(validation, amount) {
+  const baseAmount = Math.max(0, Number(amount) || 0);
+  if (!baseAmount) return null;
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('xp, xp_buffer, level, hp, pets, equipped_pet, total_quest_xp')
+    .eq('user_id', validation.owner_user_id)
+    .single();
+
+  if (profileError) throw profileError;
+
+  const multiplier = getHpXpMultiplier(profile.hp);
+  const modifiedAmount = Number((baseAmount * multiplier).toFixed(4));
+  const pets = Array.isArray(profile.pets) ? profile.pets : [];
+  const pet = pets.find(item => item && item.id === profile.equipped_pet && item.active !== false);
+  const share = pet ? Math.max(0, Math.min(Number(pet.share || 0.1), 1)) : 0;
+  const playerAmount = modifiedAmount * (1 - share);
+  const totalBuffered = (parseFloat(profile.xp_buffer) || 0) + playerAmount;
+  let xp = (parseInt(profile.xp, 10) || 0) + Math.floor(totalBuffered);
+  const xpBuffer = Number((totalBuffered - Math.floor(totalBuffered)).toFixed(4));
+  let level = parseInt(profile.level, 10) || 1;
+  let xpNeeded = getXpToNextLevel(level);
+
+  while (xp >= xpNeeded) {
+    xp -= xpNeeded;
+    level += 1;
+    xpNeeded = getXpToNextLevel(level);
+  }
+
+  if (pet) {
+    pet.xp = (parseInt(pet.xp, 10) || 0) + Math.floor(modifiedAmount * share);
+    pet.level = parseInt(pet.level, 10) || 1;
+    let petNeeded = getPetXpNeeded(pet.level);
+    while (pet.xp >= petNeeded && pet.level < 50) {
+      pet.xp -= petNeeded;
+      pet.level += 1;
+      petNeeded = getPetXpNeeded(pet.level);
+    }
+  }
+
+  const totalQuestXP = Number(((parseFloat(profile.total_quest_xp) || 0) + baseAmount).toFixed(4));
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      xp,
+      xp_buffer: xpBuffer,
+      level,
+      pets,
+      total_quest_xp: totalQuestXP
+    })
+    .eq('user_id', validation.owner_user_id);
+
+  if (error) throw error;
+  return { base_xp: baseAmount, modified_xp: modifiedAmount, xp, xp_buffer: xpBuffer, level };
+}
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function appendQuestHistory(userId, questText, statusLabel) {
@@ -85,10 +168,11 @@ async function getVotesForUser(userId) {
   return new Set((data || []).map(vote => vote.validation_id));
 }
 
-async function finalizeValidation(validation, status, statusLabel) {
+async function finalizeValidation(validation, status, statusLabel, extraUpdates = {}) {
   const { data, error } = await supabaseAdmin
     .from('quest_validations')
     .update({
+      ...extraUpdates,
       status,
       resolved_at: new Date().toISOString()
     })
@@ -102,11 +186,76 @@ async function finalizeValidation(validation, status, statusLabel) {
   return { validation: data, quest_history };
 }
 
+async function getValidationVotes(validationId) {
+  const { data, error } = await supabaseAdmin
+    .from('quest_validation_votes')
+    .select('vote_value, vote_scope, created_at')
+    .eq('validation_id', validationId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function evaluateValidation(validation) {
+  const votes = await getValidationVotes(validation.id);
+  const friendVotes = votes.filter(vote => vote.vote_scope === 'friend');
+  const publicVotes = votes.filter(vote => vote.vote_scope === 'public');
+  const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
+  const publicSlots = Number(validation.public_slots || 0);
+  const updates = {};
+  let xpDelta = 0;
+
+  if (friendCount > 0 && validation.friend_status === 'pending') {
+    const yes = friendVotes.filter(vote => vote.vote_value).length;
+    const no = friendVotes.filter(vote => !vote.vote_value).length;
+    const majority = Math.floor(friendCount / 2) + 1;
+    const closed = yes >= majority || no >= majority || yes + no >= friendCount;
+
+    if (closed) {
+      updates.friend_status = yes >= majority ? 'accepted' : 'rejected';
+      xpDelta += updates.friend_status === 'accepted'
+        ? Number(validation.friend_xp || 0)
+        : Number(validation.fallback_xp || 0);
+    }
+  }
+
+  if (publicSlots > 0 && validation.public_status === 'pending' && publicVotes.length >= publicSlots) {
+    const publicAward = calculatePublicAwardXP(validation, publicVotes);
+    updates.public_status = publicAward > 0 ? 'accepted' : 'rejected';
+    xpDelta += publicAward;
+  }
+
+  const nextFriendStatus = updates.friend_status || validation.friend_status;
+  const nextPublicStatus = updates.public_status || validation.public_status;
+  const friendDone = nextFriendStatus === 'none' || nextFriendStatus === 'accepted' || nextFriendStatus === 'rejected';
+  const publicDone = nextPublicStatus === 'none' || nextPublicStatus === 'accepted' || nextPublicStatus === 'rejected';
+  let finalized = null;
+  let award = null;
+
+  if (xpDelta > 0) {
+    award = await awardQuestXpToOwner(validation, xpDelta);
+    updates.xp_awarded = Number(((Number(validation.xp_awarded || 0)) + xpDelta).toFixed(4));
+  }
+
+  if (friendDone && publicDone) {
+    const accepted = nextFriendStatus === 'accepted' || nextPublicStatus === 'accepted';
+    finalized = await finalizeValidation(validation, accepted ? 'accepted' : 'rejected', accepted ? 'acceptee' : 'refusee', updates);
+  } else if (Object.keys(updates).length) {
+    const { error } = await supabaseAdmin
+      .from('quest_validations')
+      .update(updates)
+      .eq('id', validation.id);
+    if (error) throw error;
+  }
+
+  return { updates, finalized, award };
+}
+
 router.post('/validations', async (req, res) => {
   const quests = Array.isArray(req.body.quests) ? req.body.quests : [];
   const friendValidatorIds = normalizeFriendIds(req.body.friend_validator_ids);
-  const requestedPublicSlots = normalizePublicSlots(req.body.public_slots);
-  const publicSlots = friendValidatorIds.length > 0 ? 0 : Math.max(1, requestedPublicSlots || 1);
+  const publicSlots = normalizePublicSlots(req.body.public_slots);
 
   if (!quests.length) {
     return res.status(400).json({ error: 'Aucune quete a valider' });
@@ -123,10 +272,10 @@ router.post('/validations', async (req, res) => {
         ...xpParts,
         public_slots: publicSlots,
         friend_validator_ids: friendValidatorIds,
-        moderator_required: friendValidatorIds.length === 0,
+        moderator_required: friendValidatorIds.length === 0 && publicSlots === 0,
         friend_status: friendValidatorIds.length ? 'pending' : 'none',
         public_status: publicSlots > 0 ? 'pending' : 'none',
-        moderator_status: friendValidatorIds.length === 0 ? 'pending' : 'none',
+        moderator_status: friendValidatorIds.length === 0 && publicSlots === 0 ? 'pending' : 'none',
         xp_awarded: xpParts.immediate_xp
       };
     });
@@ -186,7 +335,10 @@ router.get('/public', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     const items = (data || [])
       .filter(item => !votedIds.has(item.id))
-      .filter(item => !Array.isArray(item.friend_validator_ids) || item.friend_validator_ids.length === 0);
+      .filter(item => {
+        const friendIds = Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids : [];
+        return !friendIds.includes(req.user.id);
+      });
     res.json(await attachOwnerNames(items));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -210,14 +362,24 @@ router.get('/mine', async (req, res) => {
     if (validationIds.length) {
       const { data: voteRows, error: voteError } = await supabaseAdmin
         .from('quest_validation_votes')
-        .select('validation_id, vote_scope, vote_value, vote_weight')
-        .in('validation_id', validationIds);
+        .select('validation_id, vote_scope, vote_value, vote_weight, created_at')
+        .in('validation_id', validationIds)
+        .order('created_at', { ascending: true });
       if (voteError) return res.status(500).json({ error: voteError.message });
       votes = voteRows || [];
     }
 
     const result = (data || []).map((validation) => {
       const validationVotes = votes.filter(vote => vote.validation_id === validation.id);
+      const friendVotes = validationVotes.filter(vote => vote.vote_scope === 'friend');
+      const publicVotes = validationVotes.filter(vote => vote.vote_scope === 'public');
+      const publicShares = getPublicPercentShares(validation.public_slots);
+      const publicAwardPercent = publicVotes
+        .slice(0, publicShares.length)
+        .reduce((sum, vote, index) => sum + (vote.vote_value ? publicShares[index] : 0), 0);
+      const publicClosedPercent = publicShares
+        .slice(0, publicVotes.length)
+        .reduce((sum, share) => sum + share, 0);
       const yes = validationVotes.filter(vote => vote.vote_value).length;
       const no = validationVotes.filter(vote => !vote.vote_value).length;
       return {
@@ -225,7 +387,15 @@ router.get('/mine', async (req, res) => {
         votes: {
           yes,
           no,
-          total: yes + no
+          total: yes + no,
+          friend_yes: friendVotes.filter(vote => vote.vote_value).length,
+          friend_no: friendVotes.filter(vote => !vote.vote_value).length,
+          friend_total: friendVotes.length,
+          public_yes: publicVotes.filter(vote => vote.vote_value).length,
+          public_no: publicVotes.filter(vote => !vote.vote_value).length,
+          public_total: publicVotes.length,
+          public_award_percent: publicAwardPercent,
+          public_closed_percent: publicClosedPercent
         }
       };
     });
@@ -261,9 +431,16 @@ router.post('/validations/:id/vote', async (req, res) => {
   }
 
   if (scope === 'public') {
-    const friendIds = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids : [];
-    if (friendIds.length > 0 || Number(validation.public_slots || 0) <= 0) {
+    if (Number(validation.public_slots || 0) <= 0 || validation.public_status !== 'pending') {
       return res.status(403).json({ error: 'Vote public non autorise' });
+    }
+  }
+
+  const currentVotes = await getValidationVotes(validationId);
+  if (scope === 'public') {
+    const publicVotes = currentVotes.filter(vote => vote.vote_scope === 'public');
+    if (publicVotes.length >= Number(validation.public_slots || 0)) {
+      return res.status(409).json({ error: 'Votes publics deja complets' });
     }
   }
 
@@ -281,44 +458,16 @@ router.post('/validations/:id/vote', async (req, res) => {
 
   if (voteError) return res.status(500).json({ error: voteError.message });
 
-  const { data: votes } = await supabaseAdmin
-    .from('quest_validation_votes')
-    .select('vote_value, vote_scope')
-    .eq('validation_id', validationId)
-    .eq('vote_scope', scope);
-
-  const yes = (votes || []).filter(item => item.vote_value).length;
-  const no = (votes || []).filter(item => !item.vote_value).length;
-  const updates = {};
-  let expectedVotes = 1;
-
-  if (scope === 'friend') {
-    const needed = (validation.friend_validator_ids || []).length;
-    expectedVotes = Math.max(needed, 1);
-    if (yes + no >= needed) {
-      updates.friend_status = yes > no ? 'accepted' : 'rejected';
-    }
+  try {
+    const evaluation = await evaluateValidation(validation);
+    const votes = await getValidationVotes(validationId);
+    const scopeVotes = votes.filter(item => item.vote_scope === scope);
+    const yes = scopeVotes.filter(item => item.vote_value).length;
+    const no = scopeVotes.filter(item => !item.vote_value).length;
+    res.json({ vote, tally: { yes, no }, ...evaluation });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-  if (scope === 'public') {
-    const needed = Number(validation.public_slots || 0);
-    expectedVotes = Math.max(needed, 1);
-    if (yes + no >= needed) {
-      updates.public_status = yes > no ? 'accepted' : 'rejected';
-    }
-  }
-
-  let finalized = null;
-  if (yes + no >= expectedVotes) {
-    finalized = await finalizeValidation(validation, yes > no ? 'accepted' : 'rejected', yes > no ? 'acceptee' : 'refusee');
-  } else if (Object.keys(updates).length) {
-    await supabaseAdmin
-      .from('quest_validations')
-      .update(updates)
-      .eq('id', validationId);
-  }
-
-  res.json({ vote, tally: { yes, no }, updates, finalized });
 });
 
 router.post('/validations/:id/complete-now', async (req, res) => {
