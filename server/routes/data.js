@@ -133,7 +133,7 @@ router.post('/import', async (req, res) => {
 
     total_login_days:  parseInt(ls.totalLoginDays)  || 0,
     total_quests_done: parseInt(ls.totalQuestsDone) || 0,
-    total_quest_xp:    parseFloat(ls.totalQuestXP)  || 0,
+    total_quest_xp:    Math.floor(parseFloat(ls.totalQuestXP) || 0),
     total_chess_xp:    parseInt(ls.totalChessXP)    || 0,
     peak_elo:          parseInt(ls.peakElo)          || 0,
     last_login:        ls.lastLogin  || null,

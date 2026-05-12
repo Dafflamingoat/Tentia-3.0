@@ -1888,7 +1888,7 @@ async function submitQuestValidation() {
           quests,
           quest_reputation: nextReputation,
           total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0,
-          total_quest_xp: parseFloat(localStorage.getItem('totalQuestXP')) || 0
+          total_quest_xp: Math.floor(parseFloat(localStorage.getItem('totalQuestXP')) || 0)
         });
       }
 

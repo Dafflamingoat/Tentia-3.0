@@ -101,7 +101,7 @@ async function awardQuestXpToOwner(validation, amount) {
     }
   }
 
-  const totalQuestXP = Number(((parseFloat(profile.total_quest_xp) || 0) + baseAmount).toFixed(4));
+  const totalQuestXP = Math.floor((parseFloat(profile.total_quest_xp) || 0) + baseAmount);
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
