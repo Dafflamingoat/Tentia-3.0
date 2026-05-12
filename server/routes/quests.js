@@ -432,6 +432,32 @@ async function closeExpiredPendingValidations() {
   }
 }
 
+async function keepOnlyOpenForScope(validations, scope) {
+  const result = [];
+
+  for (const validation of validations || []) {
+    const evaluation = await evaluateValidation(validation);
+    if (evaluation.finalized) continue;
+
+    const nextFriendStatus = evaluation.updates?.friend_status || validation.friend_status;
+    const nextPublicStatus = evaluation.updates?.public_status || validation.public_status;
+
+    if (scope === 'friend' && nextFriendStatus === 'pending') {
+      result.push(validation);
+    }
+
+    if (scope === 'public' && nextPublicStatus === 'pending') {
+      const votes = await getValidationVotes(validation.id);
+      const publicVotes = votes.filter(vote => vote.vote_scope === 'public');
+      if (publicVotes.length < Number(validation.public_slots || 0)) {
+        result.push(validation);
+      }
+    }
+  }
+
+  return result;
+}
+
 router.post('/validations', async (req, res) => {
   const quests = Array.isArray(req.body.quests) ? req.body.quests : [];
   const friendValidatorIds = normalizeFriendIds(req.body.friend_validator_ids);
@@ -494,7 +520,8 @@ router.get('/friends', async (req, res) => {
       .limit(50);
 
     if (error) return res.status(500).json({ error: error.message });
-    const items = (data || []).filter(item => !votedIds.has(item.id));
+    const openItems = await keepOnlyOpenForScope(data || [], 'friend');
+    const items = openItems.filter(item => !votedIds.has(item.id));
     res.json(await attachOwnerNames(items));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -516,9 +543,10 @@ router.get('/public', async (req, res) => {
       .limit(50);
 
     if (error) return res.status(500).json({ error: error.message });
-    const ownerIds = [...new Set((data || []).map(item => item.owner_user_id))];
+    const openItems = await keepOnlyOpenForScope(data || [], 'public');
+    const ownerIds = [...new Set(openItems.map(item => item.owner_user_id))];
     const friendOwnerIds = await getFriendOwnerIdsForUser(req.user.id, ownerIds);
-    const items = (data || [])
+    const items = openItems
       .filter(item => !votedIds.has(item.id))
       .filter(item => !friendOwnerIds.has(item.owner_user_id));
     res.json(await attachOwnerNames(items));
