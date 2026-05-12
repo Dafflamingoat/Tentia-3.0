@@ -1236,6 +1236,7 @@ const questCompleteWarningCancel = document.getElementById('quest-complete-warni
 const questCompleteWarningConfirm = document.getElementById('quest-complete-warning-confirm');
 const questValidationTabs = document.querySelectorAll('.quest-validation-tab');
 const questValidationPanels = document.querySelectorAll('.quest-validation-panel');
+const questRefreshList = document.getElementById('quest-refresh-list');
 
 // ────────────────
 // XP JOUEUR
@@ -1597,21 +1598,27 @@ function renderMyQuestValidationList(items) {
 }
 
 async function loadQuestValidationLists() {
+  if (questRefreshList) questRefreshList.disabled = true;
   if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) {
     renderQuestValidationList('quest-friends-list', [], 'friend');
     renderQuestValidationList('quest-public-list', [], 'public');
+    if (questRefreshList) questRefreshList.disabled = false;
     return;
   }
 
-  const [friendItems, publicItems, mineItems] = await Promise.all([
-    fetchQuestValidationList('friends'),
-    fetchQuestValidationList('public'),
-    fetchQuestValidationList('mine')
-  ]);
+  try {
+    const [friendItems, publicItems, mineItems] = await Promise.all([
+      fetchQuestValidationList('friends'),
+      fetchQuestValidationList('public'),
+      fetchQuestValidationList('mine')
+    ]);
 
-  renderQuestValidationList('quest-friends-list', friendItems, 'friend');
-  renderQuestValidationList('quest-public-list', publicItems, 'public');
-  renderMyQuestValidationList(mineItems);
+    renderQuestValidationList('quest-friends-list', friendItems, 'friend');
+    renderQuestValidationList('quest-public-list', publicItems, 'public');
+    renderMyQuestValidationList(mineItems);
+  } finally {
+    if (questRefreshList) questRefreshList.disabled = false;
+  }
 }
 
 async function voteQuestValidation(validationId, scope, value) {
@@ -2940,6 +2947,10 @@ if (questSubmitPopup) {
   });
 }
 
+if (questRefreshList) {
+  questRefreshList.addEventListener('click', loadQuestValidationLists);
+}
+
 questValidationTabs.forEach((tab) => {
   tab.addEventListener('click', () => {
     const target = tab.dataset.questValidationTab;
@@ -2987,6 +2998,8 @@ questValidationPanels.forEach((panel) => {
     button.disabled = true;
     try {
       await voteQuestValidation(button.dataset.id, button.dataset.scope, button.dataset.value === 'true');
+      const item = button.closest('.quest-validation-item');
+      if (item) item.remove();
       await loadQuestValidationLists();
     } catch (error) {
       alert(error.message || 'Vote impossible');

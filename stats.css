@@ -1473,6 +1473,32 @@ body {
   margin-bottom: 8px;
 }
 
+.quest-validation-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.quest-refresh-btn {
+  background: #111;
+  border: 1px solid var(--border);
+  color: var(--gold-light);
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 7px;
+  cursor: pointer;
+}
+
+.quest-refresh-btn:hover {
+  background: var(--gold-dark);
+  color: #fff;
+}
+
+.quest-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .quest-validation-tab {
   background: #111;
   border: 1px solid var(--border);
