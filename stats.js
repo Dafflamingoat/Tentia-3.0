@@ -1721,7 +1721,7 @@ function renderQuestSubmitFriends(friends = []) {
   });
 
   questSubmitFriends.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-    input.addEventListener('change', updateQuestSubmitPublicState);
+    input.addEventListener('change', () => updateQuestSubmitPublicState('friend'));
   });
 }
 
@@ -1735,13 +1735,18 @@ function renderQuestSubmitModerators(moderators = []) {
   }
 
   moderators.forEach((moderator) => {
-    const row = document.createElement('div');
-    row.className = 'quest-submit-friend quest-submit-moderator';
-    row.innerHTML = `
+    const label = document.createElement('label');
+    label.className = 'quest-submit-friend quest-submit-moderator';
+    label.innerHTML = `
+      <input type="checkbox" value="${moderator.user_id}">
       <span>${escapeHTML(moderator.username)}</span>
       <span class="quest-submit-moderator-meta">N${Number(moderator.level || 1)} | ${Math.round(Number(moderator.reputation_score || 0))}%</span>
     `;
-    questSubmitModerators.appendChild(row);
+    questSubmitModerators.appendChild(label);
+  });
+
+  questSubmitModerators.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', () => updateQuestSubmitPublicState('moderator'));
   });
 }
 
@@ -1755,7 +1760,7 @@ async function fetchQuestSubmitModerators() {
   return Array.isArray(data) ? data : [];
 }
 
-function updateQuestSubmitPublicState() {
+function updateQuestSubmitPublicState(source = '') {
   const selectedFriends = getSelectedQuestSubmitFriendIds();
   const friendInputs = questSubmitFriends
     ? [...questSubmitFriends.querySelectorAll('input[type="checkbox"]')]
@@ -1765,21 +1770,22 @@ function updateQuestSubmitPublicState() {
     : [];
   const selectedModerators = moderatorInputs.filter(input => input.checked);
 
-  if (questPublicSlots) {
-    questPublicSlots.disabled = selectedModerators.length > 0;
-    if (questPublicSlots.disabled) questPublicSlots.selectedIndex = -1;
+  if (source === 'friend' && selectedFriends.length) {
+    moderatorInputs.forEach(input => { input.checked = false; });
   }
 
-  friendInputs.forEach((input) => {
-    if (!input.checked) input.disabled = selectedModerators.length > 0;
-    const label = input.closest('.quest-submit-friend');
-    if (label) label.classList.toggle('disabled', input.disabled);
-  });
+  if (source === 'moderator' && selectedModerators.length) {
+    friendInputs.forEach(input => { input.checked = false; });
+  }
 
-  moderatorInputs.forEach((input) => {
-    if (!input.checked) input.disabled = selectedFriends.length > 0;
+  if (questPublicSlots) {
+    questPublicSlots.disabled = false;
+  }
+
+  [...friendInputs, ...moderatorInputs].forEach((input) => {
+    input.disabled = false;
     const label = input.closest('.quest-submit-friend');
-    if (label) label.classList.toggle('disabled', input.disabled);
+    if (label) label.classList.remove('disabled');
   });
 }
 
@@ -1827,6 +1833,13 @@ function getSelectedQuestSubmitFriendIds() {
     .filter(Boolean);
 }
 
+function getSelectedQuestSubmitModeratorIds() {
+  if (!questSubmitModerators) return [];
+  return [...questSubmitModerators.querySelectorAll('input[type="checkbox"]:checked')]
+    .map(input => input.value)
+    .filter(Boolean);
+}
+
 function getSelectedQuestPublicSlots() {
   if (!questPublicSlots || questPublicSlots.disabled) return 0;
   return parseInt(questPublicSlots.value, 10) || 1;
@@ -1855,7 +1868,11 @@ async function submitQuestValidation() {
 
   try {
     const friendValidatorIds = getSelectedQuestSubmitFriendIds();
+    const moderatorValidatorIds = getSelectedQuestSubmitModeratorIds();
     const publicSlots = getSelectedQuestPublicSlots();
+    if (moderatorValidatorIds.length) {
+      throw new Error('La selection moderateur est prete visuellement, mais le vote moderateur sera branche a l etape suivante.');
+    }
     if (!friendValidatorIds.length && publicSlots <= 0) {
       throw new Error('Selectionne au moins un ami ou un validateur public.');
     }
