@@ -36,14 +36,12 @@ function calculateQuestXpParts(totalXp) {
 
 function getReputationScore(reputation = {}) {
   if (!reputation || typeof reputation !== 'object') return 0;
-  return Number(reputation.score ?? reputation.judge_score ?? reputation.player_score ?? 0) || 0;
+  return Number(reputation.score ?? reputation.judge_score ?? 0) || 0;
 }
 
 function getReputationActionCount(reputation = {}) {
   if (!reputation || typeof reputation !== 'object') return 0;
-  return Number(reputation.accepted || 0)
-    + Number(reputation.rejected || 0)
-    + Number(reputation.judge_total || 0);
+  return Number(reputation.judge_total || 0);
 }
 
 function getXpToNextLevel(currentLevel) {
@@ -183,9 +181,7 @@ function normalizeQuestReputation(current = {}) {
     judge_total: judgeTotal,
     judge_aligned: judgeAligned,
     judge_score: judgeScore,
-    score: scores.length
-      ? Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(2))
-      : null
+    score: judgeScore
   };
 }
 
@@ -219,8 +215,9 @@ async function updateQuestReputation(userId, accepted) {
 async function updateJudgeReputations(validationId, accepted) {
   const { data: votes, error: votesError } = await supabaseAdmin
     .from('quest_validation_votes')
-    .select('voter_user_id, vote_value')
-    .eq('validation_id', validationId);
+    .select('voter_user_id, vote_value, vote_scope')
+    .eq('validation_id', validationId)
+    .in('vote_scope', ['public', 'moderator']);
 
   if (votesError) throw votesError;
   if (!votes?.length) return {};
