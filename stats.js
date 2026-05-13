@@ -1533,7 +1533,6 @@ function renderQuestValidationList(targetId, items, scope) {
     const currentVotes = scope === 'friend'
       ? Number(item.votes?.friend_total || 0)
       : Number(item.votes?.public_total || 0);
-    const remainingVotes = Math.max(0, expectedVotes - currentVotes);
     const remainingLabel = scope === 'friend' ? 'Votes amis restants' : 'Votes publics restants';
 
     const row = document.createElement('div');
@@ -1542,7 +1541,7 @@ function renderQuestValidationList(targetId, items, scope) {
       <div class="quest-validation-item-main">
         <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
         <div class="quest-validation-item-meta">${escapeHTML(item.owner_username || 'Joueur')} | ${formatQuestValidationDate(item.created_at)} | ${Number(item.total_xp || 0)} XP</div>
-        <div class="quest-validation-item-meta">${remainingLabel} | ${remainingVotes}</div>
+        <div class="quest-validation-item-meta">${remainingLabel} | ${currentVotes}/${expectedVotes}</div>
       </div>
       <div class="quest-validation-actions">
         <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${scope}" data-value="true">Valider</button>
@@ -1872,7 +1871,7 @@ function getSelectedQuestSubmitModeratorIds() {
 }
 
 function getSelectedQuestPublicSlots() {
-  if (!questPublicSlots || questPublicSlots.disabled) return 0;
+  if (!questPublicSlots) return 0;
   return parseInt(questPublicSlots.value, 10) || 1;
 }
 
@@ -1904,8 +1903,8 @@ async function submitQuestValidation() {
     if (moderatorValidatorIds.length) {
       throw new Error('La selection moderateur est prete visuellement, mais le vote moderateur sera branche a l etape suivante.');
     }
-    if (!friendValidatorIds.length && publicSlots <= 0) {
-      throw new Error('Selectionne au moins un ami ou un validateur public.');
+    if (publicSlots < 1) {
+      throw new Error('Selectionne au moins 1 validateur public.');
     }
 
     const token = localStorage.getItem('_token');
