@@ -7,6 +7,11 @@ router.use(requireAuth);
 
 const FRIEND_UNLOCK_DELAY_MS = 48 * 60 * 60 * 1000;
 const AUTO_CLOSE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
+const MODERATOR_ACTIVE_DELAY_MS = 14 * 24 * 60 * 60 * 1000;
+const MODERATOR_MIN_REPUTATION = 75;
+const MODERATOR_MIN_ACTIONS = 5;
+const MODERATOR_LEVEL_BELOW = 2;
+const MODERATOR_LEVEL_ABOVE = 4;
 
 function normalizePublicSlots(value) {
   const slots = parseInt(value, 10) || 0;
@@ -27,6 +32,18 @@ function calculateQuestXpParts(totalXp) {
     public_xp: Number((total * 0.4).toFixed(4)),
     fallback_xp: Number((total * 0.15).toFixed(4))
   };
+}
+
+function getReputationScore(reputation = {}) {
+  if (!reputation || typeof reputation !== 'object') return 0;
+  return Number(reputation.score ?? reputation.judge_score ?? reputation.player_score ?? 0) || 0;
+}
+
+function getReputationActionCount(reputation = {}) {
+  if (!reputation || typeof reputation !== 'object') return 0;
+  return Number(reputation.accepted || 0)
+    + Number(reputation.rejected || 0)
+    + Number(reputation.judge_total || 0);
 }
 
 function getXpToNextLevel(currentLevel) {
@@ -503,6 +520,64 @@ router.post('/validations', async (req, res) => {
     validations: data,
     immediate_xp: Number(immediateXp.toFixed(4))
   });
+});
+
+router.get('/moderators', async (req, res) => {
+  try {
+    const { data: ownerProfile, error: ownerError } = await supabaseAdmin
+      .from('profiles')
+      .select('level')
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (ownerError) return res.status(500).json({ error: ownerError.message });
+
+    const ownerLevel = parseInt(ownerProfile?.level, 10) || 1;
+    const minLevel = Math.max(1, ownerLevel - MODERATOR_LEVEL_BELOW);
+    const maxLevel = ownerLevel + MODERATOR_LEVEL_ABOVE;
+    const activeSince = new Date(Date.now() - MODERATOR_ACTIVE_DELAY_MS).toISOString();
+
+    const { data: friendRows, error: friendError } = await supabaseAdmin
+      .from('friends')
+      .select('friend_id')
+      .eq('user_id', req.user.id);
+
+    if (friendError) return res.status(500).json({ error: friendError.message });
+
+    const friendIds = new Set((friendRows || []).map(row => row.friend_id));
+
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, username, level, last_seen, quest_reputation')
+      .neq('user_id', req.user.id)
+      .gte('level', minLevel)
+      .lte('level', maxLevel)
+      .gte('last_seen', activeSince)
+      .limit(50);
+
+    if (profilesError) return res.status(500).json({ error: profilesError.message });
+
+    const moderators = (profiles || [])
+      .filter(profile => !friendIds.has(profile.user_id))
+      .map((profile) => {
+        const reputation = profile.quest_reputation || {};
+        return {
+          user_id: profile.user_id,
+          username: profile.username || 'Joueur',
+          level: parseInt(profile.level, 10) || 1,
+          reputation_score: getReputationScore(reputation),
+          reputation_actions: getReputationActionCount(reputation)
+        };
+      })
+      .filter(profile => profile.reputation_score >= MODERATOR_MIN_REPUTATION)
+      .filter(profile => profile.reputation_actions >= MODERATOR_MIN_ACTIONS)
+      .sort((a, b) => b.reputation_score - a.reputation_score || b.reputation_actions - a.reputation_actions)
+      .slice(0, 12);
+
+    res.json(moderators);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.get('/friends', async (req, res) => {

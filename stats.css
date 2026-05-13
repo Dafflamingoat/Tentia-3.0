@@ -1771,6 +1771,16 @@ body {
   opacity: 0.45;
 }
 
+.quest-submit-moderator {
+  justify-content: space-between;
+}
+
+.quest-submit-moderator-meta {
+  color: var(--gold-light);
+  font-size: 7px;
+  white-space: nowrap;
+}
+
 .quest-submit-note,
 .quest-submit-feedback {
   color: var(--text-dim);

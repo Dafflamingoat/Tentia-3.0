@@ -1735,18 +1735,24 @@ function renderQuestSubmitModerators(moderators = []) {
   }
 
   moderators.forEach((moderator) => {
-    const label = document.createElement('label');
-    label.className = 'quest-submit-friend quest-submit-moderator';
-    label.innerHTML = `
-      <input type="checkbox" value="${moderator.user_id}">
+    const row = document.createElement('div');
+    row.className = 'quest-submit-friend quest-submit-moderator';
+    row.innerHTML = `
       <span>${escapeHTML(moderator.username)}</span>
+      <span class="quest-submit-moderator-meta">N${Number(moderator.level || 1)} | ${Math.round(Number(moderator.reputation_score || 0))}%</span>
     `;
-    questSubmitModerators.appendChild(label);
+    questSubmitModerators.appendChild(row);
   });
+}
 
-  questSubmitModerators.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-    input.addEventListener('change', updateQuestSubmitPublicState);
+async function fetchQuestSubmitModerators() {
+  const token = localStorage.getItem('_token');
+  const response = await fetch('/api/quests/moderators', {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
+  if (!response.ok) return [];
+  const data = await response.json().catch(() => []);
+  return Array.isArray(data) ? data : [];
 }
 
 function updateQuestSubmitPublicState() {
@@ -1801,8 +1807,12 @@ async function openQuestSubmitPopup() {
   questSubmitPopup.classList.add('active');
 
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    const friends = await friendsRequest('GET', '/list');
+    const [friends, moderators] = await Promise.all([
+      friendsRequest('GET', '/list'),
+      fetchQuestSubmitModerators()
+    ]);
     renderQuestSubmitFriends(Array.isArray(friends) ? friends : []);
+    renderQuestSubmitModerators(Array.isArray(moderators) ? moderators : []);
   }
 }
 
