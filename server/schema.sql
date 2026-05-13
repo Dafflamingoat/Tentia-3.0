@@ -107,6 +107,7 @@ create table if not exists quest_validations (
   fallback_xp numeric not null default 0,
   public_slots int not null default 0 check (public_slots between 0 and 4),
   friend_validator_ids uuid[] default '{}',
+  moderator_validator_ids uuid[] default '{}',
   moderator_required boolean default false,
   status text not null default 'pending' check (status in ('pending','accepted','rejected','cancelled')),
   friend_status text not null default 'pending' check (friend_status in ('none','pending','accepted','rejected')),
@@ -127,6 +128,8 @@ create table if not exists quest_validation_votes (
   created_at timestamptz default now(),
   unique(validation_id, voter_user_id, vote_scope)
 );
+
+alter table quest_validations add column if not exists moderator_validator_ids uuid[] default '{}';
 
 create unique index if not exists quest_validations_owner_quest_unique
   on quest_validations(owner_user_id, quest_id);

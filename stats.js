@@ -1540,7 +1540,7 @@ function renderQuestValidationList(targetId, items, scope) {
   const list = document.getElementById(targetId);
   if (!list) return;
 
-  const label = scope === 'friend' ? 'quetes amis' : 'quetes publiques';
+  const label = scope === 'friend' ? 'quetes amis / moderation' : 'quetes publiques';
   const emptyLabel = scope === 'friend' ? 'ami' : 'publique';
   const displayedCount = items.length >= 50 ? '50+' : String(items.length);
   const submenu = `
@@ -1557,13 +1557,24 @@ function renderQuestValidationList(targetId, items, scope) {
 
   list.innerHTML = submenu;
   items.forEach((item) => {
-    const expectedVotes = scope === 'friend'
+    const itemScope = scope === 'friend' && Array.isArray(item.moderator_validator_ids) && item.moderator_validator_ids.length
+      ? 'moderator'
+      : scope;
+    const expectedVotes = itemScope === 'friend'
       ? (Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0)
+      : itemScope === 'moderator'
+        ? (Array.isArray(item.moderator_validator_ids) ? item.moderator_validator_ids.length : 0)
       : Number(item.public_slots || 0);
-    const currentVotes = scope === 'friend'
+    const currentVotes = itemScope === 'friend'
       ? Number(item.votes?.friend_total || 0)
+      : itemScope === 'moderator'
+        ? Number(item.votes?.moderator_total || 0)
       : Number(item.votes?.public_total || 0);
-    const remainingLabel = scope === 'friend' ? 'Votes amis restants' : 'Votes publics restants';
+    const remainingLabel = itemScope === 'friend'
+      ? 'Votes amis restants'
+      : itemScope === 'moderator'
+        ? 'Votes moderateurs restants'
+        : 'Votes publics restants';
 
     const row = document.createElement('div');
     row.className = 'quest-validation-item';
@@ -1574,8 +1585,8 @@ function renderQuestValidationList(targetId, items, scope) {
         <div class="quest-validation-item-meta">${remainingLabel} | ${currentVotes}/${expectedVotes}</div>
       </div>
       <div class="quest-validation-actions">
-        <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${scope}" data-value="true">Valider</button>
-        <button class="quest-vote-btn no" data-id="${item.id}" data-scope="${scope}" data-value="false">Refuser</button>
+        <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${itemScope}" data-value="true">Valider</button>
+        <button class="quest-vote-btn no" data-id="${item.id}" data-scope="${itemScope}" data-value="false">Refuser</button>
       </div>
     `;
     list.appendChild(row);
@@ -1609,35 +1620,45 @@ function renderMyQuestValidationList(items) {
   list.innerHTML = submenu;
   items.forEach((item) => {
     const friendCount = Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0;
+    const moderatorCount = Array.isArray(item.moderator_validator_ids) ? item.moderator_validator_ids.length : 0;
+    const privateCount = friendCount || moderatorCount;
+    const privateLabel = friendCount ? 'Amis' : 'Moderateurs';
     const publicSlots = Number(item.public_slots || 0);
     const friendYes = Number(item.votes?.friend_yes || 0);
     const friendNo = Number(item.votes?.friend_no || 0);
+    const moderatorYes = Number(item.votes?.moderator_yes || 0);
+    const moderatorNo = Number(item.votes?.moderator_no || 0);
     const publicYes = Number(item.votes?.public_yes || 0);
     const publicNo = Number(item.votes?.public_no || 0);
     const friendTotal = Number(item.votes?.friend_total || 0);
+    const moderatorTotal = Number(item.votes?.moderator_total || 0);
+    const privateYes = friendYes || moderatorYes;
+    const privateNo = friendNo || moderatorNo;
+    const privateTotal = friendTotal || moderatorTotal;
     const publicTotal = Number(item.votes?.public_total || 0);
-    const friendMajority = Math.floor(friendCount / 2) + 1;
-    const friendClosed = !friendCount || friendYes >= friendMajority || friendNo >= friendMajority || friendTotal >= friendCount;
-    const friendAccepted = friendCount > 0 && friendYes >= friendMajority;
-    const friendRejected = friendCount > 0 && friendClosed && !friendAccepted;
-    const friendWidth = friendAccepted ? 40 : 0;
-    const friendNoWidth = friendRejected ? 40 : 0;
+    const privateMajority = Math.floor(privateCount / 2) + 1;
+    const privateClosed = !privateCount || privateYes >= privateMajority || privateNo >= privateMajority || privateTotal >= privateCount;
+    const privateAccepted = privateCount > 0 && privateYes >= privateMajority;
+    const privateRejected = privateCount > 0 && privateClosed && !privateAccepted;
+    const privateWidth = privateAccepted ? 40 : 0;
+    const privateNoWidth = privateRejected ? 40 : 0;
     const publicShares = getPublicPercentShares(publicSlots);
     const publicClosedPercent = Number(item.votes?.public_closed_percent ?? publicShares
       .slice(0, publicTotal)
       .reduce((sum, share) => sum + share, 0));
     const publicPercent = Number(item.votes?.public_award_percent ?? 0);
     const publicNoPercent = Math.max(0, publicClosedPercent - publicPercent);
-    const yesWidth = Math.min(80, friendWidth + publicPercent);
-    const noWidth = Math.min(80 - yesWidth, friendNoWidth + publicNoPercent);
-    const canOpenPublic = item.unlock_available && friendCount > 0 && item.friend_status === 'pending';
+    const yesWidth = Math.min(80, privateWidth + publicPercent);
+    const noWidth = Math.min(80 - yesWidth, privateNoWidth + publicNoPercent);
+    const privatePending = item.friend_status === 'pending' || item.moderator_status === 'pending';
+    const canOpenPublic = item.unlock_available && privateCount > 0 && privatePending;
 
     const row = document.createElement('div');
     row.className = 'quest-validation-item';
     row.innerHTML = `
       <div class="quest-validation-item-main">
         <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
-        <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | Amis ${friendTotal}/${friendCount} | Public ${publicTotal}/${publicSlots}</div>
+        <div class="quest-validation-item-meta">${formatQuestValidationDate(item.created_at)} | ${privateLabel} ${privateTotal}/${privateCount} | Public ${publicTotal}/${publicSlots}</div>
         <div class="quest-progress-wrap">
           <div class="quest-progress-fill base" style="width:20%;"></div>
           <div class="quest-progress-fill yes" style="left:20%;width:${yesWidth}%;"></div>
@@ -1645,8 +1666,8 @@ function renderMyQuestValidationList(items) {
           <div class="quest-progress-label">20% acquis</div>
         </div>
         <div class="quest-progress-legend">
-          <span>Valides A${friendYes}/P${publicYes}</span>
-          <span>Refus A${friendNo}/P${publicNo}</span>
+          <span>Valides ${friendCount ? 'A' : 'M'}${privateYes}/P${publicYes}</span>
+          <span>Refus ${friendCount ? 'A' : 'M'}${privateNo}/P${publicNo}</span>
         </div>
       </div>
       <div class="quest-validation-actions">
@@ -1931,11 +1952,11 @@ async function submitQuestValidation() {
     const friendValidatorIds = getSelectedQuestSubmitFriendIds();
     const moderatorValidatorIds = getSelectedQuestSubmitModeratorIds();
     const publicSlots = getSelectedQuestPublicSlots();
-    if (moderatorValidatorIds.length) {
-      throw new Error('La selection moderateur est prete visuellement, mais le vote moderateur sera branche a l etape suivante.');
-    }
     if (publicSlots < 1) {
       throw new Error('Selectionne au moins 1 validateur public.');
+    }
+    if (friendValidatorIds.length && moderatorValidatorIds.length) {
+      throw new Error('Choisis amis ou moderateurs, pas les deux.');
     }
 
     const token = localStorage.getItem('_token');
@@ -1948,6 +1969,7 @@ async function submitQuestValidation() {
       body: JSON.stringify({
         quests: selectedQuests,
         friend_validator_ids: friendValidatorIds,
+        moderator_validator_ids: moderatorValidatorIds,
         public_slots: publicSlots
       })
     });

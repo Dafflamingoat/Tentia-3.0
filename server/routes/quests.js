@@ -23,6 +23,11 @@ function normalizeFriendIds(value) {
   return [...new Set(value.filter(Boolean).map(String))];
 }
 
+function normalizeModeratorIds(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter(Boolean).map(String))];
+}
+
 function calculateQuestXpParts(totalXp) {
   const total = Math.max(0, Number(totalXp) || 0);
   return {
@@ -75,6 +80,12 @@ function calculatePublicAwardXP(validation, publicVotes) {
     .slice(0, shares.length)
     .reduce((sum, vote, index) => sum + (vote.vote_value ? shares[index] : 0), 0);
   return Number(((totalXp * percent) / 100).toFixed(4));
+}
+
+function getPrivateValidatorIds(validation) {
+  const friendIds = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids : [];
+  const moderatorIds = Array.isArray(validation.moderator_validator_ids) ? validation.moderator_validator_ids : [];
+  return [...new Set([...friendIds, ...moderatorIds])];
 }
 
 async function awardQuestXpToOwner(validation, amount, questCount = 0) {
@@ -299,6 +310,7 @@ async function attachVoteSummaries(validations) {
     const validationVotes = (votes || []).filter(vote => vote.validation_id === validation.id);
     const friendVotes = validationVotes.filter(vote => vote.vote_scope === 'friend');
     const publicVotes = validationVotes.filter(vote => vote.vote_scope === 'public');
+    const moderatorVotes = validationVotes.filter(vote => vote.vote_scope === 'moderator');
 
     return {
       ...validation,
@@ -308,7 +320,10 @@ async function attachVoteSummaries(validations) {
         friend_no: friendVotes.filter(vote => !vote.vote_value).length,
         public_total: publicVotes.length,
         public_yes: publicVotes.filter(vote => vote.vote_value).length,
-        public_no: publicVotes.filter(vote => !vote.vote_value).length
+        public_no: publicVotes.filter(vote => !vote.vote_value).length,
+        moderator_total: moderatorVotes.length,
+        moderator_yes: moderatorVotes.filter(vote => vote.vote_value).length,
+        moderator_no: moderatorVotes.filter(vote => !vote.vote_value).length
       }
     };
   });
@@ -420,9 +435,12 @@ async function evaluateValidation(validation, options = {}) {
   const votes = await getValidationVotes(validation.id);
   const friendVotes = votes.filter(vote => vote.vote_scope === 'friend');
   const publicVotes = votes.filter(vote => vote.vote_scope === 'public');
+  const moderatorVotes = votes.filter(vote => vote.vote_scope === 'moderator');
   const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
+  const moderatorCount = Array.isArray(validation.moderator_validator_ids) ? validation.moderator_validator_ids.length : 0;
   const publicSlots = Number(validation.public_slots || 0);
   const forceFriend = options.forceFriend === true;
+  const forceModerator = options.forceModerator === true;
   const forcePublic = options.forcePublic === true;
   const updates = {};
   let xpDelta = 0;
@@ -449,10 +467,28 @@ async function evaluateValidation(validation, options = {}) {
     xpDelta += publicAward;
   }
 
+  if (moderatorCount > 0 && validation.moderator_status === 'pending') {
+    const yes = moderatorVotes.filter(vote => vote.vote_value).length;
+    const no = moderatorVotes.filter(vote => !vote.vote_value).length;
+    const majority = Math.floor(moderatorCount / 2) + 1;
+    const closed = forceModerator || yes >= majority || no >= majority || yes + no >= moderatorCount;
+
+    if (closed) {
+      updates.moderator_status = forceModerator
+        ? (yes > no ? 'accepted' : 'rejected')
+        : (yes >= majority ? 'accepted' : 'rejected');
+      xpDelta += updates.moderator_status === 'accepted'
+        ? Number(validation.friend_xp || 0)
+        : Number(validation.fallback_xp || 0);
+    }
+  }
+
   const nextFriendStatus = updates.friend_status || validation.friend_status;
   const nextPublicStatus = updates.public_status || validation.public_status;
+  const nextModeratorStatus = updates.moderator_status || validation.moderator_status;
   const friendDone = nextFriendStatus === 'none' || nextFriendStatus === 'accepted' || nextFriendStatus === 'rejected';
   const publicDone = nextPublicStatus === 'none' || nextPublicStatus === 'accepted' || nextPublicStatus === 'rejected';
+  const moderatorDone = nextModeratorStatus === 'none' || nextModeratorStatus === 'accepted' || nextModeratorStatus === 'rejected';
   let finalized = null;
   let award = null;
 
@@ -461,8 +497,8 @@ async function evaluateValidation(validation, options = {}) {
     updates.xp_awarded = Number(((Number(validation.xp_awarded || 0)) + xpDelta).toFixed(4));
   }
 
-  if (friendDone && publicDone) {
-    const accepted = nextFriendStatus === 'accepted' || nextPublicStatus === 'accepted';
+  if (friendDone && publicDone && moderatorDone) {
+    const accepted = nextFriendStatus === 'accepted' || nextPublicStatus === 'accepted' || nextModeratorStatus === 'accepted';
     finalized = await finalizeValidation(validation, accepted ? 'accepted' : 'rejected', accepted ? 'acceptee' : 'refusee', updates);
   } else if (Object.keys(updates).length) {
     const { error } = await supabaseAdmin
@@ -486,7 +522,7 @@ async function closeExpiredPendingValidations() {
 
   if (error) throw error;
   for (const validation of data || []) {
-    await evaluateValidation(validation, { forceFriend: true, forcePublic: true });
+    await evaluateValidation(validation, { forceFriend: true, forceModerator: true, forcePublic: true });
   }
 }
 
@@ -499,8 +535,13 @@ async function keepOnlyOpenForScope(validations, scope) {
 
     const nextFriendStatus = evaluation.updates?.friend_status || validation.friend_status;
     const nextPublicStatus = evaluation.updates?.public_status || validation.public_status;
+    const nextModeratorStatus = evaluation.updates?.moderator_status || validation.moderator_status;
 
     if (scope === 'friend' && nextFriendStatus === 'pending') {
+      result.push(validation);
+    }
+
+    if (scope === 'moderator' && nextModeratorStatus === 'pending') {
       result.push(validation);
     }
 
@@ -519,11 +560,16 @@ async function keepOnlyOpenForScope(validations, scope) {
 router.post('/validations', async (req, res) => {
   const quests = Array.isArray(req.body.quests) ? req.body.quests : [];
   const friendValidatorIds = normalizeFriendIds(req.body.friend_validator_ids);
+  const moderatorValidatorIds = normalizeModeratorIds(req.body.moderator_validator_ids);
   const requestedPublicSlots = normalizePublicSlots(req.body.public_slots);
   const publicSlots = Math.max(1, requestedPublicSlots);
 
   if (!quests.length) {
     return res.status(400).json({ error: 'Aucune quete a valider' });
+  }
+
+  if (friendValidatorIds.length && moderatorValidatorIds.length) {
+    return res.status(400).json({ error: 'Choisis amis ou moderateurs, pas les deux.' });
   }
 
   const rows = quests
@@ -537,10 +583,11 @@ router.post('/validations', async (req, res) => {
         ...xpParts,
         public_slots: publicSlots,
         friend_validator_ids: friendValidatorIds,
-        moderator_required: false,
+        moderator_validator_ids: moderatorValidatorIds,
+        moderator_required: moderatorValidatorIds.length > 0,
         friend_status: friendValidatorIds.length ? 'pending' : 'none',
         public_status: publicSlots > 0 ? 'pending' : 'none',
-        moderator_status: 'none',
+        moderator_status: moderatorValidatorIds.length ? 'pending' : 'none',
         xp_awarded: xpParts.immediate_xp
       };
     });
@@ -714,7 +761,7 @@ router.get('/friends', async (req, res) => {
   try {
     await closeExpiredPendingValidations();
     const votedIds = await getVotesForUser(req.user.id);
-    const { data, error } = await supabaseAdmin
+    const { data: friendData, error: friendError } = await supabaseAdmin
       .from('quest_validations')
       .select('*')
       .eq('status', 'pending')
@@ -724,9 +771,26 @@ router.get('/friends', async (req, res) => {
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (error) return res.status(500).json({ error: error.message });
-    const openItems = await keepOnlyOpenForScope(data || [], 'friend');
-    const items = openItems.filter(item => !votedIds.has(item.id));
+    if (friendError) return res.status(500).json({ error: friendError.message });
+
+    const { data: moderatorData, error: moderatorError } = await supabaseAdmin
+      .from('quest_validations')
+      .select('*')
+      .eq('status', 'pending')
+      .eq('moderator_status', 'pending')
+      .contains('moderator_validator_ids', [req.user.id])
+      .neq('owner_user_id', req.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (moderatorError) return res.status(500).json({ error: moderatorError.message });
+
+    const openFriendItems = await keepOnlyOpenForScope(friendData || [], 'friend');
+    const openModeratorItems = await keepOnlyOpenForScope(moderatorData || [], 'moderator');
+    const items = [...openFriendItems, ...openModeratorItems]
+      .filter(item => !votedIds.has(item.id))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 50);
     res.json(await attachOwnerNames(await attachVoteSummaries(items)));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -753,7 +817,8 @@ router.get('/public', async (req, res) => {
     const friendOwnerIds = await getFriendOwnerIdsForUser(req.user.id, ownerIds);
     const items = openItems
       .filter(item => !votedIds.has(item.id))
-      .filter(item => !friendOwnerIds.has(item.owner_user_id));
+      .filter(item => !friendOwnerIds.has(item.owner_user_id))
+      .filter(item => !getPrivateValidatorIds(item).includes(req.user.id));
     res.json(await attachOwnerNames(await attachVoteSummaries(items)));
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -789,6 +854,7 @@ router.get('/mine', async (req, res) => {
       const validationVotes = votes.filter(vote => vote.validation_id === validation.id);
       const friendVotes = validationVotes.filter(vote => vote.vote_scope === 'friend');
       const publicVotes = validationVotes.filter(vote => vote.vote_scope === 'public');
+      const moderatorVotes = validationVotes.filter(vote => vote.vote_scope === 'moderator');
       const publicShares = getPublicPercentShares(validation.public_slots);
       const publicAwardPercent = publicVotes
         .slice(0, publicShares.length)
@@ -812,6 +878,9 @@ router.get('/mine', async (req, res) => {
           public_yes: publicVotes.filter(vote => vote.vote_value).length,
           public_no: publicVotes.filter(vote => !vote.vote_value).length,
           public_total: publicVotes.length,
+          moderator_yes: moderatorVotes.filter(vote => vote.vote_value).length,
+          moderator_no: moderatorVotes.filter(vote => !vote.vote_value).length,
+          moderator_total: moderatorVotes.length,
           public_award_percent: publicAwardPercent,
           public_closed_percent: publicClosedPercent
         }
@@ -829,7 +898,7 @@ router.post('/validations/:id/vote', async (req, res) => {
   const scope = String(req.body.vote_scope || '');
   const value = req.body.vote_value === true;
 
-  if (!['friend', 'public'].includes(scope)) {
+  if (!['friend', 'public', 'moderator'].includes(scope)) {
     return res.status(400).json({ error: 'Type de vote invalide' });
   }
 
@@ -842,7 +911,7 @@ router.post('/validations/:id/vote', async (req, res) => {
 
   if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
   if (isOlderThan(validation.created_at, AUTO_CLOSE_DELAY_MS)) {
-    const evaluation = await evaluateValidation(validation, { forceFriend: true, forcePublic: true });
+    const evaluation = await evaluateValidation(validation, { forceFriend: true, forceModerator: true, forcePublic: true });
     return res.status(409).json({ error: 'Cette quete vient d etre cloturee automatiquement', ...evaluation });
   }
   if (validation.owner_user_id === req.user.id) return res.status(400).json({ error: 'Impossible de voter pour sa propre quete' });
@@ -852,9 +921,19 @@ router.post('/validations/:id/vote', async (req, res) => {
     if (!friendIds.includes(req.user.id)) return res.status(403).json({ error: 'Vote ami non autorise' });
   }
 
+  if (scope === 'moderator') {
+    const moderatorIds = Array.isArray(validation.moderator_validator_ids) ? validation.moderator_validator_ids : [];
+    if (validation.moderator_status !== 'pending' || !moderatorIds.includes(req.user.id)) {
+      return res.status(403).json({ error: 'Vote moderateur non autorise' });
+    }
+  }
+
   if (scope === 'public') {
     if (Number(validation.public_slots || 0) <= 0 || validation.public_status !== 'pending') {
       return res.status(403).json({ error: 'Vote public non autorise' });
+    }
+    if (getPrivateValidatorIds(validation).includes(req.user.id)) {
+      return res.status(403).json({ error: 'Un validateur prive ne peut pas voter en public sur cette quete' });
     }
     const ownerIsFriend = await areUsersFriends(req.user.id, validation.owner_user_id);
     if (ownerIsFriend) {
@@ -920,11 +999,13 @@ router.post('/validations/:id/open-public', async (req, res) => {
     const votes = await getValidationVotes(validationId);
     const friendVotes = votes.filter(vote => vote.vote_scope === 'friend').length;
     const friendCount = Array.isArray(validation.friend_validator_ids) ? validation.friend_validator_ids.length : 0;
-    const missingFriendVotes = Math.max(0, friendCount - friendVotes);
+    const moderatorVotes = votes.filter(vote => vote.vote_scope === 'moderator').length;
+    const moderatorCount = Array.isArray(validation.moderator_validator_ids) ? validation.moderator_validator_ids.length : 0;
+    const missingPrivateVotes = Math.max(0, friendCount - friendVotes) + Math.max(0, moderatorCount - moderatorVotes);
     const publicVotes = votes.filter(vote => vote.vote_scope === 'public').length;
     const nextPublicSlots = Math.max(
       publicVotes,
-      Math.min(4, Number(validation.public_slots || 0) + missingFriendVotes)
+      Math.min(4, Number(validation.public_slots || 0) + missingPrivateVotes)
     );
     const publicStatus = nextPublicSlots > publicVotes ? 'pending' : validation.public_status;
     const updatedValidation = {
@@ -943,10 +1024,10 @@ router.post('/validations/:id/open-public', async (req, res) => {
 
     if (error) throw error;
 
-    const evaluation = await evaluateValidation(updatedValidation, { forceFriend: true });
+    const evaluation = await evaluateValidation(updatedValidation, { forceFriend: true, forceModerator: true });
     res.json({
       validation: updatedValidation,
-      missing_friend_votes: missingFriendVotes,
+      missing_private_votes: missingPrivateVotes,
       added_public_slots: nextPublicSlots - Number(validation.public_slots || 0),
       ...evaluation
     });
@@ -969,7 +1050,7 @@ router.post('/validations/:id/complete-now', async (req, res) => {
   if (validationError || !validation) return res.status(404).json({ error: 'Quete introuvable' });
 
   try {
-    const hasAcceptedBlock = validation.friend_status === 'accepted' || validation.public_status === 'accepted';
+    const hasAcceptedBlock = validation.friend_status === 'accepted' || validation.public_status === 'accepted' || validation.moderator_status === 'accepted';
     const hasAwardedBeyondImmediate = Number(validation.xp_awarded || 0) > Number(validation.immediate_xp || 0);
     const accepted = hasAcceptedBlock || hasAwardedBeyondImmediate;
     const finalized = await finalizeValidation(
