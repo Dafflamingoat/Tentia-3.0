@@ -811,6 +811,17 @@ color: #fff;
   color: #8bc34a;
 }
 
+.custom-skill-node.timer-limit-reached {
+  opacity: 0.72;
+}
+
+.custom-skill-node.timer-limit-reached .timer-btn:disabled {
+  cursor: not-allowed;
+  border-color: #555;
+  color: #777;
+  background: #151515;
+}
+
 .skill-delete-btn {
   position: absolute;
   top: 5px;

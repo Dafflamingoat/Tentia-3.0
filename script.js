@@ -77,6 +77,7 @@ const REMOVED_DEFAULT_SKILLS = ['mecanique', 'anglais', 'dev'];
 const MAX_LEVELS = { echec: 1000, argent: 3000 };
 const STUDY_XP_PER_HOUR = 12;
 const STUDY_MIN_SESSION_MS = 5 * 60 * 1000;
+const MAX_ACTIVE_CUSTOM_SKILL_TIMERS = 2;
 const skills = { echec: 0, argent: 0 };
 let customSkills = [];
 let customSkillTimerInterval = null;
@@ -376,6 +377,10 @@ function getCustomSkillElapsed(skill) {
   return Math.max(0, skill.totalMs + runningMs);
 }
 
+function getActiveCustomSkillTimerCount() {
+  return customSkills.filter(skill => Boolean(skill.activeStartedAt)).length;
+}
+
 function updateCustomSkillUI(id) {
   const skill = customSkills.find(item => item.id === id);
   const node = document.getElementById('skill-' + id);
@@ -385,12 +390,18 @@ function updateCustomSkillUI(id) {
   const session = document.getElementById('session-' + id);
   const button = node.querySelector('[data-action="toggle"]');
   const currentSessionMs = skill.activeStartedAt ? Date.now() - Number(skill.activeStartedAt) : 0;
+  const limitReached = !skill.activeStartedAt && getActiveCustomSkillTimerCount() >= MAX_ACTIVE_CUSTOM_SKILL_TIMERS;
 
   if (total) total.textContent = formatTotalHours(getCustomSkillElapsed(skill));
   if (session) session.textContent = formatSessionTime(currentSessionMs);
-  if (button) button.textContent = skill.activeStartedAt ? 'STOP' : 'START';
+  if (button) {
+    button.textContent = skill.activeStartedAt ? 'STOP' : 'START';
+    button.disabled = limitReached;
+    button.title = limitReached ? 'Maximum 2 chronos actifs' : '';
+  }
 
   node.classList.toggle('timer-running', Boolean(skill.activeStartedAt));
+  node.classList.toggle('timer-limit-reached', limitReached);
 }
 
 function showSkillXPFeedback(id, message) {
@@ -419,6 +430,11 @@ function toggleSkillTimer(id) {
       showSkillXPFeedback(skill.id, 'MIN 5 MIN');
     }
   } else {
+    if (getActiveCustomSkillTimerCount() >= MAX_ACTIVE_CUSTOM_SKILL_TIMERS) {
+      showSkillXPFeedback(skill.id, 'MAX 2 CHRONOS');
+      updateAllCustomSkillTimers();
+      return;
+    }
     skill.activeStartedAt = Date.now();
     showSkillXPFeedback(skill.id, '');
   }

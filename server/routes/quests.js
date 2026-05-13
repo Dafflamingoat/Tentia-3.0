@@ -462,7 +462,9 @@ async function evaluateValidation(validation, options = {}) {
   }
 
   if (publicSlots > 0 && validation.public_status === 'pending' && (forcePublic || publicVotes.length >= publicSlots)) {
-    const publicAward = calculatePublicAwardXP(validation, publicVotes);
+    const publicAward = forcePublic && publicVotes.length === 0
+      ? Number(validation.public_xp || 0)
+      : calculatePublicAwardXP(validation, publicVotes);
     updates.public_status = publicAward > 0 ? 'accepted' : 'rejected';
     xpDelta += publicAward;
   }
