@@ -1577,7 +1577,7 @@ function renderQuestValidationList(targetId, items, scope) {
         : 'Votes publics restants';
 
     const row = document.createElement('div');
-    row.className = 'quest-validation-item';
+    row.className = `quest-validation-item ${itemScope === 'moderator' ? 'moderator' : ''}`.trim();
     row.innerHTML = `
       <div class="quest-validation-item-main">
         <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>

@@ -1566,6 +1566,15 @@ body {
   margin-bottom: 8px;
 }
 
+.quest-validation-item.moderator {
+  border-color: rgba(87, 170, 255, 0.45);
+  background: linear-gradient(90deg, rgba(22, 43, 66, 0.78), #181818 70%);
+}
+
+.quest-validation-item.moderator .quest-validation-item-meta {
+  color: #9fc8ff;
+}
+
 .quest-validation-item-main {
   min-width: 0;
 }
