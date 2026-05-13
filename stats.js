@@ -1237,6 +1237,7 @@ const questCompleteWarningConfirm = document.getElementById('quest-complete-warn
 const questValidationTabs = document.querySelectorAll('.quest-validation-tab');
 const questValidationPanels = document.querySelectorAll('.quest-validation-panel');
 const questRefreshList = document.getElementById('quest-refresh-list');
+const questDevCounts = document.getElementById('quest-dev-counts');
 
 // ────────────────
 // XP JOUEUR
@@ -1485,6 +1486,24 @@ async function fetchQuestValidationList(type) {
   return Array.isArray(data) ? data : [];
 }
 
+async function fetchQuestValidationCounts() {
+  const token = localStorage.getItem('_token');
+  const response = await fetch('/api/quests/counts', {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!response.ok) return null;
+  return response.json().catch(() => null);
+}
+
+function updateQuestDevCounts(counts) {
+  if (!questDevCounts) return;
+  if (!counts) {
+    questDevCounts.textContent = 'Restantes | --';
+    return;
+  }
+  questDevCounts.textContent = `Restantes | A ${Number(counts.friends || 0)} / P ${Number(counts.public || 0)} / M ${Number(counts.mine || 0)}`;
+}
+
 function formatQuestValidationDate(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -1513,9 +1532,10 @@ function renderQuestValidationList(targetId, items, scope) {
 
   const label = scope === 'friend' ? 'quetes amis' : 'quetes publiques';
   const emptyLabel = scope === 'friend' ? 'ami' : 'publique';
+  const displayedCount = items.length >= 50 ? '50+' : String(items.length);
   const submenu = `
     <div class="quest-list-submenu">
-      <span>Total | ${items.length}</span>
+      <span>Affichees | ${displayedCount}</span>
       <span>${label}</span>
     </div>
   `;
@@ -1563,9 +1583,10 @@ function renderMyQuestValidationList(items) {
   const list = document.getElementById('quest-mine-list');
   if (!list) return;
 
+  const displayedCount = items.length >= 50 ? '50+' : String(items.length);
   const submenu = `
     <div class="quest-list-submenu">
-      <span>Total | ${items.length}</span>
+      <span>Affichees | ${displayedCount}</span>
       <span>mes quetes</span>
     </div>
   `;
@@ -1637,15 +1658,17 @@ async function loadQuestValidationLists() {
   }
 
   try {
-    const [friendItems, publicItems, mineItems] = await Promise.all([
+    const [friendItems, publicItems, mineItems, counts] = await Promise.all([
       fetchQuestValidationList('friends'),
       fetchQuestValidationList('public'),
-      fetchQuestValidationList('mine')
+      fetchQuestValidationList('mine'),
+      fetchQuestValidationCounts()
     ]);
 
     renderQuestValidationList('quest-friends-list', friendItems, 'friend');
     renderQuestValidationList('quest-public-list', publicItems, 'public');
     renderMyQuestValidationList(mineItems);
+    updateQuestDevCounts(counts);
   } finally {
     if (questRefreshList) questRefreshList.disabled = false;
   }
