@@ -342,6 +342,13 @@ async function areUsersFriends(userId, otherUserId) {
   return Boolean(data);
 }
 
+function applyNotIn(query, column, values) {
+  if (!values.length) return query;
+  const uniqueValues = [...new Set(values)].filter(Boolean);
+  if (!uniqueValues.length) return query;
+  return query.not(column, 'in', `(${uniqueValues.map(value => `"${value}"`).join(',')})`);
+}
+
 async function finalizeValidation(validation, status, statusLabel, extraUpdates = {}) {
   const { data, error } = await supabaseAdmin
     .from('quest_validations')
@@ -603,6 +610,59 @@ router.get('/moderators', async (req, res) => {
       .slice(0, 12);
 
     res.json(moderators);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/counts', async (req, res) => {
+  try {
+    await closeExpiredPendingValidations();
+    const votedIds = [...await getVotesForUser(req.user.id)];
+
+    const { data: friendRows, error: friendError } = await supabaseAdmin
+      .from('friends')
+      .select('friend_id')
+      .eq('user_id', req.user.id);
+
+    if (friendError) return res.status(500).json({ error: friendError.message });
+    const friendIds = (friendRows || []).map(row => row.friend_id);
+
+    let friendsQuery = supabaseAdmin
+      .from('quest_validations')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .eq('friend_status', 'pending')
+      .contains('friend_validator_ids', [req.user.id])
+      .neq('owner_user_id', req.user.id);
+    friendsQuery = applyNotIn(friendsQuery, 'id', votedIds);
+    const { count: friends, error: friendsError } = await friendsQuery;
+    if (friendsError) return res.status(500).json({ error: friendsError.message });
+
+    let publicQuery = supabaseAdmin
+      .from('quest_validations')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .eq('public_status', 'pending')
+      .gt('public_slots', 0)
+      .neq('owner_user_id', req.user.id);
+    publicQuery = applyNotIn(publicQuery, 'id', votedIds);
+    publicQuery = applyNotIn(publicQuery, 'owner_user_id', friendIds);
+    const { count: publicCount, error: publicError } = await publicQuery;
+    if (publicError) return res.status(500).json({ error: publicError.message });
+
+    const { count: mine, error: mineError } = await supabaseAdmin
+      .from('quest_validations')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_user_id', req.user.id)
+      .eq('status', 'pending');
+    if (mineError) return res.status(500).json({ error: mineError.message });
+
+    res.json({
+      friends: friends || 0,
+      public: publicCount || 0,
+      mine: mine || 0
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
