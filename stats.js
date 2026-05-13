@@ -2159,9 +2159,7 @@ function updateReputationPanel() {
   const acceptRate = playerJudged ? Math.round((accepted / playerJudged) * 100) : 0;
   const rejectRate = playerJudged ? Math.round((rejected / playerJudged) * 100) : 0;
   const judgeRate = judgeTotal ? Math.round((judgeAligned / judgeTotal) * 100) : 0;
-  const score = reputation.score !== null && reputation.score !== undefined
-    ? Math.round(Number(reputation.score) || 0)
-    : judgeRate;
+  const score = judgeTotal ? judgeRate : 0;
   const tier = getReputationTier(score);
 
   const tierImg = document.getElementById('reputation-tier-img');

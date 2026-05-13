@@ -36,7 +36,9 @@ function calculateQuestXpParts(totalXp) {
 
 function getReputationScore(reputation = {}) {
   if (!reputation || typeof reputation !== 'object') return 0;
-  return Number(reputation.score ?? reputation.judge_score ?? 0) || 0;
+  const judgeTotal = Number(reputation.judge_total || 0);
+  if (judgeTotal <= 0) return 0;
+  return Number(reputation.judge_score ?? reputation.score ?? 0) || 0;
 }
 
 function getReputationActionCount(reputation = {}) {
