@@ -1475,16 +1475,10 @@ body {
 
 .quest-validation-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
-}
-
-.quest-dev-counts {
-  color: var(--gold-light);
-  font-size: 8px;
-  line-height: 1.4;
 }
 
 .quest-refresh-btn {

@@ -1237,7 +1237,6 @@ const questCompleteWarningConfirm = document.getElementById('quest-complete-warn
 const questValidationTabs = document.querySelectorAll('.quest-validation-tab');
 const questValidationPanels = document.querySelectorAll('.quest-validation-panel');
 const questRefreshList = document.getElementById('quest-refresh-list');
-const questDevCounts = document.getElementById('quest-dev-counts');
 
 // ────────────────
 // XP JOUEUR
@@ -1451,6 +1450,35 @@ function syncQuestReputationFromServer(reputation) {
   updateReputationPanel();
 }
 
+function syncQuestAwardFromServer(award) {
+  if (!award || typeof award !== 'object') return null;
+
+  if (award.xp !== undefined && award.xp !== null) {
+    xp = parseInt(award.xp, 10) || 0;
+    localStorage.setItem('xp', xp);
+  }
+  if (award.xp_buffer !== undefined && award.xp_buffer !== null) {
+    storeXpBuffer(award.xp_buffer);
+  }
+  if (award.level !== undefined && award.level !== null) {
+    localStorage.setItem('level', parseInt(award.level, 10) || 1);
+  }
+  if (Array.isArray(award.pets)) {
+    localStorage.setItem('pets', JSON.stringify(award.pets));
+  }
+  if (award.total_quest_xp !== undefined && award.total_quest_xp !== null) {
+    localStorage.setItem('totalQuestXP', Number(award.total_quest_xp) || 0);
+  }
+  if (award.total_quests_done !== undefined && award.total_quests_done !== null) {
+    localStorage.setItem('totalQuestsDone', parseInt(award.total_quests_done, 10) || 0);
+  }
+
+  updateXPBar();
+  updateProfilePanel();
+  updatePetUI();
+  return award;
+}
+
 function getQuestTotalXP() {
   const discipline = parseInt(localStorage.getItem('Discipline')) || 0;
   return 5 + Math.floor(discipline / 8);
@@ -1484,24 +1512,6 @@ async function fetchQuestValidationList(type) {
   if (!response.ok) return [];
   const data = await response.json().catch(() => []);
   return Array.isArray(data) ? data : [];
-}
-
-async function fetchQuestValidationCounts() {
-  const token = localStorage.getItem('_token');
-  const response = await fetch('/api/quests/counts', {
-    headers: token ? { Authorization: `Bearer ${token}` } : {}
-  });
-  if (!response.ok) return null;
-  return response.json().catch(() => null);
-}
-
-function updateQuestDevCounts(counts) {
-  if (!questDevCounts) return;
-  if (!counts) {
-    questDevCounts.textContent = 'Restantes | --';
-    return;
-  }
-  questDevCounts.textContent = `Restantes | A ${Number(counts.friends || 0)} / P ${Number(counts.public || 0)} / M ${Number(counts.mine || 0)}`;
 }
 
 function formatQuestValidationDate(value) {
@@ -1658,17 +1668,15 @@ async function loadQuestValidationLists() {
   }
 
   try {
-    const [friendItems, publicItems, mineItems, counts] = await Promise.all([
+    const [friendItems, publicItems, mineItems] = await Promise.all([
       fetchQuestValidationList('friends'),
       fetchQuestValidationList('public'),
-      fetchQuestValidationList('mine'),
-      fetchQuestValidationCounts()
+      fetchQuestValidationList('mine')
     ]);
 
     renderQuestValidationList('quest-friends-list', friendItems, 'friend');
     renderQuestValidationList('quest-public-list', publicItems, 'public');
     renderMyQuestValidationList(mineItems);
-    updateQuestDevCounts(counts);
   } finally {
     if (questRefreshList) questRefreshList.disabled = false;
   }
@@ -1949,8 +1957,13 @@ async function submitQuestValidation() {
     const submittedIds = selectedQuests.map(quest => quest.id);
     quests = quests.filter(quest => !submittedIds.includes(quest.id));
 
-    trackQuestStats(selectedQuests.length, result.immediate_xp || 0);
-    const xpResult = addXP(result.immediate_xp || 0);
+    const submittedCount = Number.isFinite(Number(result.submitted_count))
+      ? Number(result.submitted_count)
+      : selectedQuests.length;
+    trackQuestStats(submittedCount, result.immediate_xp || 0);
+    const xpResult = syncQuestAwardFromServer(result.immediate_award) || {
+      modified_xp: result.immediate_xp || 0
+    };
     saveQuests();
     renderQuests();
     checkAllAchievements();
@@ -1961,7 +1974,7 @@ async function submitQuestValidation() {
     })();
     const nextReputation = {
       ...reputation,
-      submitted: Number(reputation.submitted || 0) + selectedQuests.length,
+      submitted: Number(reputation.submitted || 0) + submittedCount,
       accepted: Number(reputation.accepted || 0),
       rejected: Number(reputation.rejected || 0),
       judge_total: Number(reputation.judge_total || 0),
@@ -1974,12 +1987,12 @@ async function submitQuestValidation() {
         window.TentiaAPI.saveProfile({
           quests,
           quest_reputation: nextReputation,
-          total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0,
-          total_quest_xp: Math.floor(parseFloat(localStorage.getItem('totalQuestXP')) || 0)
+          total_quests_done: parseInt(localStorage.getItem('totalQuestsDone')) || 0
         });
       }
 
-    alert(`+${xpResult.modifiedAmount} XP immediat !`);
+    const immediateLabel = Number(xpResult.modified_xp ?? xpResult.modifiedAmount ?? result.immediate_xp ?? 0);
+    alert(`+${Number(immediateLabel.toFixed(4))} XP immediat !`);
     closeQuestSubmitPopup();
   } catch (error) {
     if (questSubmitFeedback) questSubmitFeedback.textContent = error.message || 'Erreur de soumission.';

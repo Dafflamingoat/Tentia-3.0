@@ -77,13 +77,13 @@ function calculatePublicAwardXP(validation, publicVotes) {
   return Number(((totalXp * percent) / 100).toFixed(4));
 }
 
-async function awardQuestXpToOwner(validation, amount) {
+async function awardQuestXpToOwner(validation, amount, questCount = 0) {
   const baseAmount = Math.max(0, Number(amount) || 0);
   if (!baseAmount) return null;
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('xp, xp_buffer, level, hp, pets, equipped_pet, total_quest_xp')
+    .select('xp, xp_buffer, level, hp, pets, equipped_pet, total_quest_xp, total_quests_done')
     .eq('user_id', validation.owner_user_id)
     .single();
 
@@ -119,6 +119,7 @@ async function awardQuestXpToOwner(validation, amount) {
   }
 
   const totalQuestXP = Math.floor((parseFloat(profile.total_quest_xp) || 0) + baseAmount);
+  const totalQuestsDone = (parseInt(profile.total_quests_done, 10) || 0) + Math.max(0, parseInt(questCount, 10) || 0);
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
@@ -126,12 +127,17 @@ async function awardQuestXpToOwner(validation, amount) {
       xp_buffer: xpBuffer,
       level,
       pets,
-      total_quest_xp: totalQuestXP
+      total_quest_xp: totalQuestXP,
+      total_quests_done: totalQuestsDone
     })
     .eq('user_id', validation.owner_user_id);
 
   if (error) throw error;
-  return { base_xp: baseAmount, modified_xp: modifiedAmount, xp, xp_buffer: xpBuffer, level };
+  return { base_xp: baseAmount, modified_xp: modifiedAmount, xp, xp_buffer: xpBuffer, level, pets, total_quest_xp: totalQuestXP, total_quests_done: totalQuestsDone };
+}
+
+async function awardImmediateQuestXpToOwner(ownerUserId, amount, questCount) {
+  return awardQuestXpToOwner({ owner_user_id: ownerUserId }, amount, questCount);
 }
 
 function getTodayKey() {
@@ -543,17 +549,53 @@ router.post('/validations', async (req, res) => {
     return res.status(400).json({ error: 'Quetes invalides' });
   }
 
+  const questIds = rows.map(row => row.quest_id);
+  const { data: existingRows, error: existingError } = await supabaseAdmin
+    .from('quest_validations')
+    .select('*')
+    .eq('owner_user_id', req.user.id)
+    .in('quest_id', questIds);
+
+  if (existingError) return res.status(500).json({ error: existingError.message });
+
+  const existingQuestIds = new Set((existingRows || []).map(row => row.quest_id));
+  const rowsToInsert = rows.filter(row => !existingQuestIds.has(row.quest_id));
+
+  if (!rowsToInsert.length) {
+    return res.json({
+      validations: existingRows || [],
+      immediate_xp: 0,
+      immediate_award: null,
+      submitted_count: 0
+    });
+  }
+
   const { data, error } = await supabaseAdmin
     .from('quest_validations')
-    .insert(rows)
+    .insert(rowsToInsert)
     .select('*');
 
   if (error) return res.status(500).json({ error: error.message });
 
   const immediateXp = data.reduce((sum, validation) => sum + Number(validation.immediate_xp || 0), 0);
+  let immediateAward = null;
+  if (immediateXp > 0) {
+    try {
+      immediateAward = await awardImmediateQuestXpToOwner(req.user.id, immediateXp, rowsToInsert.length);
+    } catch (awardError) {
+      await supabaseAdmin
+        .from('quest_validations')
+        .delete()
+        .in('id', data.map(validation => validation.id));
+      return res.status(500).json({ error: awardError.message });
+    }
+  }
+
   res.json({
-    validations: data,
-    immediate_xp: Number(immediateXp.toFixed(4))
+    validations: [...(existingRows || []), ...data],
+    immediate_xp: Number(immediateXp.toFixed(4)),
+    immediate_award: immediateAward,
+    submitted_count: rowsToInsert.length
   });
 });
 

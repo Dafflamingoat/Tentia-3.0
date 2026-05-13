@@ -128,6 +128,9 @@ create table if not exists quest_validation_votes (
   unique(validation_id, voter_user_id, vote_scope)
 );
 
+create unique index if not exists quest_validations_owner_quest_unique
+  on quest_validations(owner_user_id, quest_id);
+
 alter table quest_validations enable row level security;
 alter table quest_validation_votes enable row level security;
 
