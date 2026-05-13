@@ -1489,7 +1489,12 @@ function formatQuestValidationDate(value) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  return date.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 function escapeHTML(value) {
@@ -1506,19 +1511,38 @@ function renderQuestValidationList(targetId, items, scope) {
   const list = document.getElementById(targetId);
   if (!list) return;
 
+  const label = scope === 'friend' ? 'quetes amis' : 'quetes publiques';
+  const emptyLabel = scope === 'friend' ? 'ami' : 'publique';
+  const submenu = `
+    <div class="quest-list-submenu">
+      <span>Total | ${items.length}</span>
+      <span>${label}</span>
+    </div>
+  `;
+
   if (!items.length) {
-    list.innerHTML = `<div class="quest-validation-empty">Aucune quete ${scope === 'friend' ? 'ami' : 'publique'} a valider.</div>`;
+    list.innerHTML = `${submenu}<div class="quest-validation-empty">Aucune quete ${emptyLabel} a valider.</div>`;
     return;
   }
 
-  list.innerHTML = '';
+  list.innerHTML = submenu;
   items.forEach((item) => {
+    const expectedVotes = scope === 'friend'
+      ? (Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0)
+      : Number(item.public_slots || 0);
+    const currentVotes = scope === 'friend'
+      ? Number(item.votes?.friend_total || 0)
+      : Number(item.votes?.public_total || 0);
+    const remainingVotes = Math.max(0, expectedVotes - currentVotes);
+    const remainingLabel = scope === 'friend' ? 'Votes amis restants' : 'Votes publics restants';
+
     const row = document.createElement('div');
     row.className = 'quest-validation-item';
     row.innerHTML = `
       <div class="quest-validation-item-main">
         <div class="quest-validation-item-title">${escapeHTML(item.quest_text)}</div>
         <div class="quest-validation-item-meta">${escapeHTML(item.owner_username || 'Joueur')} | ${formatQuestValidationDate(item.created_at)} | ${Number(item.total_xp || 0)} XP</div>
+        <div class="quest-validation-item-meta">${remainingLabel} | ${remainingVotes}</div>
       </div>
       <div class="quest-validation-actions">
         <button class="quest-vote-btn yes" data-id="${item.id}" data-scope="${scope}" data-value="true">Valider</button>
@@ -1540,12 +1564,19 @@ function renderMyQuestValidationList(items) {
   const list = document.getElementById('quest-mine-list');
   if (!list) return;
 
+  const submenu = `
+    <div class="quest-list-submenu">
+      <span>Total | ${items.length}</span>
+      <span>mes quetes</span>
+    </div>
+  `;
+
   if (!items.length) {
-    list.innerHTML = '<div class="quest-validation-empty">Aucune quete en cours de validation.</div>';
+    list.innerHTML = `${submenu}<div class="quest-validation-empty">Aucune quete en cours de validation.</div>`;
     return;
   }
 
-  list.innerHTML = '';
+  list.innerHTML = submenu;
   items.forEach((item) => {
     const friendCount = Array.isArray(item.friend_validator_ids) ? item.friend_validator_ids.length : 0;
     const publicSlots = Number(item.public_slots || 0);

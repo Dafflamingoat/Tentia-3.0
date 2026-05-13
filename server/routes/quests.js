@@ -279,6 +279,35 @@ async function attachOwnerNames(validations) {
   }));
 }
 
+async function attachVoteSummaries(validations) {
+  if (!validations.length) return [];
+  const validationIds = validations.map(item => item.id);
+  const { data: votes, error } = await supabaseAdmin
+    .from('quest_validation_votes')
+    .select('validation_id, vote_scope, vote_value')
+    .in('validation_id', validationIds);
+
+  if (error) throw error;
+
+  return validations.map((validation) => {
+    const validationVotes = (votes || []).filter(vote => vote.validation_id === validation.id);
+    const friendVotes = validationVotes.filter(vote => vote.vote_scope === 'friend');
+    const publicVotes = validationVotes.filter(vote => vote.vote_scope === 'public');
+
+    return {
+      ...validation,
+      votes: {
+        friend_total: friendVotes.length,
+        friend_yes: friendVotes.filter(vote => vote.vote_value).length,
+        friend_no: friendVotes.filter(vote => !vote.vote_value).length,
+        public_total: publicVotes.length,
+        public_yes: publicVotes.filter(vote => vote.vote_value).length,
+        public_no: publicVotes.filter(vote => !vote.vote_value).length
+      }
+    };
+  });
+}
+
 async function getVotesForUser(userId) {
   const { data, error } = await supabaseAdmin
     .from('quest_validation_votes')
@@ -596,7 +625,7 @@ router.get('/friends', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     const openItems = await keepOnlyOpenForScope(data || [], 'friend');
     const items = openItems.filter(item => !votedIds.has(item.id));
-    res.json(await attachOwnerNames(items));
+    res.json(await attachOwnerNames(await attachVoteSummaries(items)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -623,7 +652,7 @@ router.get('/public', async (req, res) => {
     const items = openItems
       .filter(item => !votedIds.has(item.id))
       .filter(item => !friendOwnerIds.has(item.owner_user_id));
-    res.json(await attachOwnerNames(items));
+    res.json(await attachOwnerNames(await attachVoteSummaries(items)));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
