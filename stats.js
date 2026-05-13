@@ -2681,25 +2681,28 @@ function saveDailyHealthEditEntry() {
 }
 
 function ensureJournalEntry(journal, key) {
+  const currentElo = parseInt(localStorage.getItem('currentElo')) || 0;
+  const lastElo = parseInt(localStorage.getItem('lastElo')) || currentElo;
+  const entryDate = new Date(`${key}T00:00:00`);
+  const previousKey = getPreviousDateKey(entryDate);
+  const previousEntry = journal[previousKey];
+  const previousElo = previousEntry
+    ? (typeof previousEntry.eloEnd === 'number'
+      ? previousEntry.eloEnd
+      : (typeof previousEntry.eloStart === 'number' ? previousEntry.eloStart : null))
+    : null;
+
   if (journal[key]) {
+    if (typeof journal[key].eloStart !== 'number') {
+      journal[key].eloStart = previousElo ?? lastElo ?? currentElo ?? 0;
+    }
     if (typeof journal[key].eloEnd !== 'number') {
-      journal[key].eloEnd = journal[key].eloStart || 0;
+      journal[key].eloEnd = isToday(entryDate) ? currentElo : journal[key].eloStart;
     }
     return journal[key];
   }
 
-  const currentElo = parseInt(localStorage.getItem('currentElo')) || 0;
-  const entryDate = new Date(`${key}T00:00:00`);
-  const previousKey = getPreviousDateKey(entryDate);
-  const previousEntry = journal[previousKey];
-
-  let eloStart = currentElo;
-
-  if (previousEntry) {
-    eloStart = typeof previousEntry.eloEnd === 'number'
-      ? previousEntry.eloEnd
-      : (previousEntry.eloStart || currentElo);
-  }
+  const eloStart = previousElo ?? lastElo ?? currentElo ?? 0;
 
   journal[key] = {
     text: '',
@@ -2735,8 +2738,9 @@ function loadJournal() {
   document.getElementById('journal-text').value = entry.text || '';
   document.getElementById('journal-games-input').value = entry.games || 0;
 
-  const eloEnd = typeof entry.eloEnd === 'number' ? entry.eloEnd : entry.eloStart;
-  const diff = eloEnd - entry.eloStart;
+  const eloStart = typeof entry.eloStart === 'number' ? entry.eloStart : 0;
+  const eloEnd = typeof entry.eloEnd === 'number' ? entry.eloEnd : eloStart;
+  const diff = eloEnd - eloStart;
 
   document.getElementById('journal-elo').textContent =
     `${entry.eloStart} → ${eloEnd} (${diff >= 0 ? '+' : ''}${diff})`;
