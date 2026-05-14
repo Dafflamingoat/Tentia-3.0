@@ -2224,6 +2224,10 @@ body {
   min-height: 10px;
 }
 
+.reset-btn {
+  display: none !important;
+}
+
 /* Desktop readability pass */
 @media (min-width: 901px) {
   body {

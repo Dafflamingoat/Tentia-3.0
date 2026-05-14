@@ -1051,6 +1051,10 @@ color: #fff;
   line-height: 1.7;
 }
 
+.reset-btn {
+  display: none !important;
+}
+
 /* Desktop readability pass */
 @media (min-width: 901px) {
   body {

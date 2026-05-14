@@ -802,8 +802,9 @@ function getEloColor(elo) {
 }
 
 // ════════════════════════════════════════════
-//  BOUTON RESET GLOBAL
+//  RESET GLOBAL DESACTIVE
 // ════════════════════════════════════════════
+/*
 const resetBtn = document.createElement('button');
 resetBtn.textContent = 'Réinitialiser tout';
 resetBtn.style.cssText = `
@@ -827,6 +828,7 @@ resetBtn.addEventListener('click', () => {
   persistSkills();
   renderCustomSkills();
 });
+*/
 
 // ────────────────
 // HP SYSTEM
