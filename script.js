@@ -270,12 +270,55 @@ function convertBufferedXP(amount) {
   return { visibleXP, buffer: nextBuffer };
 }
 
+const INDEX_DEFAULT_PETS = [
+  { id: 'pet1', name: 'Familier Intelligence', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/intel/pet1_frame1.png', sprite2: 'assets/pets/intel/pet1_frame2.png' },
+  { id: 'pet2', name: 'Familier Force', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/force/pet1_frame1.png', sprite2: 'assets/pets/force/pet1_frame2.png' },
+  { id: 'pet3', name: 'Familier Discipline', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/discipline/pet1_frame1.png', sprite2: 'assets/pets/discipline/pet1_frame2.png' },
+  { id: 'pet4', name: 'Familier Focus', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/focus/pet1_frame1.png', sprite2: 'assets/pets/focus/pet1_frame2.png' },
+  { id: 'pet_dragon_legendary', name: 'Dragon légendaire', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/got/pet1_frame1.png', sprite2: 'assets/pets/got/pet1_frame2.png' },
+  { id: 'pet_bob', name: 'Fantôme de Bob', level: 1, xp: 0, share: 0.1, active: true, owned: false, sprite1: 'assets/pets/legends/pet1_frame1.png', sprite2: 'assets/pets/legends/pet1_frame2.png' },
+  { id: 'pet_endgame', name: 'Arme Ultime', level: 1, xp: 0, share: 0.1, active: true, owned: false, endgameForm: 'arc', sprite1: 'assets/pets/arc_frame1.png', sprite2: 'assets/pets/arc_frame2.png' }
+];
+
+function getTimelinePetVisuals() {
+  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+  return (timelineData && timelineData.pets) || {};
+}
+
+function mergeIndexPetVisuals(pet) {
+  const visual = getTimelinePetVisuals()[pet.id];
+  if (!visual) return pet;
+  return {
+    ...pet,
+    name: visual.name || pet.name,
+    sprite1: visual.sprite1 || pet.sprite1,
+    sprite2: visual.sprite2 || pet.sprite2,
+    evolutions: visual.evolutions || pet.evolutions,
+    forms: visual.forms
+      ? { ...(pet.forms || {}), ...visual.forms }
+      : pet.forms
+  };
+}
+
 function getStoredPets() {
   try {
-    const pets = JSON.parse(localStorage.getItem('pets') || '[]');
-    return Array.isArray(pets) ? pets : [];
+    const storedPets = JSON.parse(localStorage.getItem('pets') || '[]');
+    const savedPets = Array.isArray(storedPets) ? storedPets : [];
+    const byId = new Map(savedPets.map(pet => [pet.id, pet]));
+    const merged = INDEX_DEFAULT_PETS.map(defaultPet => mergeIndexPetVisuals({
+      ...defaultPet,
+      ...(byId.get(defaultPet.id) || {})
+    }));
+    savedPets.forEach((pet) => {
+      if (!INDEX_DEFAULT_PETS.some(defaultPet => defaultPet.id === pet.id)) {
+        merged.push(mergeIndexPetVisuals(pet));
+      }
+    });
+    return merged;
   } catch (e) {
-    return [];
+    return INDEX_DEFAULT_PETS.map(mergeIndexPetVisuals);
   }
 }
 
@@ -330,21 +373,20 @@ function renderCharacterPetDock() {
     empty.className = 'character-pet-empty';
     empty.textContent = '?';
     equippedEl.appendChild(empty);
-    return;
-  }
-
-  const equippedVisual = getIndexPetVisual(equipped);
-  if (equippedVisual.sprite) {
-    const equippedImg = document.createElement('img');
-    equippedImg.src = equippedVisual.sprite;
-    equippedImg.alt = equippedVisual.name;
-    equippedImg.title = equippedVisual.name;
-    equippedEl.appendChild(equippedImg);
   } else {
-    const empty = document.createElement('span');
-    empty.className = 'character-pet-empty';
-    empty.textContent = '?';
-    equippedEl.appendChild(empty);
+    const equippedVisual = getIndexPetVisual(equipped);
+    if (equippedVisual.sprite) {
+      const equippedImg = document.createElement('img');
+      equippedImg.src = equippedVisual.sprite;
+      equippedImg.alt = equippedVisual.name;
+      equippedImg.title = equippedVisual.name;
+      equippedEl.appendChild(equippedImg);
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'character-pet-empty';
+      empty.textContent = '?';
+      equippedEl.appendChild(empty);
+    }
   }
 
   pets.forEach((pet) => {
