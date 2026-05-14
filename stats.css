@@ -186,6 +186,51 @@ body {
   color: #f0c844 !important;
 }
 
+/* Dashboard profile card: prevent horizontal overflow */
+.dashboard-box {
+  overflow: hidden !important;
+}
+
+.dashboard-profile-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-photo {
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-profile-fields,
+.dashboard-profile-field,
+.dashboard-profile-field input,
+.dashboard-profile-field textarea {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dashboard-profile-field textarea {
+  resize: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.dashboard-main,
+.dashboard-panel {
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+@media (min-width: 901px) {
+  .dashboard-box {
+    grid-template-columns: clamp(190px, 18vw, 230px) minmax(0, 1fr) !important;
+  }
+}
+
 .stats-box {
   width: 220px;
   right: -220px;
