@@ -74,7 +74,7 @@ window.TIMELINE_DATA.billaud = {
     { id: 'skin_witcher',         name: 'Geralt',         folder: 'timelines/billaud/Skin_Witcher',       owned: false },
     { id: 'Skin_Redead',          name: 'Red Dead',       folder: 'timelines/billaud/Skin_Redead',        owned: false },
     { id: 'skin_nick',            name: 'Nick',           folder: 'timelines/billaud/Skin_Nick',          owned: false },
-    { id: 'skin_imperial',        name: 'Warhammer',      folder: 'timelines/billaud/Skin_Imperial',      owned: false },
+    { id: 'skin_imperial',        name: 'Warhammer',      folder: 'timelines/billaud/Skin_Imp',      owned: false },
     { id: 'skin_matrix',          name: 'Matrix',         folder: 'timelines/billaud/Skin_Matrix',        owned: false },
     { id: 'skin_south',           name: 'South Park',     folder: 'timelines/billaud/Skin_South',         owned: false },
     { id: 'skin_stoner',          name: 'Stoner',         folder: 'timelines/billaud/skin_Stoner',        owned: false },
@@ -217,7 +217,7 @@ window.TIMELINE_DATA.billaud = {
 
     52: [{ type: 'title',      id: 'title_marins' }],
     53: [{ type: 'avatar',     id: 'avatar_imperial' }],
-    55: [{ type: 'skin',       id: '' }],
+    55: [{ type: 'skin',       id: 'skin_imperial' }],
     57: [{ type: 'background', id: 'bg_billaud_8' }],
     59: [{ type: 'badge',      id: 'badge_snk' }],
     60: [{ type: 'pet',        id: 'pet3' }],
@@ -231,7 +231,7 @@ window.TIMELINE_DATA.billaud = {
     72: [{ type: 'title',      id: 'title_south' }],
     73: [{ type: 'avatar',     id: 'avatar_samourai' }],
     75: [{ type: 'background', id: 'bg_billaud_10' }],
-    77: [{ type: 'skin',       id: 'skin_samourai' }],
+    77: [{ type: 'skin',       id: 'skin_south' }],
     79: [{ type: 'badge',      id: 'badge_dragon' }],
     80: [{ type: 'pet',        id: 'pet4' }],
 
@@ -243,7 +243,7 @@ window.TIMELINE_DATA.billaud = {
     89: [{ type: 'badge',      id: 'badge_tiers3_2' }],
     90: [{ type: 'pet',        id: 'pet_dragon_legendary' }],
 
-    91: [{ type: 'skin',       id: 'skin_gogeta' }],
+    91: [{ type: 'skin',       id: 'skin_quilby' }],
     92: [{ type: 'badge',      id: 'badge_tiers3_3' }],
     93: [{ type: 'badge',      id: 'badge_tiers3_4' }],
     94: [{ type: 'skin',       id: 'skin_quilby' }],

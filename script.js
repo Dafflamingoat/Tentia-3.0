@@ -47,6 +47,7 @@ function setSkin(skinName) {
   currentSkin = skinName;
   localStorage.setItem('selectedSkin', skinName);
   startAnimation();
+  renderCharacterStylePreview();
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     window.TentiaAPI.saveProfile({ selected_skin: skinName });
   }
@@ -282,6 +283,89 @@ function getEquippedPetForXP() {
   const pets = getStoredPets();
   const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
   return pets.find(pet => pet.id === equippedPetId && pet.owned) || null;
+}
+
+function getIndexPetVisual(pet) {
+  if (!pet) return { name: 'Familier', sprite: '' };
+  if (pet.id === 'pet_endgame' && pet.forms) {
+    const form = pet.forms[pet.endgameForm || 'arc'];
+    if (form) return { name: form.name || pet.name || 'Familier', sprite: form.sprite1 || pet.sprite1 || '' };
+  }
+  const level = Number(pet.level || 1);
+  const evo = Array.isArray(pet.evolutions)
+    ? pet.evolutions.find(item => level >= Number(item.minLevel || 1) && level <= Number(item.maxLevel || 50))
+    : null;
+  return {
+    name: evo?.name || pet.name || 'Familier',
+    sprite: evo?.sprite1 || pet.sprite1 || ''
+  };
+}
+
+function equipPetFromIndex(petId) {
+  const pets = getStoredPets();
+  const pet = pets.find(item => item.id === petId && item.owned);
+  if (!pet) return;
+  localStorage.setItem('equippedPetId', pet.id);
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({ equipped_pet: pet.id });
+  }
+  renderCharacterPetDock();
+}
+
+function renderCharacterPetDock() {
+  const equippedEl = document.getElementById('character-pet-equipped');
+  const listEl = document.getElementById('character-pet-list');
+  if (!equippedEl || !listEl) return;
+
+  const pets = getStoredPets().filter(pet => pet.owned);
+  const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
+  const equipped = pets.find(pet => pet.id === equippedPetId) || pets[0];
+
+  equippedEl.innerHTML = '';
+  listEl.innerHTML = '';
+
+  if (!equipped) {
+    const empty = document.createElement('span');
+    empty.className = 'character-pet-empty';
+    empty.textContent = '?';
+    equippedEl.appendChild(empty);
+    return;
+  }
+
+  const equippedVisual = getIndexPetVisual(equipped);
+  if (equippedVisual.sprite) {
+    const equippedImg = document.createElement('img');
+    equippedImg.src = equippedVisual.sprite;
+    equippedImg.alt = equippedVisual.name;
+    equippedImg.title = equippedVisual.name;
+    equippedEl.appendChild(equippedImg);
+  } else {
+    const empty = document.createElement('span');
+    empty.className = 'character-pet-empty';
+    empty.textContent = '?';
+    equippedEl.appendChild(empty);
+  }
+
+  pets.forEach((pet) => {
+    const visual = getIndexPetVisual(pet);
+    const button = document.createElement('button');
+    button.className = 'character-pet-option' + (pet.id === equipped.id ? ' equipped' : '');
+    button.type = 'button';
+    button.title = visual.name;
+    if (visual.sprite) {
+      const img = document.createElement('img');
+      img.src = visual.sprite;
+      img.alt = visual.name;
+      button.appendChild(img);
+    } else {
+      const empty = document.createElement('span');
+      empty.className = 'character-pet-empty';
+      empty.textContent = '?';
+      button.appendChild(empty);
+    }
+    button.addEventListener('click', () => equipPetFromIndex(pet.id));
+    listEl.appendChild(button);
+  });
 }
 
 function addPetXPFromStudy(totalXP) {
@@ -569,6 +653,15 @@ if (addSkillForm) {
     e.preventDefault();
     const input = document.getElementById('add-skill-input');
     addCustomSkill(input ? input.value : '');
+  });
+}
+
+const characterPetToggle = document.getElementById('character-pet-toggle');
+const characterPetList = document.getElementById('character-pet-list');
+if (characterPetToggle && characterPetList) {
+  characterPetToggle.addEventListener('click', () => {
+    characterPetList.classList.toggle('hidden');
+    characterPetToggle.textContent = characterPetList.classList.contains('hidden') ? '▶' : '▼';
   });
 }
 
@@ -1095,6 +1188,8 @@ startAnimation();
 // MENU DES FONDS (avec verrou par niveau)
 // ────────────────
 const bgThumbsWrap = document.querySelector('.bg-thumbs-wrap');
+const characterBgModal = document.getElementById('character-bg-modal');
+const closeCharacterBg = document.getElementById('close-character-bg');
 const charFrame = document.querySelector('.character-frame');
 
 let bgFrames = [];
@@ -1102,7 +1197,8 @@ let bgFrameIndex = 0;
 let bgInterval = null;
 
 function toggleBGMenu() {
-  bgThumbsWrap.classList.toggle('hidden');
+  renderCharacterStylePreview();
+  if (characterBgModal) characterBgModal.style.display = 'flex';
 }
 
 // Données par défaut si localStorage vide (avant que stats.js s'exécute)
@@ -1177,6 +1273,7 @@ function applyBG(bg1, bg2) {
   localStorage.setItem('selectedBG', JSON.stringify([bg1, bg2]));
   bgFrameIndex = 0;
   charFrame.style.backgroundImage = `url(${bg1})`;
+  renderCharacterStylePreview();
   // Retirer le filtre et le cadenas BG de prévisualisation
   charFrame.style.filter = '';
   const bgLockEl = charFrame.querySelector('.bg-preview-lock');
@@ -1271,9 +1368,44 @@ function renderBGThumbs() {
 // MENU SKINS (avec verrou par niveau)
 // ────────────────
 const skinWrap = document.querySelector('.skin-thumbs-wrap');
+const characterSkinModal = document.getElementById('character-skin-modal');
+const closeCharacterSkin = document.getElementById('close-character-skin');
 
 function toggleSkinMenu() {
-  skinWrap.classList.toggle('hidden');
+  renderCharacterStylePreview();
+  if (characterSkinModal) characterSkinModal.style.display = 'flex';
+}
+
+function closeCharacterStyleModals() {
+  if (characterSkinModal) characterSkinModal.style.display = 'none';
+  if (characterBgModal) characterBgModal.style.display = 'none';
+}
+
+function renderCharacterStylePreview() {
+  const mainSprite = document.getElementById('char-sprite');
+  const skinSprite = document.getElementById('skin-popup-sprite');
+  const bgSprite = document.getElementById('bg-popup-sprite');
+  const bgFrame = document.getElementById('bg-popup-frame');
+  if (mainSprite && skinSprite) skinSprite.src = mainSprite.src;
+  if (mainSprite && bgSprite) bgSprite.src = mainSprite.src;
+  if (bgFrame && charFrame) {
+    bgFrame.style.backgroundImage = charFrame.style.backgroundImage;
+    bgFrame.style.backgroundSize = charFrame.style.backgroundSize || 'cover';
+    bgFrame.style.backgroundPosition = charFrame.style.backgroundPosition || 'center';
+  }
+}
+
+if (closeCharacterSkin) closeCharacterSkin.addEventListener('click', closeCharacterStyleModals);
+if (closeCharacterBg) closeCharacterBg.addEventListener('click', closeCharacterStyleModals);
+if (characterSkinModal) {
+  characterSkinModal.addEventListener('click', (event) => {
+    if (event.target === characterSkinModal) closeCharacterStyleModals();
+  });
+}
+if (characterBgModal) {
+  characterBgModal.addEventListener('click', (event) => {
+    if (event.target === characterBgModal) closeCharacterStyleModals();
+  });
 }
 
 function renderSkinThumbs() {
@@ -1361,6 +1493,7 @@ function renderSkinThumbs() {
 window.addEventListener('load', () => {
   renderSkinThumbs();
   renderBGThumbs();
+  renderCharacterPetDock();
 
   // Restaurer le background sauvegardé
   const saved = localStorage.getItem('selectedBG');
@@ -1548,6 +1681,7 @@ window.addEventListener('load', async () => {
     updateHPUI();
     startAnimation();
     renderBadgeSlots();
+    renderCharacterPetDock();
     renderSkinThumbs();
     renderBGThumbs();
 
