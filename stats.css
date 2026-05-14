@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg-panel: #222;
   --bg-slot: #333;
   --border: #000;
@@ -3983,5 +3983,38 @@ body {
 
   .settings-volume-slider {
     width: 100%;
+  }
+}
+
+/* Desktop section breathing */
+@media (min-width: 901px) {
+  .xp-container {
+    margin-top: 54px;
+    margin-bottom: 48px;
+  }
+
+  .profile-box,
+  .stats-page,
+  .achievements-section {
+    margin-top: 46px;
+  }
+
+  .profile-box::before,
+  .dashboard-box::before,
+  .quest-box::before,
+  .achievements-section::before {
+    top: -30px;
+  }
+
+  .profile-box::after,
+  .dashboard-box::after,
+  .quest-box::after,
+  .achievements-section::after {
+    top: -40px;
+    padding: 0 18px;
+  }
+
+  .stats-page {
+    gap: 54px;
   }
 }
