@@ -8,11 +8,74 @@
   --text: #fff;
 }
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-light) rgba(0, 0, 0, 0.55);
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.75);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+  border: 1px solid #000;
+  box-shadow: 0 0 8px rgba(255, 214, 74, 0.45);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-light);
+}
+
 body {
   background-color: #0d0b05;
   font-family: 'Press Start 2P', monospace;
   margin: 0;
   padding: 0;
+}
+
+.quest-list::-webkit-scrollbar,
+.pet-list::-webkit-scrollbar,
+.avatar-list::-webkit-scrollbar,
+.title-list::-webkit-scrollbar,
+.hf-popup-list::-webkit-scrollbar,
+.info-popup-body::-webkit-scrollbar,
+.quest-history-list::-webkit-scrollbar,
+.friends-list::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.quest-list::-webkit-scrollbar-track,
+.pet-list::-webkit-scrollbar-track,
+.avatar-list::-webkit-scrollbar-track,
+.title-list::-webkit-scrollbar-track,
+.hf-popup-list::-webkit-scrollbar-track,
+.info-popup-body::-webkit-scrollbar-track,
+.quest-history-list::-webkit-scrollbar-track,
+.friends-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid var(--border);
+}
+
+.quest-list::-webkit-scrollbar-thumb,
+.pet-list::-webkit-scrollbar-thumb,
+.avatar-list::-webkit-scrollbar-thumb,
+.title-list::-webkit-scrollbar-thumb,
+.hf-popup-list::-webkit-scrollbar-thumb,
+.info-popup-body::-webkit-scrollbar-thumb,
+.quest-history-list::-webkit-scrollbar-thumb,
+.friends-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+  border: 1px solid #000;
+  box-shadow: 0 0 8px rgba(255, 214, 74, 0.45);
 }
 
 /* Bouton retour */
@@ -2702,4 +2765,41 @@ body {
   .achievements-section {
     margin-bottom: 44px;
   }
+}
+
+.quest-list::-webkit-scrollbar,
+.pet-list::-webkit-scrollbar,
+.avatar-list::-webkit-scrollbar,
+.title-list::-webkit-scrollbar,
+.hf-popup-list::-webkit-scrollbar,
+.info-popup-body::-webkit-scrollbar,
+.quest-history-list::-webkit-scrollbar,
+.friends-list::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.quest-list::-webkit-scrollbar-track,
+.pet-list::-webkit-scrollbar-track,
+.avatar-list::-webkit-scrollbar-track,
+.title-list::-webkit-scrollbar-track,
+.hf-popup-list::-webkit-scrollbar-track,
+.info-popup-body::-webkit-scrollbar-track,
+.quest-history-list::-webkit-scrollbar-track,
+.friends-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid var(--border);
+}
+
+.quest-list::-webkit-scrollbar-thumb,
+.pet-list::-webkit-scrollbar-thumb,
+.avatar-list::-webkit-scrollbar-thumb,
+.title-list::-webkit-scrollbar-thumb,
+.hf-popup-list::-webkit-scrollbar-thumb,
+.info-popup-body::-webkit-scrollbar-thumb,
+.quest-history-list::-webkit-scrollbar-thumb,
+.friends-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
+  border: 1px solid #000;
+  box-shadow: 0 0 8px rgba(255, 214, 74, 0.45);
 }

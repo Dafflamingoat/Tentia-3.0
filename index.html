@@ -158,7 +158,7 @@
         <div class="character-action-row">
           <button class="character-action-btn" type="button" onclick="toggleSkinMenu()" title="Skins">🎭</button>
           <button class="character-action-btn" type="button" onclick="toggleBGMenu()" title="Backgrounds">🖼</button>
-          <button class="character-action-btn" type="button" title="Stats globales">📊</button>
+          <button class="character-action-btn" id="open-index-stats" type="button" title="Stats globales">📊</button>
           <button class="character-action-btn" type="button" title="A venir">⚙</button>
         </div>
 
@@ -168,6 +168,51 @@
         <div class="character-pet-equipped" id="character-pet-equipped"></div>
         <button class="character-pet-toggle" id="character-pet-toggle" type="button" title="Familiers">▶</button>
         <div class="character-pet-list hidden" id="character-pet-list"></div>
+      </div>
+    </div>
+
+    <!-- Menu stats coulissant -->
+    <div class="index-stats-box" id="index-stats-box">
+      <button class="index-stats-toggle" id="index-stats-toggle" type="button" title="Stats">‹</button>
+
+      <div class="index-stat-item">
+        <span class="index-stat-name">Force</span>
+        <div class="index-stat-right">
+          <span class="index-stat-value" id="stat-force">0</span>
+          <button class="index-stat-add-btn" type="button" onclick="addStat('Force')">+</button>
+        </div>
+      </div>
+
+      <div class="index-stat-item">
+        <span class="index-stat-name">Intelligence</span>
+        <div class="index-stat-right">
+          <span class="index-stat-value" id="stat-intel">0</span>
+          <button class="index-stat-add-btn" type="button" onclick="addStat('Intelligence')">+</button>
+        </div>
+      </div>
+
+      <div class="index-stat-item">
+        <span class="index-stat-name">Discipline</span>
+        <div class="index-stat-right">
+          <span class="index-stat-value" id="stat-discipline">0</span>
+          <button class="index-stat-add-btn" type="button" onclick="addStat('Discipline')">+</button>
+        </div>
+      </div>
+
+      <div class="index-stat-item">
+        <span class="index-stat-name">Focus</span>
+        <div class="index-stat-right">
+          <span class="index-stat-value" id="stat-focus">0</span>
+          <button class="index-stat-add-btn" type="button" onclick="addStat('Focus')">+</button>
+        </div>
+      </div>
+
+      <div class="index-stat-item index-points-row">
+        <span class="index-stat-name">Points</span>
+        <div class="index-stat-right">
+          <span class="index-stat-value" id="points-left">0</span>
+          <span class="index-stat-info">?</span>
+        </div>
       </div>
     </div>
 

@@ -344,6 +344,99 @@ function getIndexPetVisual(pet) {
   };
 }
 
+function getIndexPetStatBonus(statName) {
+  const pets = getStoredPets();
+  const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
+  const pet = pets.find(item => item.id === equippedPetId && item.owned);
+  if (!pet || pet.active === false) return 0;
+
+  const levelValue = Math.min(Number(pet.level || 1), 50);
+  if (pet.id === 'pet_endgame') {
+    const form = pet.forms?.[pet.endgameForm || 'arc'];
+    const dominant = form?.dominant;
+    if (levelValue <= 25) return statName === dominant ? 10 : 5;
+    if (levelValue <= 49) return statName === dominant ? 12 : 10;
+    return statName === dominant ? 20 : 15;
+  }
+  if (pet.stat === statName) return levelValue;
+  if (pet.stat === 'ForceIntelligence' && (statName === 'Force' || statName === 'Intelligence')) return Math.floor(levelValue / 2);
+  if (pet.stat === 'FocusDiscipline' && (statName === 'Focus' || statName === 'Discipline')) return Math.floor(levelValue / 2);
+  return 0;
+}
+
+function getIndexBadgeStatBonus(statName, flatValue) {
+  const badges = getBadges();
+  let flat = 0;
+  let multiplier = 1;
+
+  badges.forEach((badge) => {
+    if (!badge.owned || !badge.equippedSlot) return;
+    const statDef = badge.stats?.[statName];
+    if (!statDef) return;
+    if (badge.multiplier) multiplier *= statDef.dominant;
+    else flat += badge.equippedSlot === statName ? statDef.dominant : statDef.base;
+  });
+
+  return Math.floor((flatValue + flat) * multiplier) - flatValue;
+}
+
+function getIndexEffectiveStat(statName) {
+  const base = parseInt(localStorage.getItem(statName), 10) || 0;
+  const petBonus = getIndexPetStatBonus(statName);
+  return base + petBonus + getIndexBadgeStatBonus(statName, base + petBonus);
+}
+
+function updateIndexStatsAttention() {
+  const points = parseInt(localStorage.getItem('statPoints'), 10) || 0;
+  const toggle = document.getElementById('index-stats-toggle');
+  if (!toggle) return;
+  toggle.classList.toggle('has-points', points > 0);
+  toggle.title = points > 0 ? `${points} point(s) de stats disponible(s)` : 'Stats';
+}
+
+function updateIndexStatsUI() {
+  const statMap = {
+    Force: 'stat-force',
+    Intelligence: 'stat-intel',
+    Discipline: 'stat-discipline',
+    Focus: 'stat-focus'
+  };
+
+  Object.entries(statMap).forEach(([statName, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = getIndexEffectiveStat(statName);
+  });
+
+  const points = parseInt(localStorage.getItem('statPoints'), 10) || 0;
+  const pointsEl = document.getElementById('points-left');
+  if (pointsEl) pointsEl.textContent = points;
+  updateIndexStatsAttention();
+}
+
+function addStat(statName) {
+  let statPoints = parseInt(localStorage.getItem('statPoints'), 10) || 0;
+  if (statPoints <= 0) {
+    alert('Plus de points disponibles !');
+    return;
+  }
+
+  const nextValue = (parseInt(localStorage.getItem(statName), 10) || 0) + 1;
+  statPoints -= 1;
+  localStorage.setItem(statName, nextValue);
+  localStorage.setItem('statPoints', statPoints);
+  updateIndexStatsUI();
+
+  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
+    window.TentiaAPI.saveProfile({
+      force: parseInt(localStorage.getItem('Force'), 10) || 0,
+      intelligence: parseInt(localStorage.getItem('Intelligence'), 10) || 0,
+      discipline: parseInt(localStorage.getItem('Discipline'), 10) || 0,
+      focus: parseInt(localStorage.getItem('Focus'), 10) || 0,
+      points_left: statPoints
+    });
+  }
+}
+
 function equipPetFromIndex(petId) {
   const pets = getStoredPets();
   const pet = pets.find(item => item.id === petId && item.owned);
@@ -353,6 +446,7 @@ function equipPetFromIndex(petId) {
     window.TentiaAPI.saveProfile({ equipped_pet: pet.id });
   }
   renderCharacterPetDock();
+  updateIndexStatsUI();
 }
 
 function renderCharacterPetDock() {
@@ -469,6 +563,7 @@ function addPlayerXPFromStudy(totalXP) {
   if (levelsGained > 0) {
     const statPoints = (parseInt(localStorage.getItem('statPoints')) || 0) + levelsGained * 2;
     localStorage.setItem('statPoints', statPoints);
+    updateIndexStatsUI();
   }
 
   localStorage.setItem('xp', currentXP);
@@ -717,6 +812,20 @@ if (characterPetToggle && characterPetList) {
     characterPetToggle.textContent = characterPetList.classList.contains('hidden') ? '▶' : '▼';
   });
 }
+
+
+const indexStatsBox = document.getElementById('index-stats-box');
+const indexStatsToggle = document.getElementById('index-stats-toggle');
+const openIndexStats = document.getElementById('open-index-stats');
+function toggleIndexStatsBox(forceOpen = null) {
+  if (!indexStatsBox || !indexStatsToggle) return;
+  const shouldOpen = forceOpen === null ? !indexStatsBox.classList.contains('open') : forceOpen;
+  indexStatsBox.classList.toggle('open', shouldOpen);
+  indexStatsToggle.textContent = shouldOpen ? '?' : '?';
+}
+if (indexStatsToggle) indexStatsToggle.addEventListener('click', () => toggleIndexStatsBox());
+if (openIndexStats) openIndexStats.addEventListener('click', () => toggleIndexStatsBox(true));
+updateIndexStatsUI();
 
 // ----------------
 // ELO CHESS
@@ -1615,6 +1724,7 @@ function getBadges() {
 
 function saveBadgesIndex(badges) {
   localStorage.setItem('badges', JSON.stringify(badges));
+  updateIndexStatsUI();
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
     const slots = {};
     badges.forEach(b => { if (b.equippedSlot) slots[b.id] = b.equippedSlot; });
@@ -1763,6 +1873,7 @@ window.addEventListener('load', async () => {
     renderCharacterPetDock();
     renderSkinThumbs();
     renderBGThumbs();
+    updateIndexStatsUI();
 
     // Recharger les competences personnalisees
     loadSavedSkills();
