@@ -10,8 +10,8 @@ const AUTO_CLOSE_DELAY_MS = 7 * 24 * 60 * 60 * 1000;
 const MODERATOR_ACTIVE_DELAY_MS = 14 * 24 * 60 * 60 * 1000;
 const MODERATOR_MIN_REPUTATION = 75;
 const MODERATOR_MIN_ACTIONS = 5;
-const MODERATOR_LEVEL_BELOW = 2;
-const MODERATOR_LEVEL_ABOVE = 4;
+const MODERATOR_VOTE_XP = 1;
+const RECENT_REPUTATION_DAYS = 7;
 
 function normalizePublicSlots(value) {
   const slots = parseInt(value, 10) || 0;
@@ -88,14 +88,77 @@ function getPrivateValidatorIds(validation) {
   return [...new Set([...friendIds, ...moderatorIds])];
 }
 
-async function awardQuestXpToOwner(validation, amount, questCount = 0) {
+function getRecentReputationSince() {
+  return new Date(Date.now() - RECENT_REPUTATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function emptyRecentJudgeStats(userId) {
+  return {
+    user_id: userId,
+    judge_total: 0,
+    judge_aligned: 0,
+    judge_score: 0,
+    score: 0
+  };
+}
+
+async function getRecentJudgeStats(userIds) {
+  const ids = [...new Set((Array.isArray(userIds) ? userIds : [userIds]).filter(Boolean))];
+  if (!ids.length) return new Map();
+
+  const { data: votes, error: votesError } = await supabaseAdmin
+    .from('quest_validation_votes')
+    .select('validation_id, voter_user_id, vote_value, created_at')
+    .in('voter_user_id', ids)
+    .in('vote_scope', ['public', 'moderator'])
+    .gte('created_at', getRecentReputationSince());
+
+  if (votesError) throw votesError;
+
+  const validationIds = [...new Set((votes || []).map(vote => vote.validation_id).filter(Boolean))];
+  const statusByValidation = new Map();
+
+  if (validationIds.length) {
+    const { data: validations, error: validationsError } = await supabaseAdmin
+      .from('quest_validations')
+      .select('id, status')
+      .in('id', validationIds)
+      .in('status', ['accepted', 'rejected']);
+
+    if (validationsError) throw validationsError;
+    (validations || []).forEach(validation => {
+      statusByValidation.set(validation.id, validation.status);
+    });
+  }
+
+  const stats = new Map(ids.map(id => [id, emptyRecentJudgeStats(id)]));
+  (votes || []).forEach((vote) => {
+    const status = statusByValidation.get(vote.validation_id);
+    if (!status) return;
+    const current = stats.get(vote.voter_user_id) || emptyRecentJudgeStats(vote.voter_user_id);
+    const accepted = status === 'accepted';
+    current.judge_total += 1;
+    if (vote.vote_value === accepted) current.judge_aligned += 1;
+    current.judge_score = current.judge_total
+      ? Number(((current.judge_aligned / current.judge_total) * 100).toFixed(2))
+      : 0;
+    current.score = current.judge_score;
+    stats.set(vote.voter_user_id, current);
+  });
+
+  return stats;
+}
+
+async function awardXpToUser(userId, amount, options = {}) {
   const baseAmount = Math.max(0, Number(amount) || 0);
   if (!baseAmount) return null;
+  const questCount = Math.max(0, parseInt(options.questCount, 10) || 0);
+  const trackQuestXp = options.trackQuestXp === true;
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('xp, xp_buffer, level, hp, pets, equipped_pet, total_quest_xp, total_quests_done')
-    .eq('user_id', validation.owner_user_id)
+    .eq('user_id', userId)
     .single();
 
   if (profileError) throw profileError;
@@ -129,8 +192,10 @@ async function awardQuestXpToOwner(validation, amount, questCount = 0) {
     }
   }
 
-  const totalQuestXP = Math.floor((parseFloat(profile.total_quest_xp) || 0) + baseAmount);
-  const totalQuestsDone = (parseInt(profile.total_quests_done, 10) || 0) + Math.max(0, parseInt(questCount, 10) || 0);
+  const totalQuestXP = trackQuestXp
+    ? Math.floor((parseFloat(profile.total_quest_xp) || 0) + baseAmount)
+    : (parseFloat(profile.total_quest_xp) || 0);
+  const totalQuestsDone = (parseInt(profile.total_quests_done, 10) || 0) + questCount;
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
@@ -141,14 +206,25 @@ async function awardQuestXpToOwner(validation, amount, questCount = 0) {
       total_quest_xp: totalQuestXP,
       total_quests_done: totalQuestsDone
     })
-    .eq('user_id', validation.owner_user_id);
+    .eq('user_id', userId);
 
   if (error) throw error;
   return { base_xp: baseAmount, modified_xp: modifiedAmount, xp, xp_buffer: xpBuffer, level, pets, total_quest_xp: totalQuestXP, total_quests_done: totalQuestsDone };
 }
 
+async function awardQuestXpToOwner(validation, amount, questCount = 0) {
+  return awardXpToUser(validation.owner_user_id, amount, {
+    trackQuestXp: true,
+    questCount
+  });
+}
+
 async function awardImmediateQuestXpToOwner(ownerUserId, amount, questCount) {
   return awardQuestXpToOwner({ owner_user_id: ownerUserId }, amount, questCount);
+}
+
+async function awardModeratorVoteXp(userId) {
+  return awardXpToUser(userId, MODERATOR_VOTE_XP);
 }
 
 function getTodayKey() {
@@ -659,8 +735,6 @@ router.get('/moderators', async (req, res) => {
     if (ownerError) return res.status(500).json({ error: ownerError.message });
 
     const ownerLevel = parseInt(ownerProfile?.level, 10) || 1;
-    const minLevel = Math.max(1, ownerLevel - MODERATOR_LEVEL_BELOW);
-    const maxLevel = ownerLevel + MODERATOR_LEVEL_ABOVE;
     const activeSince = new Date(Date.now() - MODERATOR_ACTIVE_DELAY_MS).toISOString();
 
     const { data: friendRows, error: friendError } = await supabaseAdmin
@@ -674,33 +748,49 @@ router.get('/moderators', async (req, res) => {
 
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, username, level, last_seen, quest_reputation')
+      .select('user_id, username, level, last_seen')
       .neq('user_id', req.user.id)
-      .gte('level', minLevel)
-      .lte('level', maxLevel)
       .gte('last_seen', activeSince)
-      .limit(50);
+      .limit(100);
 
     if (profilesError) return res.status(500).json({ error: profilesError.message });
+
+    const candidateProfiles = (profiles || []).filter(profile => !friendIds.has(profile.user_id));
+    const recentStats = await getRecentJudgeStats(candidateProfiles.map(profile => profile.user_id));
 
     const moderators = (profiles || [])
       .filter(profile => !friendIds.has(profile.user_id))
       .map((profile) => {
-        const reputation = profile.quest_reputation || {};
+        const reputation = recentStats.get(profile.user_id) || emptyRecentJudgeStats(profile.user_id);
+        const level = parseInt(profile.level, 10) || 1;
         return {
           user_id: profile.user_id,
           username: profile.username || 'Joueur',
-          level: parseInt(profile.level, 10) || 1,
+          level,
+          level_distance: Math.abs(level - ownerLevel),
           reputation_score: getReputationScore(reputation),
-          reputation_actions: getReputationActionCount(reputation)
+          reputation_actions: getReputationActionCount(reputation),
+          reputation_window_days: RECENT_REPUTATION_DAYS
         };
       })
       .filter(profile => profile.reputation_score >= MODERATOR_MIN_REPUTATION)
       .filter(profile => profile.reputation_actions >= MODERATOR_MIN_ACTIONS)
-      .sort((a, b) => b.reputation_score - a.reputation_score || b.reputation_actions - a.reputation_actions)
+      .sort((a, b) => a.level_distance - b.level_distance || b.reputation_score - a.reputation_score || b.reputation_actions - a.reputation_actions)
       .slice(0, 12);
 
     res.json(moderators);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/reputation/recent', async (req, res) => {
+  try {
+    const stats = await getRecentJudgeStats([req.user.id]);
+    res.json({
+      ...(stats.get(req.user.id) || emptyRecentJudgeStats(req.user.id)),
+      window_days: RECENT_REPUTATION_DAYS
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -970,12 +1060,15 @@ router.post('/validations/:id/vote', async (req, res) => {
       await ensurePublicVoteStillHasSlot(validation, vote);
     }
     const evaluation = await evaluateValidation(validation);
+    const moderator_award = scope === 'moderator'
+      ? await awardModeratorVoteXp(req.user.id)
+      : null;
     const votes = await getValidationVotes(validationId);
     const scopeVotes = votes.filter(item => item.vote_scope === scope);
     const yes = scopeVotes.filter(item => item.vote_value).length;
     const no = scopeVotes.filter(item => !item.vote_value).length;
     const voter_reputation = evaluation.finalized?.judge_reputations?.[req.user.id] || null;
-    res.json({ vote, tally: { yes, no }, voter_reputation, ...evaluation });
+    res.json({ vote, tally: { yes, no }, voter_reputation, moderator_award, ...evaluation });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }

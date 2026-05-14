@@ -1450,6 +1450,20 @@ function syncQuestReputationFromServer(reputation) {
   updateReputationPanel();
 }
 
+async function refreshRecentQuestReputation() {
+  if (!window.TentiaAPI || !window.TentiaAPI.isLoggedIn()) return null;
+  const token = localStorage.getItem('_token');
+  const response = await fetch('/api/quests/reputation/recent', {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!response.ok) return null;
+  const reputation = await response.json().catch(() => null);
+  if (!reputation || typeof reputation !== 'object') return null;
+  localStorage.setItem('questRecentReputation', JSON.stringify(reputation));
+  updateReputationPanel();
+  return reputation;
+}
+
 function syncQuestAwardFromServer(award) {
   if (!award || typeof award !== 'object') return null;
 
@@ -1721,6 +1735,9 @@ async function voteQuestValidation(validationId, scope, value) {
   if (result.voter_reputation) {
     syncQuestReputationFromServer(result.voter_reputation);
   }
+  if (result.moderator_award) {
+    syncQuestAwardFromServer(result.moderator_award);
+  }
   return result;
 }
 
@@ -1822,7 +1839,7 @@ function renderQuestSubmitModerators(moderators = []) {
     label.innerHTML = `
       <input type="checkbox" value="${moderator.user_id}">
       <span>${escapeHTML(moderator.username)}</span>
-      <span class="quest-submit-moderator-meta">N${Number(moderator.level || 1)} | ${Math.round(Number(moderator.reputation_score || 0))}%</span>
+      <span class="quest-submit-moderator-meta">N${Number(moderator.level || 1)} | ${Math.round(Number(moderator.reputation_score || 0))}% 7j | ${Number(moderator.reputation_actions || 0)}v</span>
     `;
     questSubmitModerators.appendChild(label);
   });
@@ -2230,6 +2247,15 @@ function getQuestReputation() {
   }
 }
 
+function getRecentQuestReputation() {
+  try {
+    const reputation = JSON.parse(localStorage.getItem('questRecentReputation') || '{}');
+    return reputation && typeof reputation === 'object' ? reputation : {};
+  } catch (error) {
+    return {};
+  }
+}
+
 function getReputationTier(score) {
   if (score >= 90) return 4;
   if (score >= 75) return 3;
@@ -2239,16 +2265,18 @@ function getReputationTier(score) {
 
 function updateReputationPanel() {
   const reputation = getQuestReputation();
+  const recentReputation = getRecentQuestReputation();
   const accepted = Number(reputation.accepted || 0);
   const rejected = Number(reputation.rejected || 0);
   const playerJudged = accepted + rejected;
-  const judgeTotal = Number(reputation.judge_total || 0);
-  const judgeAligned = Number(reputation.judge_aligned || 0);
+  const judgeTotal = Number(recentReputation.judge_total ?? reputation.judge_total ?? 0);
+  const judgeAligned = Number(recentReputation.judge_aligned ?? reputation.judge_aligned ?? 0);
   const acceptRate = playerJudged ? Math.round((accepted / playerJudged) * 100) : 0;
   const rejectRate = playerJudged ? Math.round((rejected / playerJudged) * 100) : 0;
   const judgeRate = judgeTotal ? Math.round((judgeAligned / judgeTotal) * 100) : 0;
   const score = judgeTotal ? judgeRate : 0;
   const tier = getReputationTier(score);
+  const windowDays = Number(recentReputation.window_days || 7);
 
   const tierImg = document.getElementById('reputation-tier-img');
   const scoreEl = document.getElementById('reputation-score');
@@ -2269,7 +2297,7 @@ function updateReputationPanel() {
   if (rejectBar) rejectBar.style.width = `${rejectRate}%`;
   if (judgeBar) judgeBar.style.width = `${judgeRate}%`;
   if (meta) {
-    meta.textContent = `${playerJudged} quete${playerJudged > 1 ? 's' : ''} cloturee${playerJudged > 1 ? 's' : ''} | ${judgeTotal} vote${judgeTotal > 1 ? 's' : ''} juge${judgeTotal > 1 ? 's' : ''}`;
+    meta.textContent = `${playerJudged} quete${playerJudged > 1 ? 's' : ''} cloturee${playerJudged > 1 ? 's' : ''} | ${judgeTotal} vote${judgeTotal > 1 ? 's' : ''} juge${judgeTotal > 1 ? 's' : ''} sur ${windowDays}j`;
   }
 }
 
@@ -2987,7 +3015,7 @@ function initDashboard() {
       dashboardPanels.forEach((panel) => {
         panel.classList.toggle('active', panel.id === `dashboard-tab-${target}`);
       });
-      if (target === 'profile') updateReputationPanel();
+      if (target === 'profile') refreshRecentQuestReputation();
     });
   });
 
@@ -2998,7 +3026,7 @@ function initDashboard() {
       profileSubpanels.forEach((panel) => {
         panel.classList.toggle('active', panel.id === `profile-subtab-${target}`);
       });
-      if (target === 'reputation') updateReputationPanel();
+      if (target === 'reputation') refreshRecentQuestReputation();
     });
   });
 
