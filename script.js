@@ -1195,6 +1195,10 @@ const charFrame = document.querySelector('.character-frame');
 let bgFrames = [];
 let bgFrameIndex = 0;
 let bgInterval = null;
+let pendingSkinSelection = null;
+let pendingSkinUnlocked = false;
+let pendingBgSelection = null;
+let pendingBgUnlocked = false;
 
 function toggleBGMenu() {
   renderCharacterStylePreview();
@@ -1338,26 +1342,7 @@ function renderBGThumbs() {
     }
 
     thumb.addEventListener('click', () => {
-      if (owned) {
-        applyBG(bg1, bg2);
-        // Retirer l'overlay cadenas si présent
-        const existingLock = charFrame.querySelector('.bg-preview-lock');
-        if (existingLock) existingLock.remove();
-        charFrame.style.filter = '';
-      } else {
-        // Prévisualisation statique grisée avec cadenas
-        if (bgInterval) clearInterval(bgInterval);
-        charFrame.style.backgroundImage = `url(${bg1})`;
-        charFrame.style.filter = 'grayscale(80%) brightness(0.6)';
-        // Ajouter cadenas si pas déjà là
-        if (!charFrame.querySelector('.bg-preview-lock')) {
-          const lockEl = document.createElement('span');
-          lockEl.className = 'bg-preview-lock';
-          lockEl.textContent = '🔒';
-          lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
-          charFrame.appendChild(lockEl);
-        }
-      }
+      previewBGInPopup(bg1, bg2, owned);
     });
 
     wrap.appendChild(thumb);
@@ -1376,9 +1361,66 @@ function toggleSkinMenu() {
   if (characterSkinModal) characterSkinModal.style.display = 'flex';
 }
 
+function clearPopupPreviewLock(frame) {
+  if (!frame) return;
+  frame.querySelectorAll('.skin-preview-lock, .bg-preview-lock').forEach(lock => lock.remove());
+}
+
+function showPopupPreviewLock(frame, className) {
+  if (!frame || frame.querySelector(`.${className}`)) return;
+  const lockEl = document.createElement('span');
+  lockEl.className = className;
+  lockEl.textContent = '🔒';
+  lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
+  frame.appendChild(lockEl);
+}
+
+function previewSkinInPopup(folder, owned) {
+  const skinSprite = document.getElementById('skin-popup-sprite');
+  const frame = skinSprite ? skinSprite.closest('.character-popup-frame') : null;
+  if (!skinSprite) return;
+
+  skinSprite.src = `assets/character/${folder}/moove1.png`;
+  skinSprite.style.filter = owned ? '' : 'grayscale(80%) brightness(0.6)';
+  clearPopupPreviewLock(frame);
+  if (!owned) showPopupPreviewLock(frame, 'skin-preview-lock');
+
+  pendingSkinSelection = owned ? folder : null;
+  pendingSkinUnlocked = owned;
+  if (owned) {
+    document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
+    const activeThumb = document.querySelector(`.skin-thumb[data-skin="${folder}"]`);
+    if (activeThumb) activeThumb.classList.add('active');
+  }
+}
+
+function previewBGInPopup(bg1, bg2, owned) {
+  const bgFrame = document.getElementById('bg-popup-frame');
+  if (!bgFrame) return;
+
+  bgFrame.style.backgroundImage = `url(${bg1})`;
+  bgFrame.style.filter = owned ? '' : 'grayscale(80%) brightness(0.6)';
+  clearPopupPreviewLock(bgFrame);
+  if (!owned) showPopupPreviewLock(bgFrame, 'bg-preview-lock');
+
+  pendingBgSelection = owned ? { bg1, bg2 } : null;
+  pendingBgUnlocked = owned;
+}
+
 function closeCharacterStyleModals() {
+  if (characterSkinModal && characterSkinModal.style.display !== 'none' && pendingSkinUnlocked && pendingSkinSelection) {
+    setSkin(pendingSkinSelection);
+  }
+  if (characterBgModal && characterBgModal.style.display !== 'none' && pendingBgUnlocked && pendingBgSelection) {
+    applyBG(pendingBgSelection.bg1, pendingBgSelection.bg2);
+  }
   if (characterSkinModal) characterSkinModal.style.display = 'none';
   if (characterBgModal) characterBgModal.style.display = 'none';
+  pendingSkinSelection = null;
+  pendingSkinUnlocked = false;
+  pendingBgSelection = null;
+  pendingBgUnlocked = false;
+  renderCharacterStylePreview();
 }
 
 function renderCharacterStylePreview() {
@@ -1386,12 +1428,21 @@ function renderCharacterStylePreview() {
   const skinSprite = document.getElementById('skin-popup-sprite');
   const bgSprite = document.getElementById('bg-popup-sprite');
   const bgFrame = document.getElementById('bg-popup-frame');
-  if (mainSprite && skinSprite) skinSprite.src = mainSprite.src;
-  if (mainSprite && bgSprite) bgSprite.src = mainSprite.src;
+  if (mainSprite && skinSprite) {
+    skinSprite.src = mainSprite.src;
+    skinSprite.style.filter = '';
+    clearPopupPreviewLock(skinSprite.closest('.character-popup-frame'));
+  }
+  if (mainSprite && bgSprite) {
+    bgSprite.src = mainSprite.src;
+    bgSprite.style.filter = '';
+  }
   if (bgFrame && charFrame) {
     bgFrame.style.backgroundImage = charFrame.style.backgroundImage;
     bgFrame.style.backgroundSize = charFrame.style.backgroundSize || 'cover';
     bgFrame.style.backgroundPosition = charFrame.style.backgroundPosition || 'center';
+    bgFrame.style.filter = '';
+    clearPopupPreviewLock(bgFrame);
   }
 }
 
@@ -1458,32 +1509,7 @@ function renderSkinThumbs() {
     }
 
     thumb.addEventListener('click', () => {
-      const sprite = document.getElementById('char-sprite');
-      if (owned) {
-        // Sélection réelle : relancer l'animation normalement
-        document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
-        thumb.classList.add('active');
-        if (sprite) { sprite.style.filter = ''; }
-        // Retirer le cadenas skin si présent
-        const existingSkinLock = charFrame.querySelector('.skin-preview-lock');
-        if (existingSkinLock) existingSkinLock.remove();
-        setSkin(folder);
-      } else {
-        // Prévisualisation : stopper l'animation et figer sur moove1 grisé
-        if (animationInterval) clearInterval(animationInterval);
-        if (sprite) {
-          sprite.src = `assets/character/${folder}/moove1.png`;
-          sprite.style.filter = 'grayscale(80%) brightness(0.6)';
-        }
-        // Ajouter cadenas skin sur la frame si pas déjà là
-        if (!charFrame.querySelector('.skin-preview-lock')) {
-          const lockEl = document.createElement('span');
-          lockEl.className = 'skin-preview-lock';
-          lockEl.textContent = '🔒';
-          lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
-          charFrame.appendChild(lockEl);
-        }
-      }
+      previewSkinInPopup(folder, owned);
     });
 
     skinWrapEl.appendChild(thumb);
