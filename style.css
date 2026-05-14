@@ -51,7 +51,9 @@ body {
 /* ── ÉQUIPEMENT ZONE ── */
 .equipment-zone {
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  gap: 10px;
   align-items: flex-start;
 }
 
@@ -1089,12 +1091,12 @@ color: #fff;
 }
 
 .character-pet-dock {
-  width: min(360px, 100%);
+  width: min(420px, 100%);
   display: grid;
-  grid-template-columns: 28px 64px minmax(0, 1fr);
+  grid-template-columns: 64px 28px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .character-pet-toggle,
