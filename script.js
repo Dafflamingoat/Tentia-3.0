@@ -317,9 +317,10 @@ function renderCharacterPetDock() {
   const listEl = document.getElementById('character-pet-list');
   if (!equippedEl || !listEl) return;
 
-  const pets = getStoredPets().filter(pet => pet.owned);
+  const pets = getStoredPets();
+  const ownedPets = pets.filter(pet => pet.owned);
   const equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
-  const equipped = pets.find(pet => pet.id === equippedPetId) || pets[0];
+  const equipped = ownedPets.find(pet => pet.id === equippedPetId) || ownedPets[0];
 
   equippedEl.innerHTML = '';
   listEl.innerHTML = '';
@@ -349,9 +350,12 @@ function renderCharacterPetDock() {
   pets.forEach((pet) => {
     const visual = getIndexPetVisual(pet);
     const button = document.createElement('button');
-    button.className = 'character-pet-option' + (pet.id === equipped.id ? ' equipped' : '');
+    button.className = 'character-pet-option'
+      + (equipped && pet.id === equipped.id ? ' equipped' : '')
+      + (pet.owned ? '' : ' locked');
     button.type = 'button';
-    button.title = visual.name;
+    button.title = pet.owned ? visual.name : `${visual.name} - verrouillé`;
+    button.disabled = !pet.owned;
     if (visual.sprite) {
       const img = document.createElement('img');
       img.src = visual.sprite;
@@ -363,7 +367,14 @@ function renderCharacterPetDock() {
       empty.textContent = '?';
       button.appendChild(empty);
     }
-    button.addEventListener('click', () => equipPetFromIndex(pet.id));
+    if (!pet.owned) {
+      const lock = document.createElement('span');
+      lock.className = 'character-pet-lock';
+      lock.textContent = '🔒';
+      button.appendChild(lock);
+    } else {
+      button.addEventListener('click', () => equipPetFromIndex(pet.id));
+    }
     listEl.appendChild(button);
   });
 }

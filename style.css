@@ -1145,11 +1145,31 @@ color: #fff;
 .character-pet-option {
   flex: 0 0 64px;
   cursor: pointer;
+  position: relative;
 }
 
 .character-pet-option.equipped {
   border-color: var(--gold-light);
   box-shadow: 0 0 10px rgba(240,200,68,0.5), 2px 2px 0 #000, inset 0 0 8px rgba(0,0,0,0.6);
+}
+
+.character-pet-option.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(80%) brightness(0.7);
+}
+
+.character-pet-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-light);
+  font-size: 14px;
+  text-shadow: 0 0 6px #000, 2px 2px 0 #000;
+  background: rgba(0, 0, 0, 0.28);
+  pointer-events: none;
 }
 
 .character-pet-empty {
