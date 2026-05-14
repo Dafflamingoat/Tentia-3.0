@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-panel: #222;
   --bg-slot: #333;
   --border: #000;
@@ -348,7 +348,7 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   border: 2px solid #6b4a00 !important;
   border-radius: 0 !important;
   color: #f0c844 !important;
@@ -362,7 +362,7 @@ body {
 .info-btn:hover {
   border-color: #f0c844 !important;
   color: #fff !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   transform: none !important;
 }
 
@@ -3304,7 +3304,7 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   border: 2px solid #6b4a00 !important;
   border-radius: 0 !important;
   color: #f0c844 !important;
@@ -3318,7 +3318,7 @@ body {
 .info-btn:hover {
   border-color: #f0c844 !important;
   color: #fff !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   transform: none !important;
 }
 
