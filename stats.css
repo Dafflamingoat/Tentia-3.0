@@ -2223,3 +2223,367 @@ body {
   margin-top: 3px;
   min-height: 10px;
 }
+
+/* Desktop readability pass */
+@media (min-width: 901px) {
+  body {
+    min-height: 100vh;
+    padding: 18px 24px 48px;
+    color: #f2e8c8;
+  }
+
+  .back-btn {
+    top: 14px;
+    left: 14px;
+    font-size: 9px;
+    padding: 8px 13px;
+  }
+
+  .xp-container {
+    margin-top: 34px;
+  }
+
+  .xp-box {
+    width: min(520px, 38vw);
+  }
+
+  .level {
+    font-size: 10px;
+    margin-bottom: 7px;
+  }
+
+  .xp-bar-wrap {
+    height: 18px;
+  }
+
+  .xp-text {
+    font-size: 8px;
+    right: 8px;
+  }
+
+  .profile-box {
+    max-width: 1480px;
+    margin: 18px auto 22px;
+    padding: 16px 18px;
+    gap: 16px;
+  }
+
+  .profile-header {
+    gap: 18px;
+  }
+
+  .profile-avatar {
+    width: 62px;
+    height: 62px;
+  }
+
+  .profile-info {
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .profile-title-line {
+    font-size: 11px;
+  }
+
+  .profile-league {
+    width: 48px;
+    height: 48px;
+  }
+
+  .profile-buttons {
+    gap: 12px;
+  }
+
+  .profile-btn {
+    min-height: 38px;
+    padding: 9px 14px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+
+  .stats-page {
+    width: min(1480px, calc(100vw - 48px));
+    min-height: 560px;
+    height: auto;
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .quest-box,
+  .dashboard-box {
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 560px;
+  }
+
+  .quest-box {
+    display: flex;
+    flex-direction: column;
+    flex: none !important;
+    padding: 18px;
+    overflow: hidden;
+  }
+
+  .dashboard-box {
+    flex: none !important;
+    grid-template-columns: clamp(180px, 18vw, 240px) minmax(0, 1fr);
+  }
+
+  .dashboard-photo {
+    font-size: 11px;
+  }
+
+  .box-title {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .quest-list {
+    flex: 1;
+    max-height: none;
+    min-height: 0;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .quest-list li label {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .quest-list input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+
+  .quest-actions {
+    gap: 8px;
+  }
+
+  #new-quest {
+    min-height: 38px;
+    margin-top: 12px;
+    font-size: 10px;
+    padding: 9px;
+  }
+
+  .validate-btn,
+  .add-quest-btn,
+  .edit-quest-btn,
+  .delete-quest-btn,
+  .reset-btn,
+  .history-btn {
+    font-size: 9px;
+    padding: 8px 11px;
+  }
+
+  .quest-box > .add-quest-btn,
+  .quest-box > .validate-btn,
+  .quest-box > .reset-btn,
+  .quest-box > .history-btn {
+    margin-top: 10px;
+  }
+
+  .dashboard-tabs {
+    min-height: 48px;
+  }
+
+  .dashboard-tab {
+    min-height: 48px;
+    font-size: 10px;
+  }
+
+  .dashboard-panel {
+    padding: 18px 20px;
+  }
+
+  .profile-subtabs,
+  .quest-validation-tabs {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .profile-subtab,
+  .quest-validation-tab {
+    min-height: 38px;
+    font-size: 10px;
+    padding: 9px;
+  }
+
+  .quest-validation-toolbar {
+    margin-bottom: 12px;
+  }
+
+  .quest-refresh-btn {
+    font-size: 9px;
+    padding: 8px 12px;
+  }
+
+  .quest-validation-list,
+  .friends-list {
+    max-height: 395px;
+    padding: 0 12px 12px;
+  }
+
+  .quest-list-submenu {
+    margin: 0 -12px 12px;
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+
+  .quest-validation-empty {
+    font-size: 10px;
+    padding: 12px 0;
+  }
+
+  .quest-validation-item {
+    gap: 14px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .quest-validation-item-title {
+    font-size: 11px;
+  }
+
+  .quest-validation-item-meta,
+  .quest-progress-legend {
+    font-size: 9px;
+  }
+
+  .quest-validation-actions {
+    flex-basis: 98px;
+    gap: 8px;
+  }
+
+  .quest-vote-btn {
+    min-height: 30px;
+    font-size: 9px;
+    padding: 7px;
+  }
+
+  .quest-progress-wrap {
+    height: 18px;
+  }
+
+  .quest-progress-label {
+    font-size: 9px;
+  }
+
+  .friends-row,
+  .friends-request-row {
+    min-height: 34px;
+    font-size: 11px;
+  }
+
+  .friends-empty,
+  .friends-feedback,
+  .settings-chess-feedback {
+    font-size: 10px;
+  }
+
+  .friends-input {
+    min-height: 34px;
+    font-size: 10px;
+    padding: 8px 9px;
+  }
+
+  .friends-add-btn,
+  .settings-chess-disconnect {
+    min-height: 34px;
+    font-size: 9px;
+    padding: 8px 10px;
+  }
+
+  .settings-section {
+    margin-bottom: 18px;
+  }
+
+  .settings-label {
+    font-size: 11px;
+    margin-bottom: 9px;
+  }
+
+  .settings-chess-connected {
+    font-size: 11px;
+  }
+
+  .reputation-card {
+    min-height: 260px;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 24px;
+    padding: 22px;
+  }
+
+  .reputation-tier img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .reputation-title,
+  .reputation-line-top,
+  .reputation-meta {
+    font-size: 11px;
+  }
+
+  .reputation-score {
+    font-size: 24px;
+  }
+
+  .reputation-bar-wrap {
+    height: 18px;
+  }
+
+  .achievements-section {
+    width: min(960px, calc(100vw - 48px));
+    max-width: none;
+    margin-top: 38px;
+  }
+
+  .achievements-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .hf-name,
+  .hf-pct {
+    font-size: 8px;
+  }
+
+  .stats-box {
+    top: 270px;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .stats-page {
+    height: auto;
+    min-height: 0;
+    flex-direction: column;
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .quest-box,
+  .dashboard-box {
+    flex: none !important;
+    max-width: none !important;
+    width: 100%;
+  }
+
+  .dashboard-box {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-photo {
+    display: none;
+  }
+}

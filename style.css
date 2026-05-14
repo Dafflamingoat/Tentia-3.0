@@ -1050,3 +1050,204 @@ color: #fff;
   text-align: center;
   line-height: 1.7;
 }
+
+/* Desktop readability pass */
+@media (min-width: 901px) {
+  body {
+    padding: 24px 28px 56px;
+  }
+
+  .page {
+    max-width: 1320px;
+    display: grid;
+    grid-template-columns: minmax(340px, 430px) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 28px;
+    row-gap: 22px;
+  }
+
+  .title {
+    grid-column: 1 / -1;
+    font-size: 17px;
+    padding: 14px 0 9px;
+  }
+
+  .equipment-zone {
+    position: sticky;
+    top: 24px;
+  }
+
+  .character-box {
+    width: 100%;
+    padding: 18px 14px;
+    background: rgba(42, 30, 8, 0.72);
+    border: 2px solid var(--border);
+    box-shadow: 0 0 14px rgba(200,163,44,0.14), inset 0 0 20px rgba(0,0,0,0.5), 4px 4px 0 #000;
+  }
+
+  .char-name-tag {
+    font-size: 10px;
+    padding: 7px 14px;
+  }
+
+  .char-frame-row {
+    gap: 14px;
+  }
+
+  .character-frame {
+    width: 220px;
+    height: 300px;
+  }
+
+  #char-sprite {
+    width: 150px;
+  }
+
+  .badge-col {
+    gap: 14px;
+  }
+
+  .badge-slot {
+    width: 66px;
+    height: 66px;
+  }
+
+  .badge-slot-img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .badge-slot-empty {
+    font-size: 24px;
+  }
+
+  .badge-slot-label {
+    font-size: 6px;
+  }
+
+  .char-stats {
+    gap: 20px;
+    font-size: 9px;
+  }
+
+  .skin-toggle,
+  .bg-toggle-btn {
+    min-height: 34px;
+    font-size: 8px;
+    padding: 8px 12px;
+  }
+
+  .skin-thumbs-wrap,
+  .bg-thumbs-wrap {
+    max-width: 300px;
+  }
+
+  .skill-section {
+    min-height: 560px;
+    padding: 22px;
+  }
+
+  .skill-title {
+    font-size: 12px;
+    margin-bottom: 22px;
+  }
+
+  .skill-tree {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    gap: 18px;
+    justify-content: stretch;
+  }
+
+  .custom-skills-list {
+    display: contents;
+  }
+
+  .skill-node {
+    width: 100%;
+    min-height: 150px;
+    padding: 15px 13px;
+  }
+
+  .custom-skill-node {
+    min-height: 175px;
+  }
+
+  .add-skill-node {
+    min-height: 150px;
+  }
+
+  .skill-icon {
+    font-size: 30px;
+  }
+
+  .skill-name {
+    font-size: 8px;
+    line-height: 1.45;
+  }
+
+  .skill-bar-wrap {
+    height: 16px;
+  }
+
+  .skill-val,
+  #val-echec {
+    font-size: 7px;
+  }
+
+  .skill-btn {
+    min-height: 32px;
+    font-size: 13px;
+  }
+
+  .skill-time-total {
+    font-size: 14px;
+  }
+
+  .skill-time-session,
+  .skill-xp-feedback,
+  .custom-skill-icon {
+    font-size: 8px;
+  }
+
+  .timer-btn {
+    min-width: 92px;
+    font-size: 8px;
+  }
+
+  .strava-activity-select {
+    height: 30px;
+    font-size: 7px;
+  }
+
+  .strava-metric {
+    min-height: 32px;
+    font-size: 10px;
+  }
+
+  .strava-summary {
+    min-height: 64px;
+    font-size: 8px;
+  }
+
+  .nav-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 20;
+    margin: 0;
+    font-size: 8px;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    padding: 16px 10px 42px;
+    overflow-x: hidden;
+  }
+
+  .page {
+    max-width: 100%;
+  }
+}
