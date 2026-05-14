@@ -307,10 +307,27 @@
   </div>
   <!-- DASHBOARD -->
   <section class="dashboard-box" id="dashboard-box">
-    <button class="dashboard-photo" id="dashboard-photo" type="button" title="Changer la photo de profil">
-      <img id="dashboard-photo-img" src="" alt="Photo de profil" style="display:none;">
-      <span id="dashboard-photo-placeholder">PHOTO</span>
-    </button>
+    <aside class="dashboard-profile-card">
+      <button class="dashboard-photo" id="dashboard-photo" type="button" title="Changer la photo de profil">
+        <img id="dashboard-photo-img" src="" alt="Photo de profil" style="display:none;">
+        <span id="dashboard-photo-placeholder">PHOTO</span>
+      </button>
+
+      <div class="dashboard-profile-fields">
+        <label class="dashboard-profile-field">
+          <span>Surnom</span>
+          <input id="dashboard-nickname" type="text" maxlength="32" autocomplete="off" placeholder="Surnom">
+        </label>
+        <label class="dashboard-profile-field">
+          <span>Site web</span>
+          <input id="dashboard-website" type="url" maxlength="120" autocomplete="off" placeholder="https://...">
+        </label>
+        <label class="dashboard-profile-field dashboard-profile-field-description">
+          <span>Description</span>
+          <textarea id="dashboard-description" maxlength="180" rows="4" placeholder="Petite description..."></textarea>
+        </label>
+      </div>
+    </aside>
     <input id="dashboard-photo-input" type="file" accept="image/*" hidden>
 
     <div class="dashboard-main">
@@ -533,7 +550,7 @@
   <div class="stats-toggle" id="stats-toggle">&lt;</div>
 
   <div class="stat-item">
-    <span class="stat-name">Force :</span>
+    <span class="stat-name">Force</span>
     <div class="stat-right">
       <span class="stat-value" id="stat-force">0</span>
       <button class="stat-add-btn" onclick="addStat('Force')">+</button>
@@ -541,7 +558,7 @@
   </div>
 
   <div class="stat-item">
-    <span class="stat-name">Intelligence :</span>
+    <span class="stat-name">Intelligence</span>
     <div class="stat-right">
       <span class="stat-value" id="stat-intel">0</span>
       <button class="stat-add-btn" onclick="addStat('Intelligence')">+</button>
@@ -549,7 +566,7 @@
   </div>
 
   <div class="stat-item">
-    <span class="stat-name">Discipline :</span>
+    <span class="stat-name">Discipline</span>
     <div class="stat-right">
       <span class="stat-value" id="stat-discipline">0</span>
       <button class="stat-add-btn" onclick="addStat('Discipline')">+</button>
@@ -557,7 +574,7 @@
   </div>
 
   <div class="stat-item">
-    <span class="stat-name">Focus :</span>
+    <span class="stat-name">Focus</span>
     <div class="stat-right">
       <span class="stat-value" id="stat-focus">0</span>
       <button class="stat-add-btn" onclick="addStat('Focus')">+</button>
@@ -565,7 +582,7 @@
   </div>
 
   <div class="stat-item points-row">
-    <span class="stat-name">Points :</span>
+    <span class="stat-name">Points</span>
     <div class="stat-right">
       <span id="points-left" class="stat-value">0</span>
       <button class="info-btn" id="open-stats-info" title="Comment fonctionnent les stats ?">?</button>

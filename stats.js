@@ -1223,6 +1223,9 @@ const dashboardPhotoBtn = document.getElementById('dashboard-photo');
 const dashboardPhotoInput = document.getElementById('dashboard-photo-input');
 const dashboardPhotoImg = document.getElementById('dashboard-photo-img');
 const dashboardPhotoPlaceholder = document.getElementById('dashboard-photo-placeholder');
+const dashboardNickname = document.getElementById('dashboard-nickname');
+const dashboardWebsite = document.getElementById('dashboard-website');
+const dashboardDescription = document.getElementById('dashboard-description');
 const questSubmitPopup = document.getElementById('quest-submit-popup');
 const questSubmitSummary = document.getElementById('quest-submit-summary');
 const questSubmitFriends = document.getElementById('quest-submit-friends');
@@ -3009,6 +3012,32 @@ function saveDashboardPhoto(file) {
   });
 }
 
+function loadDashboardProfileFields() {
+  if (dashboardNickname) {
+    dashboardNickname.value = localStorage.getItem('dashboardNickname') || localStorage.getItem('_username') || '';
+  }
+  if (dashboardWebsite) {
+    dashboardWebsite.value = localStorage.getItem('dashboardWebsite') || '';
+  }
+  if (dashboardDescription) {
+    dashboardDescription.value = localStorage.getItem('dashboardDescription') || '';
+  }
+}
+
+function saveDashboardProfileFields() {
+  if (dashboardNickname) localStorage.setItem('dashboardNickname', dashboardNickname.value.trim());
+  if (dashboardWebsite) localStorage.setItem('dashboardWebsite', dashboardWebsite.value.trim());
+  if (dashboardDescription) localStorage.setItem('dashboardDescription', dashboardDescription.value.trim());
+}
+
+function bindDashboardProfileFields() {
+  [dashboardNickname, dashboardWebsite, dashboardDescription].forEach((field) => {
+    if (!field) return;
+    field.addEventListener('change', saveDashboardProfileFields);
+    field.addEventListener('blur', saveDashboardProfileFields);
+  });
+}
+
 function initDashboard() {
   dashboardTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -3042,6 +3071,8 @@ function initDashboard() {
   }
 
   loadDashboardPhoto();
+  loadDashboardProfileFields();
+  bindDashboardProfileFields();
 }
 
 // ────────────────

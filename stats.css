@@ -160,7 +160,7 @@ body {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   border: 2px solid #6b4a00 !important;
   border-radius: 0 !important;
   color: #f0c844 !important;
@@ -174,7 +174,7 @@ body {
 .info-btn:hover {
   border-color: #f0c844 !important;
   color: #fff !important;
-  background: #222 !important;
+  background: #2a1e08 !important;
   transform: none !important;
 }
 
@@ -541,12 +541,25 @@ body {
   color: var(--gold-light);
 }
 
-.dashboard-photo {
+.dashboard-profile-card {
   min-height: 0;
   height: 100%;
-  background: #111;
-  border: 0;
   border-right: 2px solid var(--border);
+  background: linear-gradient(180deg, rgba(18,16,10,0.96), rgba(10,8,4,0.96));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 16px rgba(0,0,0,0.85);
+}
+
+.dashboard-photo {
+  min-height: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #111;
+  border: 2px solid var(--border);
   color: var(--gold-light);
   cursor: pointer;
   display: flex;
@@ -573,6 +586,46 @@ body {
 
 #dashboard-photo-placeholder {
   opacity: 0.7;
+}
+
+.dashboard-profile-fields {
+  display: grid;
+  gap: 9px;
+}
+
+.dashboard-profile-field {
+  display: grid;
+  gap: 5px;
+  color: var(--gold-light);
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.dashboard-profile-field input,
+.dashboard-profile-field textarea {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-slot);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  line-height: 1.55;
+  padding: 8px;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.7), 2px 2px 0 #000;
+  outline: none;
+}
+
+.dashboard-profile-field textarea {
+  resize: vertical;
+  min-height: 86px;
+  max-height: 150px;
+}
+
+.dashboard-profile-field input:focus,
+.dashboard-profile-field textarea:focus {
+  border-color: var(--gold-light);
+  box-shadow: 0 0 8px rgba(255,215,0,0.35), inset 0 0 8px rgba(0,0,0,0.7), 2px 2px 0 #000;
 }
 
 .dashboard-main {
@@ -2762,6 +2815,10 @@ body {
     grid-template-columns: clamp(180px, 18vw, 240px) minmax(0, 1fr);
   }
 
+  .dashboard-profile-card {
+    padding: 14px;
+  }
+
   .dashboard-photo {
     font-size: 11px;
   }
@@ -3011,7 +3068,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .dashboard-photo {
+  .dashboard-profile-card {
     display: none;
   }
 }
@@ -3097,7 +3154,7 @@ body {
     order: 1;
     width: 100%;
     height: 520px;
-    grid-template-columns: clamp(190px, 20vw, 250px) minmax(0, 1fr);
+    grid-template-columns: clamp(210px, 20vw, 260px) minmax(0, 1fr);
   }
 
   .quest-box {
