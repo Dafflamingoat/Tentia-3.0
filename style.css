@@ -1169,11 +1169,25 @@ color: #fff;
     padding: 15px 13px;
   }
 
+  #skill-strava {
+    order: 1;
+  }
+
+  #skill-echec {
+    order: 2;
+  }
+
+  #skill-argent {
+    order: 3;
+  }
+
   .custom-skill-node {
+    order: 4;
     min-height: 175px;
   }
 
   .add-skill-node {
+    order: 5;
     min-height: 150px;
   }
 
