@@ -186,6 +186,350 @@ body {
   color: #f0c844 !important;
 }
 
+/* Final override: stats.html menu must match index.html menu */
+.stats-box {
+  width: 220px !important;
+  position: fixed !important;
+  top: 250px !important;
+  right: -220px !important;
+  background: rgba(18, 16, 10, 0.96) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  padding: 15px !important;
+  box-shadow: 0 0 16px rgba(200,163,44,0.18), inset 0 0 20px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  transition: right 0.25s ease !important;
+  z-index: 60 !important;
+}
+
+.stats-box.open {
+  right: 0 !important;
+}
+
+.stats-toggle {
+  position: absolute !important;
+  left: -34px !important;
+  top: 10px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Press Start 2P', monospace !important;
+  background: var(--bg-slot) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  color: var(--gold-light) !important;
+  cursor: pointer !important;
+  box-shadow: -2px 2px 0 #000, inset 0 0 8px rgba(0,0,0,0.65) !important;
+  text-shadow: 0 0 6px var(--gold-light) !important;
+}
+
+.stat-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: 34px !important;
+  color: var(--gold-light) !important;
+  font-size: 7px !important;
+  border-bottom: 1px solid rgba(107, 74, 0, 0.55) !important;
+}
+
+.stat-name {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.stat-right {
+  display: grid !important;
+  grid-template-columns: 42px 28px !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.stat-value {
+  color: #fff2a8 !important;
+  text-align: right !important;
+}
+
+.stat-add-btn,
+.info-btn {
+  width: 28px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 10px !important;
+  box-shadow: 2px 2px 0 #000 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.stat-add-btn:hover,
+.info-btn:hover {
+  border-color: var(--gold-light) !important;
+  color: #fff !important;
+  background: var(--bg-panel) !important;
+  transform: none !important;
+}
+
+.points-row {
+  margin-top: 10px !important;
+  padding-top: 9px !important;
+  border-top: 2px solid var(--border) !important;
+  border-bottom: none !important;
+}
+
+/* Final override: stats.html infobulle must match index.html infobulle */
+#stats-info-popup.badge-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,0.75) !important;
+  z-index: 999 !important;
+}
+
+#stats-info-popup.badge-modal-overlay.active {
+  display: flex !important;
+}
+
+#stats-info-popup .badge-modal-box {
+  width: min(420px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  box-shadow: 0 0 18px rgba(200,163,44,0.25), inset 0 0 18px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  padding: 16px !important;
+}
+
+#stats-info-popup .badge-modal-title {
+  color: var(--gold-light) !important;
+  font-size: 10px !important;
+  text-align: center !important;
+  margin-bottom: 14px !important;
+  text-shadow: 0 0 6px var(--gold-light) !important;
+}
+
+#stats-info-popup .info-modal-body {
+  display: grid !important;
+  gap: 10px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#stats-info-popup .info-skill-block {
+  background: var(--bg-slot) !important;
+  border: 2px solid var(--border) !important;
+  padding: 10px !important;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.65) !important;
+}
+
+#stats-info-popup .info-skill-title {
+  color: var(--gold-light) !important;
+  font-size: 8px !important;
+  margin-bottom: 7px !important;
+}
+
+#stats-info-popup .info-skill-desc {
+  color: var(--text) !important;
+  font-size: 7px !important;
+  line-height: 1.7 !important;
+}
+
+#stats-info-popup .badge-modal-close {
+  margin-top: 14px !important;
+  width: 100% !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 8px !important;
+  padding: 9px 10px !important;
+  box-shadow: 2px 2px 0 #000 !important;
+}
+
+/* Stats menu: exact visual match with index.html */
+.stats-box {
+  width: 220px !important;
+  position: fixed !important;
+  top: 250px !important;
+  right: -220px !important;
+  background: rgba(18, 16, 10, 0.96) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  padding: 15px !important;
+  box-shadow: 0 0 16px rgba(200,163,44,0.18), inset 0 0 20px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  transition: right 0.25s ease !important;
+  z-index: 60 !important;
+}
+
+.stats-box.open {
+  right: 0 !important;
+}
+
+.stats-toggle {
+  position: absolute !important;
+  left: -34px !important;
+  top: 10px !important;
+  width: 34px !important;
+  height: 34px !important;
+  font-family: 'Press Start 2P', monospace !important;
+  background: var(--bg-slot) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  color: var(--gold-light) !important;
+  cursor: pointer !important;
+  box-shadow: -2px 2px 0 #000, inset 0 0 8px rgba(0,0,0,0.65) !important;
+  text-shadow: 0 0 6px var(--gold-light) !important;
+}
+
+.stat-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: 34px !important;
+  color: var(--gold-light) !important;
+  font-size: 7px !important;
+  border-bottom: 1px solid rgba(107, 74, 0, 0.55) !important;
+}
+
+.stat-name {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.stat-right {
+  display: grid !important;
+  grid-template-columns: 42px 28px !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.stat-value {
+  color: #fff2a8 !important;
+  text-align: right !important;
+}
+
+.stat-add-btn,
+.info-btn {
+  width: 28px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 10px !important;
+  box-shadow: 2px 2px 0 #000 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.stat-add-btn:hover,
+.info-btn:hover {
+  border-color: var(--gold-light) !important;
+  color: #fff !important;
+  background: var(--bg-panel) !important;
+  transform: none !important;
+}
+
+.points-row {
+  margin-top: 10px !important;
+  padding-top: 9px !important;
+  border-top: 2px solid var(--border) !important;
+  border-bottom: none !important;
+}
+
+/* Stats info popup: exact visual match with index infobulle */
+#stats-info-popup.badge-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,0.75) !important;
+  z-index: 999 !important;
+}
+
+#stats-info-popup.badge-modal-overlay.active {
+  display: flex !important;
+}
+
+#stats-info-popup .badge-modal-box {
+  width: min(420px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  box-shadow: 0 0 18px rgba(200,163,44,0.25), inset 0 0 18px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  padding: 16px !important;
+}
+
+#stats-info-popup .badge-modal-title {
+  color: var(--gold-light) !important;
+  font-size: 10px !important;
+  text-align: center !important;
+  margin-bottom: 14px !important;
+  text-shadow: 0 0 6px var(--gold-light) !important;
+}
+
+#stats-info-popup .info-modal-body {
+  display: grid !important;
+  gap: 10px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#stats-info-popup .info-skill-block {
+  background: var(--bg-slot) !important;
+  border: 2px solid var(--border) !important;
+  padding: 10px !important;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.65) !important;
+}
+
+#stats-info-popup .info-skill-title {
+  color: var(--gold-light) !important;
+  font-size: 8px !important;
+  margin-bottom: 7px !important;
+}
+
+#stats-info-popup .info-skill-desc {
+  color: var(--text) !important;
+  font-size: 7px !important;
+  line-height: 1.7 !important;
+}
+
+#stats-info-popup .badge-modal-close {
+  margin-top: 14px !important;
+  width: 100% !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 8px !important;
+  padding: 9px 10px !important;
+  box-shadow: 2px 2px 0 #000 !important;
+}
+
 /* Dashboard profile card: prevent horizontal overflow */
 .dashboard-box {
   overflow: hidden !important;
@@ -3374,3 +3718,98 @@ body {
   border-bottom: none !important;
   color: #f0c844 !important;
 }
+
+
+/* Last rule: stats.html menu mirrors index.html */
+.stats-box {
+  width: 220px !important;
+  position: fixed !important;
+  top: 250px !important;
+  right: -220px !important;
+  background: rgba(18, 16, 10, 0.96) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  padding: 15px !important;
+  box-shadow: 0 0 16px rgba(200,163,44,0.18), inset 0 0 20px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  transition: right 0.25s ease !important;
+  z-index: 60 !important;
+}
+.stats-box.open { right: 0 !important; }
+.stats-toggle {
+  position: absolute !important;
+  left: -34px !important;
+  top: 10px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Press Start 2P', monospace !important;
+  background: var(--bg-slot) !important;
+  border: 2px solid var(--border) !important;
+  border-right: none !important;
+  color: var(--gold-light) !important;
+  cursor: pointer !important;
+  box-shadow: -2px 2px 0 #000, inset 0 0 8px rgba(0,0,0,0.65) !important;
+  text-shadow: 0 0 6px var(--gold-light) !important;
+}
+.stat-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-height: 34px !important;
+  color: var(--gold-light) !important;
+  font-size: 7px !important;
+  border-bottom: 1px solid rgba(107, 74, 0, 0.55) !important;
+}
+.stat-name { min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+.stat-right { display: grid !important; grid-template-columns: 42px 28px !important; align-items: center !important; gap: 6px !important; }
+.stat-value { color: #fff2a8 !important; text-align: right !important; }
+.stat-add-btn, .info-btn {
+  width: 28px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  font-size: 10px !important;
+  box-shadow: 2px 2px 0 #000 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.stat-add-btn:hover, .info-btn:hover { border-color: var(--gold-light) !important; color: #fff !important; background: var(--bg-panel) !important; transform: none !important; }
+.points-row { margin-top: 10px !important; padding-top: 9px !important; border-top: 2px solid var(--border) !important; border-bottom: none !important; }
+
+/* Last rule: stats.html infobulle mirrors index.html */
+#stats-info-popup.badge-modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,0.75) !important;
+  z-index: 999 !important;
+}
+#stats-info-popup.badge-modal-overlay.active { display: flex !important; }
+#stats-info-popup .badge-modal-box {
+  width: min(420px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
+  background: var(--bg-panel) !important;
+  border: 2px solid var(--border) !important;
+  box-shadow: 0 0 18px rgba(200,163,44,0.25), inset 0 0 18px rgba(0,0,0,0.65), 4px 4px 0 #000 !important;
+  color: var(--gold-light) !important;
+  font-family: 'Press Start 2P', monospace !important;
+  padding: 16px !important;
+}
+#stats-info-popup .badge-modal-title { color: var(--gold-light) !important; font-size: 10px !important; text-align: center !important; margin-bottom: 14px !important; text-shadow: 0 0 6px var(--gold-light) !important; }
+#stats-info-popup .info-modal-body { display: grid !important; gap: 10px !important; max-height: none !important; overflow: visible !important; }
+#stats-info-popup .info-skill-block { background: var(--bg-slot) !important; border: 2px solid var(--border) !important; padding: 10px !important; box-shadow: inset 0 0 8px rgba(0,0,0,0.65) !important; }
+#stats-info-popup .info-skill-title { color: var(--gold-light) !important; font-size: 8px !important; margin-bottom: 7px !important; }
+#stats-info-popup .info-skill-desc { color: var(--text) !important; font-size: 7px !important; line-height: 1.7 !important; }
+#stats-info-popup .badge-modal-close { margin-top: 14px !important; width: 100% !important; background: var(--bg-panel) !important; border: 2px solid var(--border) !important; color: var(--gold-light) !important; font-family: 'Press Start 2P', monospace !important; font-size: 8px !important; padding: 9px 10px !important; box-shadow: 2px 2px 0 #000 !important; }
