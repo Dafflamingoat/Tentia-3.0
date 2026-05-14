@@ -817,14 +817,93 @@ if (characterPetToggle && characterPetList) {
 const indexStatsBox = document.getElementById('index-stats-box');
 const indexStatsToggle = document.getElementById('index-stats-toggle');
 const openIndexStats = document.getElementById('open-index-stats');
+const indexGlobalStatsPopup = document.getElementById('index-global-stats-popup');
+const closeIndexGlobalStats = document.getElementById('close-index-global-stats');
+const openIndexStatsInfo = document.getElementById('open-index-stats-info');
+const indexStatsInfoPopup = document.getElementById('index-stats-info-popup');
+const closeIndexStatsInfo = document.getElementById('close-index-stats-info');
+
 function toggleIndexStatsBox(forceOpen = null) {
   if (!indexStatsBox || !indexStatsToggle) return;
   const shouldOpen = forceOpen === null ? !indexStatsBox.classList.contains('open') : forceOpen;
   indexStatsBox.classList.toggle('open', shouldOpen);
-  indexStatsToggle.textContent = shouldOpen ? '?' : '?';
+  indexStatsToggle.textContent = shouldOpen ? '>' : '<';
 }
+
+function createIndexSummaryRow(label, value, detail = '') {
+  const row = document.createElement('div');
+  row.className = 'index-global-stat-row';
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'index-global-stat-label';
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'index-global-stat-value';
+  valueEl.textContent = value;
+
+  row.appendChild(labelEl);
+  row.appendChild(valueEl);
+
+  if (detail) {
+    const detailEl = document.createElement('span');
+    detailEl.className = 'index-global-stat-detail';
+    detailEl.textContent = detail;
+    row.appendChild(detailEl);
+  }
+
+  return row;
+}
+
+function renderIndexGlobalStatsSummary() {
+  const list = document.getElementById('index-global-stats-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  ['Force', 'Intelligence', 'Discipline', 'Focus'].forEach((statName) => {
+    const base = parseInt(localStorage.getItem(statName), 10) || 0;
+    const petBonus = getIndexPetStatBonus(statName);
+    const badgeBonus = getIndexBadgeStatBonus(statName, base + petBonus);
+    const total = base + petBonus + badgeBonus;
+    list.appendChild(createIndexSummaryRow(statName, total, `Base ${base} | Pet +${petBonus} | Badge +${badgeBonus}`));
+  });
+
+  const equippedBadges = getBadges().filter(badge => badge.owned && badge.equippedSlot);
+  const badgeText = equippedBadges.length
+    ? equippedBadges.map(badge => `${badge.equippedSlot}: ${badge.name}`).join(' | ')
+    : 'Aucun badge équipé';
+  list.appendChild(createIndexSummaryRow('Badges', equippedBadges.length, badgeText));
+
+  const equippedPet = getEquippedPetForXP();
+  const petVisual = getIndexPetVisual(equippedPet);
+  list.appendChild(createIndexSummaryRow('Familier', equippedPet ? petVisual.name : 'Aucun', equippedPet ? `Niveau ${equippedPet.level || 1}` : ''));
+
+  const points = parseInt(localStorage.getItem('statPoints'), 10) || 0;
+  list.appendChild(createIndexSummaryRow('Points dispo', points));
+}
+
+function openIndexGlobalStatsPopup() {
+  renderIndexGlobalStatsSummary();
+  if (indexGlobalStatsPopup) indexGlobalStatsPopup.style.display = 'flex';
+}
+
+function closeIndexOverlay(overlay) {
+  if (overlay) overlay.style.display = 'none';
+}
+
 if (indexStatsToggle) indexStatsToggle.addEventListener('click', () => toggleIndexStatsBox());
-if (openIndexStats) openIndexStats.addEventListener('click', () => toggleIndexStatsBox(true));
+if (openIndexStats) openIndexStats.addEventListener('click', openIndexGlobalStatsPopup);
+if (closeIndexGlobalStats) closeIndexGlobalStats.addEventListener('click', () => closeIndexOverlay(indexGlobalStatsPopup));
+if (indexGlobalStatsPopup) indexGlobalStatsPopup.addEventListener('click', (event) => {
+  if (event.target === indexGlobalStatsPopup) closeIndexOverlay(indexGlobalStatsPopup);
+});
+if (openIndexStatsInfo) openIndexStatsInfo.addEventListener('click', () => {
+  if (indexStatsInfoPopup) indexStatsInfoPopup.style.display = 'flex';
+});
+if (closeIndexStatsInfo) closeIndexStatsInfo.addEventListener('click', () => closeIndexOverlay(indexStatsInfoPopup));
+if (indexStatsInfoPopup) indexStatsInfoPopup.addEventListener('click', (event) => {
+  if (event.target === indexStatsInfoPopup) closeIndexOverlay(indexStatsInfoPopup);
+});
 updateIndexStatsUI();
 
 // ----------------

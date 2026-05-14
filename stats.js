@@ -2196,6 +2196,8 @@ function updatePointsUI() {
   const points = parseInt(localStorage.getItem('statPoints')) || 0;
   const el = document.getElementById('points-left');
   if (el) el.textContent = points;
+  const toggle = document.getElementById('stats-toggle');
+  if (toggle) toggle.classList.toggle('has-points', points > 0);
 }
 
 // ────────────────
