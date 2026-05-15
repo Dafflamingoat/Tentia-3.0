@@ -16,7 +16,7 @@ window.TIMELINE_DATA.male = {
     defaultAppearance: {
       body: 'body_light',
       hair: 'hair_01',
-      eyes: 'eyes_01_blue',
+      eyes: 'eyes_01_green',
       eyebrows: null,
       beard: 'beard_none',
       scar: null
@@ -38,11 +38,11 @@ window.TIMELINE_DATA.male = {
 
     // Ajouter ici les nouveaux yeux/couleurs.
     eyes: [
-      { id: 'eyes_01_blue', label: 'Yeux 1 bleu', src: 'assets/character-builder/male/eyes/eyes_01_blue.png', owned: true },
+      { id: 'eyes_01_green', label: 'Yeux 1 vert', src: 'assets/character-builder/male/eyes/eyes_01_green.png', owned: true },
       { id: 'eyes_01_brown', label: 'Yeux 1 brun', src: 'assets/character-builder/male/eyes/eyes_01_brown.png', owned: true },
-      { id: 'eyes_02_blue', label: 'Yeux 2 bleu', src: 'assets/character-builder/male/eyes/eyes_02_blue.png', owned: true },
+      { id: 'eyes_02_green', label: 'Yeux 2 vert', src: 'assets/character-builder/male/eyes/eyes_02_green.png', owned: true },
       { id: 'eyes_02_brown', label: 'Yeux 2 brun', src: 'assets/character-builder/male/eyes/eyes_02_brown.png', owned: true },
-      { id: 'eyes_03_blue', label: 'Yeux 3 bleu', src: 'assets/character-builder/male/eyes/eyes_03_blue.png', owned: true },
+      { id: 'eyes_03_green', label: 'Yeux 3 vert', src: 'assets/character-builder/male/eyes/eyes_03_green.png', owned: true },
       { id: 'eyes_03_brown', label: 'Yeux 3 brun', src: 'assets/character-builder/male/eyes/eyes_03_brown.png', owned: true }
     ],
 

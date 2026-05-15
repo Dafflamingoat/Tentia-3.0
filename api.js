@@ -19,7 +19,7 @@ const TIMELINES = {
       characterAppearance: {
         body: 'body_light',
         hair: 'hair_01',
-        eyes: 'eyes_01_blue',
+        eyes: 'eyes_01_green',
         eyebrows: null,
         beard: 'beard_none',
         scar: null
