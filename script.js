@@ -161,6 +161,14 @@ function renderCharacterTimelineOptions() {
   });
 }
 
+const CHARACTER_BUILDER_TABS = [
+  { id: 'body', label: 'Peau', category: 'bodies', field: 'body' },
+  { id: 'hair', label: 'Cheveux', category: 'hair', field: 'hair' },
+  { id: 'eyes', label: 'Yeux', category: 'eyes', field: 'eyes' },
+  { id: 'beard', label: 'Barbe', category: 'beards', field: 'beard' }
+];
+let activeCharacterBuilderTab = 'body';
+
 function makeCharacterOptionButton(item, field) {
   const appearance = getPendingCharacterAppearance();
   const button = document.createElement('button');
@@ -168,13 +176,22 @@ function makeCharacterOptionButton(item, field) {
   button.className = 'character-choice-btn' + (appearance[field] === item.id ? ' active' : '');
   button.title = item.label || item.id;
   if (item.src) {
+    const preview = document.createElement('span');
+    preview.className = 'character-choice-preview';
     const img = document.createElement('img');
     img.src = item.src;
     img.alt = '';
     img.onerror = function () { this.style.display = 'none'; };
-    button.appendChild(img);
+    preview.appendChild(img);
+    button.appendChild(preview);
+  } else {
+    const empty = document.createElement('span');
+    empty.className = 'character-choice-preview character-choice-none';
+    empty.textContent = '-';
+    button.appendChild(empty);
   }
   const label = document.createElement('span');
+  label.className = 'character-choice-label';
   label.textContent = item.label || item.id;
   button.appendChild(label);
   button.addEventListener('click', () => {
@@ -184,34 +201,60 @@ function makeCharacterOptionButton(item, field) {
   return button;
 }
 
-function renderCharacterOptionGroup(parent, title, category, field) {
+function getAvailableCharacterTabs() {
   const config = getCharacterBuilderConfig(pendingCharacterTimelineId);
-  const options = (config && config[category]) || [];
-  if (!options.length) return;
+  return CHARACTER_BUILDER_TABS.filter(tab => ((config && config[tab.category]) || []).length);
+}
+
+function renderCharacterBuilderSubtabs() {
+  const wrap = document.getElementById('character-builder-subtabs');
+  if (!wrap) return;
+  const tabs = getAvailableCharacterTabs();
+  if (!tabs.some(tab => tab.id === activeCharacterBuilderTab)) {
+    activeCharacterBuilderTab = tabs[0]?.id || 'body';
+  }
+  wrap.innerHTML = '';
+  tabs.forEach((tab) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'character-builder-subtab' + (activeCharacterBuilderTab === tab.id ? ' active' : '');
+    button.textContent = tab.label;
+    button.addEventListener('click', () => {
+      activeCharacterBuilderTab = tab.id;
+      renderCharacterBuilderModal();
+    });
+    wrap.appendChild(button);
+  });
+}
+
+function renderCharacterOptionPanel() {
+  const options = document.getElementById('character-builder-options');
+  if (!options) return;
+  const config = getCharacterBuilderConfig(pendingCharacterTimelineId);
+  const tab = getAvailableCharacterTabs().find(item => item.id === activeCharacterBuilderTab);
+  options.innerHTML = '';
+  if (!config || !tab) return;
+
   const section = document.createElement('div');
-  section.className = 'character-builder-section';
-  const label = document.createElement('div');
-  label.className = 'character-builder-label';
-  label.textContent = title;
+  section.className = 'character-builder-section active';
+  const header = document.createElement('div');
+  header.className = 'character-builder-panel-title';
+  header.textContent = tab.label;
   const row = document.createElement('div');
   row.className = 'character-choice-row';
-  options.forEach(item => row.appendChild(makeCharacterOptionButton(item, field)));
-  section.appendChild(label);
+  (config[tab.category] || []).forEach(item => row.appendChild(makeCharacterOptionButton(item, tab.field)));
+  section.appendChild(header);
   section.appendChild(row);
-  parent.appendChild(section);
+  options.appendChild(section);
 }
 
 function renderCharacterBuilderModal() {
   const preview = document.getElementById('character-builder-modal-preview');
-  const options = document.getElementById('character-builder-options');
-  if (!preview || !options) return;
+  if (!preview) return;
   renderCharacterTimelineOptions();
   renderCharacterLayers(preview, getPendingCharacterAppearance(), pendingCharacterTimelineId);
-  options.innerHTML = '';
-  renderCharacterOptionGroup(options, 'Peau', 'bodies', 'body');
-  renderCharacterOptionGroup(options, 'Cheveux', 'hair', 'hair');
-  renderCharacterOptionGroup(options, 'Yeux', 'eyes', 'eyes');
-  renderCharacterOptionGroup(options, 'Barbe', 'beards', 'beard');
+  renderCharacterBuilderSubtabs();
+  renderCharacterOptionPanel();
 }
 
 function openCharacterBuilder() {
