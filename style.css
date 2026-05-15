@@ -135,7 +135,7 @@ body {
 .character-frame::before { top: 4px; left: 4px; border-width: 2px 0 0 2px; }
 .character-frame::after  { bottom: 4px; right: 4px; border-width: 0 2px 2px 0; }
 
-#char-sprite {
+.character-builder-stage {
   width: 120px;
   height: auto;
   object-fit: contain;
@@ -308,7 +308,7 @@ body {
 /* ── RESPONSIVE ── */
 @media (max-width: 600px) {
   .character-frame { width: 130px; height: 180px; }
-  #char-sprite { width: 90px; }
+  .character-builder-stage { width: 90px; }
   .skill-node { width: 120px; }
   .title { font-size: 9px; }
 }
@@ -1462,7 +1462,7 @@ color: #fff;
     height: 300px;
   }
 
-  #char-sprite {
+  .character-builder-stage {
     width: 150px;
   }
 
@@ -1648,4 +1648,171 @@ color: #fff;
   background: linear-gradient(90deg, var(--gold-dark), var(--gold-light), var(--gold-dark));
   border: 1px solid #000;
   box-shadow: 0 0 8px rgba(255, 214, 74, 0.45);
+}
+
+
+/* Character builder layers */
+.character-builder-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  animation: character-idle-bob 2.8s ease-in-out infinite;
+}
+
+.character-builder-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.character-builder-fallback {
+  color: var(--gold-light);
+  font-size: 10px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+@keyframes character-idle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+
+/* Character builder modal */
+.character-builder-box {
+  width: min(760px, calc(100vw - 28px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+}
+
+.character-builder-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.character-builder-preview-panel {
+  min-height: 300px;
+  border: 2px solid var(--gold-dark);
+  background: linear-gradient(180deg, #1b1306, #090805);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.75);
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.character-builder-stage-modal {
+  width: 190px;
+  height: 260px;
+}
+
+.character-builder-controls {
+  min-height: 300px;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.character-builder-section {
+  border-bottom: 1px solid rgba(200, 163, 44, 0.55);
+  padding: 0 0 14px;
+  margin-bottom: 14px;
+}
+
+.character-builder-section:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.character-builder-label {
+  color: var(--gold-light);
+  font-size: 9px;
+  margin-bottom: 10px;
+  text-shadow: 0 0 7px rgba(255, 214, 74, 0.55);
+}
+
+.character-choice-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(94px, 1fr));
+  gap: 8px;
+}
+
+.character-choice-btn {
+  min-height: 50px;
+  padding: 7px;
+  border: 2px solid var(--gold-dark);
+  background: #100d08;
+  color: var(--gold-light);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  line-height: 1.35;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000, inset 0 0 10px rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-direction: column;
+  text-align: center;
+}
+
+.character-choice-btn:hover,
+.character-choice-btn.active {
+  border-color: var(--gold-light);
+  background: #2a1e08;
+  box-shadow: 0 0 12px rgba(240,200,68,0.45), 2px 2px 0 #000;
+}
+
+.character-choice-btn.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.85);
+}
+
+.character-choice-btn img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.character-gender-symbol {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.character-builder-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.character-builder-save {
+  background: #2d7d34;
+  border-color: #54d45f;
+  color: #fff;
+}
+
+@media (max-width: 680px) {
+  .character-builder-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .character-builder-preview-panel {
+    min-height: 240px;
+  }
+
+  .character-builder-stage-modal {
+    width: 160px;
+    height: 220px;
+  }
 }

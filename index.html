@@ -7,9 +7,8 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="login.css">
   <script src="api.js"></script>
-  <script src="timeline_dafz.js"></script>
-  <script src="timeline_billaud.js"></script>
-  <script src="timeline_arthur.js"></script>
+  <script src="timeline_male.js"></script>
+  <script src="timeline_female.js"></script>
 </head>
 <body>
 
@@ -68,25 +67,26 @@
       </div>
     </form>
   </div>
-  <!-- POPUP Ligues Échecs (index) -->
-  <div id="character-skin-modal" class="badge-modal-overlay character-style-modal" style="display:none;">
-    <div class="badge-modal-box character-style-box">
-      <div class="character-popup-frame">
-        <img id="skin-popup-sprite" src="assets/character/moove1.png" alt="Personnage">
-        <div class="scanlines"></div>
+
+  <div id="character-builder-modal" class="badge-modal-overlay character-builder-modal" style="display:none;">
+    <div class="badge-modal-box character-builder-box">
+      <div class="badge-modal-title">PERSONNALISATION</div>
+      <div class="character-builder-layout">
+        <div class="character-builder-preview-panel">
+          <div id="character-builder-modal-preview" class="character-builder-stage character-builder-stage-modal" aria-label="Apercu personnage"></div>
+        </div>
+        <div class="character-builder-controls">
+          <div class="character-builder-section">
+            <div class="character-builder-label">Timeline</div>
+            <div class="character-choice-row" id="character-timeline-options"></div>
+          </div>
+          <div id="character-builder-options"></div>
+        </div>
       </div>
-      <div class="skin-thumbs-wrap"></div>
-      <button class="badge-modal-close" id="close-character-skin" type="button">FERMER</button>
-    </div>
-  </div>
-  <div id="character-bg-modal" class="badge-modal-overlay character-style-modal" style="display:none;">
-    <div class="badge-modal-box character-style-box">
-      <div class="character-popup-frame" id="bg-popup-frame">
-        <img id="bg-popup-sprite" src="assets/character/moove1.png" alt="Personnage">
-        <div class="scanlines"></div>
+      <div class="character-builder-actions">
+        <button class="badge-modal-close" id="close-character-builder" type="button">ANNULER</button>
+        <button class="badge-modal-close character-builder-save" id="save-character-builder" type="button">SAUVEGARDER</button>
       </div>
-      <div class="bg-thumbs-wrap"></div>
-      <button class="badge-modal-close" id="close-character-bg" type="button">FERMER</button>
     </div>
   </div>
   <div id="chess-info-modal" class="badge-modal-overlay" style="display:none;">
@@ -130,7 +130,7 @@
           </div>
 
           <div class="character-frame">
-            <img id="char-sprite" src="assets/character/moove1.png" alt="Personnage" draggable="false">
+            <div id="character-builder-preview" class="character-builder-stage" aria-label="Personnage"></div>
             <div class="scanlines"></div>
           </div>
 
@@ -156,8 +156,8 @@
         </div>
 
         <div class="character-action-row">
-          <button class="character-action-btn" type="button" onclick="toggleSkinMenu()" title="Skins">🎭</button>
-          <button class="character-action-btn" type="button" onclick="toggleBGMenu()" title="Backgrounds">🖼</button>
+          <button class="character-action-btn" type="button" onclick="openCharacterBuilder()" title="Personnaliser">&#127917;</button>
+          <button class="character-action-btn" type="button" title="Stuff PvP a venir">&#9876;</button>
           <button class="character-action-btn" id="open-index-stats" type="button" title="Stats globales">📊</button>
           <button class="character-action-btn" type="button" title="A venir">⚙</button>
         </div>

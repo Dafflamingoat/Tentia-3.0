@@ -122,9 +122,9 @@ let equippedPetId = localStorage.getItem('equippedPetId') || 'pet1';
 
 // Appliquer les visuels/noms de la timeline active sur les pets
 function applyTimelinePetVisuals() {
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineId = localStorage.getItem('timelineId') || 'male';
   const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
-    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['male']);
   if (!timelineData || !timelineData.pets) return;
 
   pets.forEach(pet => {
@@ -322,7 +322,7 @@ let equippedAvatarId = localStorage.getItem('equippedAvatarId') || 'avatar1';
 function loadTimelineData() {
   const timelineId = getTimelineIdStats();
   const data = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
-    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz'])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA['male'])
     || null;
 
   if (!data) {
@@ -386,14 +386,14 @@ function loadTimelineData() {
 
 function getTimelineIdStats() {
   const fromStorage = localStorage.getItem('timelineId');
-  if (fromStorage) return fromStorage;
+  if (fromStorage && window.TIMELINE_DATA && window.TIMELINE_DATA[fromStorage]) return fromStorage;
 
   try {
     const skillsPayload = JSON.parse(localStorage.getItem('skills') || '{}');
-    if (skillsPayload[TIMELINE_SKILLS_KEY]) return skillsPayload[TIMELINE_SKILLS_KEY];
+    if (skillsPayload[TIMELINE_SKILLS_KEY] && window.TIMELINE_DATA && window.TIMELINE_DATA[skillsPayload[TIMELINE_SKILLS_KEY]]) return skillsPayload[TIMELINE_SKILLS_KEY];
   } catch (e) {}
 
-  return 'dafz';
+  return 'male';
 }
 
 // Charger les données de la timeline active dès que possible

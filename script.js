@@ -1,78 +1,247 @@
 // ────────────────
 // SPRITE DYNAMIQUE SELON HP
 // ────────────────
-const sprite = document.getElementById('char-sprite');
+const CHARACTER_APPEARANCE_KEY = 'characterAppearance';
+const CHARACTER_TIMELINE_KEY = 'characterTimeline';
+const DEFAULT_TIMELINE_ID = 'male';
 
-let frameIndex = 0;
-let currentFrames = [];
-let animationSpeed = 400;
-let animationInterval = null;
-let currentSkin = localStorage.getItem('selectedSkin') || 'Skin_T1';
+let pendingCharacterTimelineId = null;
+let pendingCharacterAppearance = null;
 
-function getStateFrames() {
-  if (hp <= 0) {
-    return {
-      frames: [`assets/character/${currentSkin}/placeholder.png`],
-      speed: 1000
-    };
-  }
-  if (hp <= 20) {
-    return {
-      frames: [
-        `assets/character/${currentSkin}/faible1.png`,
-        `assets/character/${currentSkin}/faible2.png`
-      ],
-      speed: 700
-    };
-  }
-  if (hp <= 80) {
-    return {
-      frames: [
-        `assets/character/${currentSkin}/moove1.png`,
-        `assets/character/${currentSkin}/moove2.png`
-      ],
-      speed: 400
-    };
-  }
-  return {
-    frames: [
-      `assets/character/${currentSkin}/moove1.png`,
-      `assets/character/${currentSkin}/moove2.png`
-    ],
-    speed: 180
-  };
+function getActiveTimelineId() {
+  const saved = localStorage.getItem(CHARACTER_TIMELINE_KEY) || localStorage.getItem('timelineId');
+  if (saved && window.TIMELINE_DATA && window.TIMELINE_DATA[saved]) return saved;
+  return DEFAULT_TIMELINE_ID;
 }
 
-function setSkin(skinName) {
-  currentSkin = skinName;
-  localStorage.setItem('selectedSkin', skinName);
-  startAnimation();
-  renderCharacterStylePreview();
+function setCharacterTimelineLocal(timelineId) {
+  if (!window.TIMELINE_DATA || !window.TIMELINE_DATA[timelineId]) return;
+  localStorage.setItem('timelineId', timelineId);
+  localStorage.setItem(CHARACTER_TIMELINE_KEY, timelineId);
+  try {
+    const skills = JSON.parse(localStorage.getItem('skills') || '{}');
+    skills._timelineId = timelineId;
+    localStorage.setItem('skills', JSON.stringify(skills));
+  } catch (e) {}
+}
+
+function getTimelineData(timelineId = getActiveTimelineId()) {
+  return (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA[DEFAULT_TIMELINE_ID])
+    || null;
+}
+
+function getCharacterBuilderConfig(timelineId = getActiveTimelineId()) {
+  const data = getTimelineData(timelineId);
+  return data ? data.characterBuilder : null;
+}
+
+function getDefaultAppearance(timelineId = getActiveTimelineId()) {
+  const config = getCharacterBuilderConfig(timelineId);
+  return { ...((config && config.defaultAppearance) || {}) };
+}
+
+function normalizeCharacterAppearance(appearance = {}, timelineId = getActiveTimelineId()) {
+  const defaults = getDefaultAppearance(timelineId);
+  return { ...defaults, ...(appearance || {}) };
+}
+
+function getCharacterAppearance() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHARACTER_APPEARANCE_KEY) || '{}');
+    return normalizeCharacterAppearance(saved);
+  } catch (e) {
+    return normalizeCharacterAppearance({});
+  }
+}
+
+function findCharacterLayer(category, id, timelineId = getActiveTimelineId()) {
+  const config = getCharacterBuilderConfig(timelineId);
+  if (!config || !id) return null;
+  const list = config[category] || [];
+  return list.find(item => item.id === id) || null;
+}
+
+function addCharacterFallback(stage) {
+  if (!stage || stage.querySelector('.character-builder-fallback')) return;
+  const fallback = document.createElement('div');
+  fallback.className = 'character-builder-fallback';
+  fallback.textContent = 'PERSONNAGE';
+  stage.appendChild(fallback);
+}
+
+function renderCharacterLayers(stage, appearance, timelineId = getActiveTimelineId()) {
+  if (!stage) return;
+  const normalized = normalizeCharacterAppearance(appearance, timelineId);
+  const layers = [
+    findCharacterLayer('bodies', normalized.body, timelineId),
+    findCharacterLayer('eyes', normalized.eyes, timelineId),
+    findCharacterLayer('eyebrows', normalized.eyebrows, timelineId),
+    findCharacterLayer('scars', normalized.scar, timelineId),
+    findCharacterLayer('beards', normalized.beard, timelineId),
+    findCharacterLayer('hair', normalized.hair, timelineId)
+  ].filter(Boolean);
+
+  stage.innerHTML = '';
+  layers.forEach((layer) => {
+    if (!layer.src) return;
+    const img = document.createElement('img');
+    img.className = 'character-builder-layer';
+    img.src = layer.src;
+    img.alt = '';
+    img.draggable = false;
+    img.onerror = function () {
+      this.remove();
+      if (!stage.querySelector('.character-builder-layer')) addCharacterFallback(stage);
+    };
+    stage.appendChild(img);
+  });
+
+  if (!stage.querySelector('.character-builder-layer')) addCharacterFallback(stage);
+}
+
+function renderCharacterBuilder() {
+  renderCharacterLayers(
+    document.getElementById('character-builder-preview'),
+    getCharacterAppearance(),
+    getActiveTimelineId()
+  );
+}
+
+function saveCharacterAppearance(nextAppearance, timelineId = getActiveTimelineId()) {
+  const merged = normalizeCharacterAppearance(nextAppearance, timelineId);
+  setCharacterTimelineLocal(timelineId);
+  localStorage.setItem(CHARACTER_APPEARANCE_KEY, JSON.stringify(merged));
+  renderCharacterBuilder();
   if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ selected_skin: skinName });
+    window.TentiaAPI.saveProfile({
+      character_timeline: timelineId,
+      character_appearance: merged,
+      skills: JSON.parse(localStorage.getItem('skills') || '{}')
+    });
   }
 }
 
 function startAnimation() {
-  if (animationInterval) clearInterval(animationInterval);
-  const state = getStateFrames();
-  currentFrames = state.frames;
-  animationSpeed = state.speed;
-  frameIndex = 0;
-  animationInterval = setInterval(() => {
-    frameIndex = (frameIndex + 1) % currentFrames.length;
-    sprite.src = currentFrames[frameIndex];
-  }, animationSpeed);
+  renderCharacterBuilder();
 }
 
-sprite.onerror = function () {
-  this.onerror = null;
-  this.src = 'assets/character/placeholder.svg';
-};
+function setSkin() {
+  renderCharacterBuilder();
+}
 
-// ════════════════════════════════════════════
-//  COMPÉTENCES + sauvegarde
-// ════════════════════════════════════════════
+function getPendingCharacterAppearance() {
+  if (!pendingCharacterAppearance) {
+    pendingCharacterAppearance = normalizeCharacterAppearance({}, pendingCharacterTimelineId || getActiveTimelineId());
+  }
+  return pendingCharacterAppearance;
+}
+
+function renderCharacterTimelineOptions() {
+  const wrap = document.getElementById('character-timeline-options');
+  if (!wrap || !window.TIMELINE_DATA) return;
+  wrap.innerHTML = '';
+  ['male', 'female'].forEach((timelineId) => {
+    const data = window.TIMELINE_DATA[timelineId];
+    if (!data) return;
+    const config = data.characterBuilder || {};
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'character-choice-btn character-gender-btn' + (pendingCharacterTimelineId === timelineId ? ' active' : '') + (config.available === false ? ' locked' : '');
+    button.dataset.timeline = timelineId;
+    button.disabled = config.available === false;
+    button.innerHTML = '<span class="character-gender-symbol">' + (timelineId === 'female' ? '&#9792;' : '&#9794;') + '</span><span>' + (timelineId === 'female' ? 'Fille' : 'Garcon') + '</span>';
+    button.addEventListener('click', () => {
+      if (config.available === false) return;
+      pendingCharacterTimelineId = timelineId;
+      pendingCharacterAppearance = normalizeCharacterAppearance({}, timelineId);
+      renderCharacterBuilderModal();
+    });
+    wrap.appendChild(button);
+  });
+}
+
+function makeCharacterOptionButton(item, field) {
+  const appearance = getPendingCharacterAppearance();
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'character-choice-btn' + (appearance[field] === item.id ? ' active' : '');
+  button.title = item.label || item.id;
+  if (item.src) {
+    const img = document.createElement('img');
+    img.src = item.src;
+    img.alt = '';
+    img.onerror = function () { this.style.display = 'none'; };
+    button.appendChild(img);
+  }
+  const label = document.createElement('span');
+  label.textContent = item.label || item.id;
+  button.appendChild(label);
+  button.addEventListener('click', () => {
+    pendingCharacterAppearance = { ...appearance, [field]: item.id };
+    renderCharacterBuilderModal();
+  });
+  return button;
+}
+
+function renderCharacterOptionGroup(parent, title, category, field) {
+  const config = getCharacterBuilderConfig(pendingCharacterTimelineId);
+  const options = (config && config[category]) || [];
+  if (!options.length) return;
+  const section = document.createElement('div');
+  section.className = 'character-builder-section';
+  const label = document.createElement('div');
+  label.className = 'character-builder-label';
+  label.textContent = title;
+  const row = document.createElement('div');
+  row.className = 'character-choice-row';
+  options.forEach(item => row.appendChild(makeCharacterOptionButton(item, field)));
+  section.appendChild(label);
+  section.appendChild(row);
+  parent.appendChild(section);
+}
+
+function renderCharacterBuilderModal() {
+  const preview = document.getElementById('character-builder-modal-preview');
+  const options = document.getElementById('character-builder-options');
+  if (!preview || !options) return;
+  renderCharacterTimelineOptions();
+  renderCharacterLayers(preview, getPendingCharacterAppearance(), pendingCharacterTimelineId);
+  options.innerHTML = '';
+  renderCharacterOptionGroup(options, 'Peau', 'bodies', 'body');
+  renderCharacterOptionGroup(options, 'Cheveux', 'hair', 'hair');
+  renderCharacterOptionGroup(options, 'Yeux', 'eyes', 'eyes');
+  renderCharacterOptionGroup(options, 'Barbe', 'beards', 'beard');
+}
+
+function openCharacterBuilder() {
+  pendingCharacterTimelineId = getActiveTimelineId();
+  pendingCharacterAppearance = getCharacterAppearance();
+  const modal = document.getElementById('character-builder-modal');
+  renderCharacterBuilderModal();
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeCharacterBuilderModal(saveChanges = false) {
+  const modal = document.getElementById('character-builder-modal');
+  if (saveChanges && pendingCharacterTimelineId && pendingCharacterAppearance) {
+    saveCharacterAppearance(pendingCharacterAppearance, pendingCharacterTimelineId);
+  }
+  pendingCharacterTimelineId = null;
+  pendingCharacterAppearance = null;
+  if (modal) modal.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('character-builder-modal');
+  document.getElementById('close-character-builder')?.addEventListener('click', () => closeCharacterBuilderModal(false));
+  document.getElementById('save-character-builder')?.addEventListener('click', () => closeCharacterBuilderModal(true));
+  modal?.addEventListener('click', (event) => {
+    if (event.target === modal) closeCharacterBuilderModal(false);
+  });
+  renderCharacterBuilder();
+});
+
 const CUSTOM_SKILLS_KEY = 'customSkills';
 const REMOVED_DEFAULT_SKILLS = ['mecanique', 'anglais', 'dev'];
 const MAX_LEVELS = { echec: 1000, argent: 3000 };
@@ -138,7 +307,7 @@ function getSkillsPayload() {
     catch (e) { return {}; }
   })();
 
-  const timelineId = savedSkills._timelineId || localStorage.getItem('timelineId') || 'dafz';
+  const timelineId = getActiveTimelineId();
 
   return {
     _timelineId: timelineId,
@@ -281,9 +450,9 @@ const INDEX_DEFAULT_PETS = [
 ];
 
 function getTimelinePetVisuals() {
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
+  const timelineId = getActiveTimelineId();
   const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
-    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
+    || (window.TIMELINE_DATA && window.TIMELINE_DATA[DEFAULT_TIMELINE_ID]);
   return (timelineData && timelineData.pets) || {};
 }
 
@@ -1241,7 +1410,7 @@ function updateHPUI() {
   document.getElementById('hp').textContent = hp;
 
   if (hp > 0) {
-    startAnimation();
+    renderCharacterBuilder();
     const koOverlay = document.getElementById('ko-overlay');
     if (koOverlay) koOverlay.remove();
   } else {
@@ -1260,8 +1429,7 @@ function updateHPUI() {
       overlay.classList.add('shake');
     }
   }
-
-  startAnimation();
+    renderCharacterBuilder();
 }
 
 function setHP(nextHP) {
@@ -1423,375 +1591,15 @@ if (closeChessInfo) closeChessInfo.addEventListener('click', () => chessInfoModa
 if (chessInfoModal) chessInfoModal.addEventListener('click', (e) => { if (e.target === chessInfoModal) chessInfoModal.style.display = 'none'; });
 
 updateHPUI();
-startAnimation();
+renderCharacterBuilder();
 
 // ────────────────
-// MENU DES FONDS (avec verrou par niveau)
-// ────────────────
-const bgThumbsWrap = document.querySelector('.bg-thumbs-wrap');
-const characterBgModal = document.getElementById('character-bg-modal');
-const closeCharacterBg = document.getElementById('close-character-bg');
-const charFrame = document.querySelector('.character-frame');
-
-let bgFrames = [];
-let bgFrameIndex = 0;
-let bgInterval = null;
-let pendingSkinSelection = null;
-let pendingSkinUnlocked = false;
-let pendingBgSelection = null;
-let pendingBgUnlocked = false;
-
-function toggleBGMenu() {
-  renderCharacterStylePreview();
-  if (characterBgModal) characterBgModal.style.display = 'flex';
-}
-
-// Données par défaut si localStorage vide (avant que stats.js s'exécute)
-const DEFAULT_OWNED_BG_FILES  = ['assets/background/bg1_frame1.png', 'assets/background/bg2_frame1.png'];
-const DEFAULT_OWNED_SKIN_FOLDERS = ['Skin_T1'];
-
-function getBackgrounds() {
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
-  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
-    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
-  const timelineBGs = (timelineData && timelineData.backgrounds) || [];
-  const bgMap = {};
-  timelineBGs.forEach(b => { bgMap[b.id] = b; });
-
-  const saved = localStorage.getItem('backgrounds');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    // Toujours merger avec TIMELINE_DATA pour inclure les nouveaux backgrounds
-    return timelineBGs.map(b => {
-      const sv = parsed.find(x => x.id === b.id);
-      if (sv) return { ...b, ...sv };
-      return b;
-    });
-  }
-
-  // Fallback depuis TIMELINE_DATA ou défaut
-  if (timelineBGs.length) return timelineBGs;
-  return [
-    { id: 'bg_default', name: 'Défaut', bg1: 'assets/background/bg1_frame1.png', bg2: 'assets/background/bg1_frame2.png', owned: true },
-    { id: 'bg_white',   name: 'Blanc',  bg1: 'assets/background/bg2_frame1.png', bg2: 'assets/background/bg2_frame2.png', owned: true },
-  ];
-}
-
-function getSkins() {
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
-  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId])
-    || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
-  const timelineSkins = (timelineData && timelineData.skins) || [];
-  const folderMap = {};
-  timelineSkins.forEach(s => { folderMap[s.id] = s; });
-
-  const saved = localStorage.getItem('skins');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    // Toujours merger avec TIMELINE_DATA pour inclure les nouveaux skins ajoutés
-    return timelineSkins.map(s => {
-      const sv = parsed.find(x => x.id === s.id);
-      // Si le skin existe en localStorage : garder son owned, compléter les champs manquants
-      if (sv) return { ...s, ...sv };
-      // Sinon : skin nouveau, utiliser les données de TIMELINE_DATA
-      return s;
-    });
-  }
-
-  // Fallback depuis TIMELINE_DATA ou Skin_T1
-  if (timelineSkins.length) return timelineSkins;
-  return [{ id: 'skin_t1', name: 'Skin T1', folder: 'Skin_T1', owned: true }];
-}
-
-// Récupère le label de déblocage depuis levelRewards (stocké en localStorage par stats.js)
-function getUnlockInfoFromStorage(rewardId) {
-  try {
-    const lr = JSON.parse(localStorage.getItem('_levelRewardsMap') || '{}');
-    if (lr[rewardId]) return `Niveau ${lr[rewardId]}`;
-  } catch(e) {}
-  return 'Verrouillé';
-}
-
-function applyBG(bg1, bg2) {
-  if (bgInterval) clearInterval(bgInterval);
-  bgFrames = [bg1, bg2];
-  localStorage.setItem('selectedBG', JSON.stringify([bg1, bg2]));
-  bgFrameIndex = 0;
-  charFrame.style.backgroundImage = `url(${bg1})`;
-  renderCharacterStylePreview();
-  // Retirer le filtre et le cadenas BG de prévisualisation
-  charFrame.style.filter = '';
-  const bgLockEl = charFrame.querySelector('.bg-preview-lock');
-  if (bgLockEl) bgLockEl.remove();
-  bgInterval = setInterval(() => {
-    bgFrameIndex = (bgFrameIndex + 1) % bgFrames.length;
-    charFrame.style.backgroundImage = `url(${bgFrames[bgFrameIndex]})`;
-  }, 400);
-  if (window.TentiaAPI && window.TentiaAPI.isLoggedIn()) {
-    window.TentiaAPI.saveProfile({ selected_bg: [bg1, bg2] });
-  }
-}
-
-function renderBGThumbs() {
-  const wrap = document.querySelector('.bg-thumbs-wrap');
-  if (!wrap) return;
-
-  const ownedBGs = getBackgrounds();
-
-  // Lire depuis TIMELINE_DATA selon la timeline active
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
-  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId]) || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
-  const allBGs = timelineData ? timelineData.backgrounds : [];
-  if (allBGs.length) window._allBGThumbs = allBGs.map(b => ({ bg1: b.bg1, bg2: b.bg2 }));
-
-  // Fallback sur HTML statique si pas de TIMELINE_DATA
-  if (!window._allBGThumbs || !window._allBGThumbs.length) {
-    const currentThumbs = Array.from(wrap.querySelectorAll('.bg-thumb[data-bg1]'))
-      .map(t => ({ bg1: t.dataset.bg1, bg2: t.dataset.bg2 }));
-    if (currentThumbs.length) window._allBGThumbs = currentThumbs;
-  }
-  const thumbData = window._allBGThumbs || [];
-
-  wrap.innerHTML = '';
-
-  thumbData.forEach(({ bg1, bg2 }) => {
-    const bgData = ownedBGs.find(b => b.bg1 === bg1);
-    const owned = bgData ? bgData.owned : DEFAULT_OWNED_BG_FILES.includes(bg1);
-    const bgName = bgData ? bgData.name : '';
-    const unlockInfo = !owned
-      ? (bgData ? getUnlockInfoFromStorage(bgData.id) : 'Verrouillé')
-      : '';
-
-    const thumb = document.createElement('div');
-    thumb.className = 'bg-thumb' + (owned ? '' : ' bg-locked');
-    thumb.style.backgroundImage = `url(${bg1})`;
-    thumb.dataset.bg1 = bg1;
-    thumb.dataset.bg2 = bg2;
-    thumb.title = bgName ? (owned ? bgName : `${bgName} — ${unlockInfo}`) : (owned ? '' : unlockInfo);
-
-    if (!owned) {
-      const lock = document.createElement('span');
-      lock.className = 'bg-lock-icon';
-      lock.textContent = '🔒';
-      thumb.appendChild(lock);
-      if (unlockInfo) {
-        const label = document.createElement('span');
-        label.className = 'bg-lock-label';
-        label.textContent = unlockInfo;
-        thumb.appendChild(label);
-      }
-    }
-
-    thumb.addEventListener('click', () => {
-      previewBGInPopup(bg1, bg2, owned);
-    });
-
-    wrap.appendChild(thumb);
-  });
-}
-
-// ────────────────
-// MENU SKINS (avec verrou par niveau)
-// ────────────────
-const skinWrap = document.querySelector('.skin-thumbs-wrap');
-const characterSkinModal = document.getElementById('character-skin-modal');
-const closeCharacterSkin = document.getElementById('close-character-skin');
-
-function toggleSkinMenu() {
-  renderCharacterStylePreview();
-  if (characterSkinModal) characterSkinModal.style.display = 'flex';
-}
-
-function clearPopupPreviewLock(frame) {
-  if (!frame) return;
-  frame.querySelectorAll('.skin-preview-lock, .bg-preview-lock').forEach(lock => lock.remove());
-}
-
-function showPopupPreviewLock(frame, className) {
-  if (!frame || frame.querySelector(`.${className}`)) return;
-  const lockEl = document.createElement('span');
-  lockEl.className = className;
-  lockEl.textContent = '🔒';
-  lockEl.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;pointer-events:none;filter:drop-shadow(1px 1px 3px #000);z-index:10;';
-  frame.appendChild(lockEl);
-}
-
-function previewSkinInPopup(folder, owned) {
-  const skinSprite = document.getElementById('skin-popup-sprite');
-  const frame = skinSprite ? skinSprite.closest('.character-popup-frame') : null;
-  if (!skinSprite) return;
-
-  skinSprite.src = `assets/character/${folder}/moove1.png`;
-  skinSprite.style.filter = owned ? '' : 'grayscale(80%) brightness(0.6)';
-  clearPopupPreviewLock(frame);
-  if (!owned) showPopupPreviewLock(frame, 'skin-preview-lock');
-
-  pendingSkinSelection = owned ? folder : null;
-  pendingSkinUnlocked = owned;
-  if (owned) {
-    document.querySelectorAll('.skin-thumb').forEach(t => t.classList.remove('active'));
-    const activeThumb = document.querySelector(`.skin-thumb[data-skin="${folder}"]`);
-    if (activeThumb) activeThumb.classList.add('active');
-  }
-}
-
-function previewBGInPopup(bg1, bg2, owned) {
-  const bgFrame = document.getElementById('bg-popup-frame');
-  if (!bgFrame) return;
-
-  bgFrame.style.backgroundImage = `url(${bg1})`;
-  bgFrame.style.filter = owned ? '' : 'grayscale(80%) brightness(0.6)';
-  clearPopupPreviewLock(bgFrame);
-  if (!owned) showPopupPreviewLock(bgFrame, 'bg-preview-lock');
-
-  pendingBgSelection = owned ? { bg1, bg2 } : null;
-  pendingBgUnlocked = owned;
-}
-
-function closeCharacterStyleModals() {
-  if (characterSkinModal && characterSkinModal.style.display !== 'none' && pendingSkinUnlocked && pendingSkinSelection) {
-    setSkin(pendingSkinSelection);
-  }
-  if (characterBgModal && characterBgModal.style.display !== 'none' && pendingBgUnlocked && pendingBgSelection) {
-    applyBG(pendingBgSelection.bg1, pendingBgSelection.bg2);
-  }
-  if (characterSkinModal) characterSkinModal.style.display = 'none';
-  if (characterBgModal) characterBgModal.style.display = 'none';
-  pendingSkinSelection = null;
-  pendingSkinUnlocked = false;
-  pendingBgSelection = null;
-  pendingBgUnlocked = false;
-  renderCharacterStylePreview();
-}
-
-function renderCharacterStylePreview() {
-  const mainSprite = document.getElementById('char-sprite');
-  const skinSprite = document.getElementById('skin-popup-sprite');
-  const bgSprite = document.getElementById('bg-popup-sprite');
-  const bgFrame = document.getElementById('bg-popup-frame');
-  if (mainSprite && skinSprite) {
-    skinSprite.src = mainSprite.src;
-    skinSprite.style.filter = '';
-    clearPopupPreviewLock(skinSprite.closest('.character-popup-frame'));
-  }
-  if (mainSprite && bgSprite) {
-    bgSprite.src = mainSprite.src;
-    bgSprite.style.filter = '';
-  }
-  if (bgFrame && charFrame) {
-    bgFrame.style.backgroundImage = charFrame.style.backgroundImage;
-    bgFrame.style.backgroundSize = charFrame.style.backgroundSize || 'cover';
-    bgFrame.style.backgroundPosition = charFrame.style.backgroundPosition || 'center';
-    bgFrame.style.filter = '';
-    clearPopupPreviewLock(bgFrame);
-  }
-}
-
-if (closeCharacterSkin) closeCharacterSkin.addEventListener('click', closeCharacterStyleModals);
-if (closeCharacterBg) closeCharacterBg.addEventListener('click', closeCharacterStyleModals);
-if (characterSkinModal) {
-  characterSkinModal.addEventListener('click', (event) => {
-    if (event.target === characterSkinModal) closeCharacterStyleModals();
-  });
-}
-if (characterBgModal) {
-  characterBgModal.addEventListener('click', (event) => {
-    if (event.target === characterBgModal) closeCharacterStyleModals();
-  });
-}
-
-function renderSkinThumbs() {
-  const skinWrapEl = document.querySelector('.skin-thumbs-wrap');
-  if (!skinWrapEl) return;
-
-  const ownedSkins = getSkins();
-
-  // Lire depuis TIMELINE_DATA selon la timeline active
-  const timelineId = localStorage.getItem('timelineId') || 'dafz';
-  const timelineData = (window.TIMELINE_DATA && window.TIMELINE_DATA[timelineId]) || (window.TIMELINE_DATA && window.TIMELINE_DATA['dafz']);
-  const allSkins = timelineData ? timelineData.skins : [];
-  if (allSkins.length) window._allSkinFolders = allSkins.map(s => s.folder);
-
-  // Fallback sur HTML statique si pas de TIMELINE_DATA
-  if (!window._allSkinFolders || !window._allSkinFolders.length) {
-    const currentThumbs = Array.from(skinWrapEl.querySelectorAll('.skin-thumb[data-skin]'))
-      .map(t => t.dataset.skin);
-    if (currentThumbs.length) window._allSkinFolders = currentThumbs;
-  }
-  const folders = window._allSkinFolders || [];
-
-  skinWrapEl.innerHTML = '';
-
-  folders.forEach(folder => {
-    const skinData = ownedSkins.find(s => s.folder === folder);
-    const owned = skinData ? skinData.owned : DEFAULT_OWNED_SKIN_FOLDERS.includes(folder);
-    const skinName = skinData ? skinData.name : folder.replace(/^Skin_/i, '').replace(/_/g, ' ');
-    const unlockInfo = !owned
-      ? (skinData ? getUnlockInfoFromStorage(skinData.id) : 'Verrouillé')
-      : '';
-
-    const thumb = document.createElement('div');
-    thumb.className = 'skin-thumb' + (currentSkin === folder ? ' active' : '') + (owned ? '' : ' skin-locked');
-    thumb.dataset.skin = folder;
-    thumb.style.backgroundImage = `url('assets/character/${folder}/moove1.png')`;
-    thumb.title = owned ? skinName : `${skinName}${unlockInfo ? ' — ' + unlockInfo : ''}`;
-
-    if (!owned) {
-      const lock = document.createElement('span');
-      lock.className = 'skin-lock-icon';
-      lock.textContent = '🔒';
-      thumb.appendChild(lock);
-      if (unlockInfo) {
-        const label = document.createElement('span');
-        label.className = 'skin-lock-label';
-        label.textContent = unlockInfo;
-        thumb.appendChild(label);
-      }
-    }
-
-    thumb.addEventListener('click', () => {
-      previewSkinInPopup(folder, owned);
-    });
-
-    skinWrapEl.appendChild(thumb);
-  });
-}
-
+// Personnage principal: l ancien menu skins/backgrounds est retire.
 window.addEventListener('load', () => {
-  renderSkinThumbs();
-  renderBGThumbs();
+  renderCharacterBuilder();
   renderCharacterPetDock();
-
-  // Restaurer le background sauvegardé
-  const saved = localStorage.getItem('selectedBG');
-  if (saved) {
-    const [bg1, bg2] = JSON.parse(saved);
-    // Vérifier qu'il est toujours owned avant de l'appliquer
-    const ownedBGs = getBackgrounds();
-    const bgData = ownedBGs.find(b => b.bg1 === bg1);
-    if (bgData && bgData.owned) {
-      applyBG(bg1, bg2);
-    } else if (bgData && !bgData.owned) {
-      // BG plus owned (reset?) → effacer la sélection
-      localStorage.removeItem('selectedBG');
-    }
-  }
-
-  // Restaurer le skin sauvegardé (vérifier qu'il est owned)
-  const ownedSkins = getSkins();
-  const savedSkin = localStorage.getItem('selectedSkin');
-  if (savedSkin) {
-    const skinData = ownedSkins.find(s => s.folder === savedSkin);
-    if (!skinData || !skinData.owned) {
-      // Skin plus owned → revenir au skin de base
-      currentSkin = 'Skin_T1';
-      localStorage.setItem('selectedSkin', 'Skin_T1');
-      startAnimation();
-    }
-  }
 });
 
-// ────────────────
 // BADGE SLOTS (index.html)
 // ────────────────
 
@@ -1947,11 +1755,9 @@ window.addEventListener('load', async () => {
 
     // Réinitialiser les UI avec les données fraîches
     updateHPUI();
-    startAnimation();
+    renderCharacterBuilder();
     renderBadgeSlots();
     renderCharacterPetDock();
-    renderSkinThumbs();
-    renderBGThumbs();
     updateIndexStatsUI();
 
     // Recharger les competences personnalisees
@@ -1959,18 +1765,7 @@ window.addEventListener('load', async () => {
     renderCustomSkills();
     Object.keys(skills).forEach(name => updateSkillUI(name));
 
-    // Recharger la BG sauvegardée
-    const savedBG = localStorage.getItem('selectedBG');
-    if (savedBG) {
-      try {
-        const frames = JSON.parse(savedBG);
-        if (frames && frames[0]) applyBG(frames[0], frames[1]);
-      } catch(e) {}
-    }
 
-    // Recharger le skin sauvegardé
-    const savedSkin = localStorage.getItem('selectedSkin');
-    if (savedSkin) setSkin(savedSkin);
   }
 });
 
