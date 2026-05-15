@@ -2081,3 +2081,119 @@ color: #fff;
     max-height: 300px;
   }
 }
+
+
+/* Character builder sketch layout */
+.character-builder-box {
+  width: min(430px, calc(100vw - 24px));
+  padding: 16px 18px;
+}
+
+.character-builder-simple {
+  gap: 10px;
+}
+
+.character-builder-simple .character-builder-preview-panel {
+  min-height: 225px;
+  max-height: 225px;
+  border-color: var(--gold);
+}
+
+.character-builder-simple .character-builder-stage-modal {
+  width: 175px;
+  height: 215px;
+}
+
+.character-builder-sex-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.character-builder-sex-row .character-choice-btn {
+  min-height: 68px;
+  flex-direction: row;
+  gap: 8px;
+  font-size: 8px;
+  border-color: var(--gold);
+}
+
+.character-builder-sex-row .character-choice-btn.locked {
+  opacity: 0.38;
+}
+
+.character-builder-sex-row .character-gender-symbol {
+  font-size: 18px;
+}
+
+.character-builder-simple .character-builder-subtabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.character-builder-simple .character-builder-subtab {
+  min-height: 46px;
+  padding: 0 4px;
+  font-size: 7px;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  border-color: var(--gold);
+}
+
+.character-builder-simple .character-builder-subtab.active {
+  background: #c08a00;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.character-builder-simple .character-builder-options-panel {
+  min-height: 215px;
+  max-height: 215px;
+  padding: 12px;
+  border-color: var(--gold);
+}
+
+.character-builder-simple .character-choice-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.character-builder-simple .character-choice-btn {
+  min-height: 96px;
+  padding: 8px;
+  border-color: var(--gold-dark);
+}
+
+.character-builder-simple .character-choice-btn.active {
+  border-color: var(--gold-light);
+}
+
+.character-builder-simple .character-choice-preview {
+  width: 54px;
+  height: 54px;
+}
+
+.character-builder-simple .character-choice-btn img {
+  width: 50px;
+  height: 50px;
+}
+
+.character-builder-actions {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 460px) {
+  .character-builder-box {
+    width: calc(100vw - 18px);
+    padding: 14px;
+  }
+
+  .character-builder-simple .character-builder-subtab {
+    font-size: 6px;
+  }
+}
