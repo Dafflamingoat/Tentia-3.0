@@ -9,33 +9,40 @@ const TIMELINE_KEY = 'timelineId';
 const TIMELINE_SKILLS_KEY = '_timelineId';
 
 const TIMELINES = {
-  male: {
-    id: 'male',
-    name: 'Garcon',
-    icon: '&#9794;',
-    available: true,
+  dafz: {
+    id: 'dafz',
+    name: 'Dafz',
+    skinPreview: 'assets/character/Skin_T1/moove1.png',
     starter: {
-      characterTimeline: 'male',
-      characterAppearance: {
-        body: 'body_light',
-        hair: 'hair_01',
-        eyes: 'eyes_01_green',
-        eyebrows: null,
-        beard: 'beard_none',
-        scar: null
-      },
-      equippedAvatarId: 'avatar1'
+      selectedSkin: 'Skin_T1',
+      equippedAvatarId: 'avatar1',
+      selectedBG: ['assets/background/bg1_frame1.png', 'assets/background/bg1_frame2.png']
     }
   },
-  female: {
-    id: 'female',
-    name: 'Fille',
-    icon: '&#9792;',
-    available: false,
+  billaud: {
+    id: 'billaud',
+    name: 'Billaud',
+    skinPreview: 'assets/character/timelines/billaud/Skin_Billaud/moove1.png',
     starter: {
-      characterTimeline: 'female',
-      characterAppearance: {},
-      equippedAvatarId: 'avatar1'
+      selectedSkin: 'timelines/billaud/Skin_Billaud',
+      equippedAvatarId: 'avatar_billaud',
+      selectedBG: [
+        'assets/background/timelines/billaud/bg1_frame1.png',
+        'assets/background/timelines/billaud/bg1_frame2.png'
+      ]
+    }
+  },
+  arthur: {
+    id: 'arthur',
+    name: 'Arthur',
+    skinPreview: 'assets/character/timelines/arthur/Skin_arthur/moove1.png',
+    starter: {
+      selectedSkin: 'timelines/arthur/Skin_arthur',
+      equippedAvatarId: 'avatar_arthur',
+      selectedBG: [
+        'assets/background/timelines/arthur/bg1_frame1.png',
+        'assets/background/timelines/arthur/bg1_frame2.png'
+      ]
     }
   }
 };
@@ -65,7 +72,6 @@ function getTimelineId() {
 }
 
 function getProfileTimelineId(profile) {
-  if (profile?.character_timeline && TIMELINES[profile.character_timeline]) return profile.character_timeline;
   const skills = safeParseJSON(profile?.skills, {});
   if (skills[TIMELINE_SKILLS_KEY] && TIMELINES[skills[TIMELINE_SKILLS_KEY]]) {
     return skills[TIMELINE_SKILLS_KEY];
@@ -81,21 +87,81 @@ function setTimelineIdLocal(timelineId) {
   localStorage.setItem('skills', JSON.stringify(skills));
 }
 
+function buildBillaudBackgrounds() {
+  return Array.from({ length: 24 }, (_, index) => {
+    const n = index + 1;
+    return {
+      id: `bg_billaud_${n}`,
+      name: `Billaud ${n}`,
+      bg1: `assets/background/timelines/billaud/bg${n}_frame1.png`,
+      bg2: `assets/background/timelines/billaud/bg${n}_frame2.png`,
+      owned: n <= 2
+    };
+  });
+}
+
+function buildArthurBackgrounds() {
+  return Array.from({ length: 24 }, (_, index) => {
+    const n = index + 1;
+    return {
+      id: `bg_arthur_${n}`,
+      name: `Arthur ${n}`,
+      bg1: `assets/background/timelines/arthur/bg${n}_frame1.png`,
+      bg2: `assets/background/timelines/arthur/bg${n}_frame2.png`,
+      owned: n <= 2
+    };
+  });
+}
+
 function applyTimelineStarterLocal(timelineId) {
   const timeline = TIMELINES[timelineId];
-  if (!timeline || timeline.available === false) return null;
+  if (!timeline) return null;
 
   setTimelineIdLocal(timelineId);
-  const appearance = timeline.starter.characterAppearance || {};
-  localStorage.setItem('characterTimeline', timelineId);
-  localStorage.setItem('characterAppearance', JSON.stringify(appearance));
-  localStorage.setItem('equippedAvatarId', timeline.starter.equippedAvatarId || 'avatar1');
+
+  if (timelineId === 'billaud' || timelineId === 'arthur') {
+    const tl = timelineId;
+    const tlName = tl.charAt(0).toUpperCase() + tl.slice(1);
+    const tlData = window.TIMELINE_DATA && window.TIMELINE_DATA[tl];
+
+    // Utiliser la liste complète depuis TIMELINE_DATA si disponible
+    const skins = (tlData && tlData.skins) || [{
+      id: `skin_${tl}`,
+      name: tlName,
+      folder: `timelines/${tl}/Skin_${tlName}`,
+      owned: true
+    }];
+    const avatars = (tlData && tlData.avatars) || [{
+      id: `avatar_${tl}`,
+      name: tlName,
+      src: `assets/avatars/timelines/${tl}/avatar_${tl}.png`,
+      owned: true
+    }];
+    const backgrounds = timelineId === 'billaud'
+      ? buildBillaudBackgrounds()
+      : buildArthurBackgrounds();
+
+    localStorage.setItem('skins', JSON.stringify(skins));
+    localStorage.setItem('avatars', JSON.stringify(avatars));
+    localStorage.setItem('backgrounds', JSON.stringify(backgrounds));
+  }
+
+  localStorage.setItem('selectedSkin', timeline.starter.selectedSkin);
+  localStorage.setItem('equippedAvatarId', timeline.starter.equippedAvatarId);
+  localStorage.setItem('selectedBG', JSON.stringify(timeline.starter.selectedBG));
 
   return {
     skills: getStoredSkillsPayload(),
-    character_timeline: timelineId,
-    character_appearance: appearance,
-    equipped_avatar: timeline.starter.equippedAvatarId || 'avatar1'
+    selected_skin: timeline.starter.selectedSkin,
+    selected_bg: timeline.starter.selectedBG,
+    equipped_avatar: timeline.starter.equippedAvatarId,
+    ...(['billaud', 'arthur'].includes(timelineId)
+      ? {
+          skins: safeParseJSON(localStorage.getItem('skins'), []),
+          avatars: safeParseJSON(localStorage.getItem('avatars'), []),
+          backgrounds: safeParseJSON(localStorage.getItem('backgrounds'), [])
+        }
+      : {})
   };
 }
 
@@ -168,22 +234,11 @@ function injectTimelineStyles() {
       box-shadow: 0 0 12px rgba(240,200,68,0.5), inset 0 0 10px rgba(0,0,0,0.65), 2px 2px 0 #000;
       transform: translateY(-1px);
     }
-    .timeline-gender-icon {
+    .timeline-sprite {
       width: 82px;
-      height: 82px;
-      display: grid;
-      place-items: center;
-      color: #f0c844;
-      border: 2px solid #6b4a00;
-      background: #090805;
-      font-size: 38px;
-      line-height: 1;
-      box-shadow: inset 0 0 12px rgba(240,200,68,0.18);
-    }
-    .timeline-card.locked {
-      opacity: 0.45;
-      cursor: not-allowed;
-      filter: grayscale(0.9);
+      height: 104px;
+      object-fit: contain;
+      image-rendering: pixelated;
     }
     .timeline-name {
       color: #f0c844;
@@ -214,13 +269,13 @@ function showTimelineChoice() {
     overlay.className = 'timeline-overlay';
     overlay.innerHTML = `
       <div class="timeline-box">
-        <div class="timeline-title">CREATION PERSONNAGE</div>
+        <div class="timeline-title">CHOISIS TA TIMELINE</div>
         <div class="timeline-grid">
           ${Object.values(TIMELINES).map(timeline => `
-            <button class="timeline-card ${timeline.available === false ? 'locked' : ''}" type="button" data-timeline="${timeline.id}" ${timeline.available === false ? 'disabled' : ''}>
-              <span class="timeline-gender-icon">${timeline.icon}</span>
+            <button class="timeline-card" type="button" data-timeline="${timeline.id}">
+              <img class="timeline-sprite" src="${timeline.skinPreview}" alt="${timeline.name}">
               <span class="timeline-name">${timeline.name}</span>
-              <span class="timeline-btn">${timeline.available === false ? 'A VENIR' : 'CHOISIR'}</span>
+              <span class="timeline-btn">CHOISIR</span>
             </button>
           `).join('')}
         </div>
@@ -230,7 +285,6 @@ function showTimelineChoice() {
     overlay.querySelectorAll('[data-timeline]').forEach((button) => {
       button.addEventListener('click', async () => {
         const timelineId = button.dataset.timeline;
-        if (TIMELINES[timelineId]?.available === false) return;
         const updates = applyTimelineStarterLocal(timelineId);
 
         if (updates && isLoggedIn()) {
@@ -258,11 +312,12 @@ async function ensureTimelineSelection(profile) {
     return profileTimelineId;
   }
 
-  // 3. Profil legacy existant → assigner male, sauvegarder, ne plus demander
+  // 3. Profil legacy existant → assigner dafz, sauvegarder, ne plus demander
   if (profile && isExistingLegacyProfile(profile)) {
-    const updates = applyTimelineStarterLocal('male');
-    if (updates) await saveProfile(updates);
-    return 'male';
+    setTimelineIdLocal('dafz');
+    const skills = getStoredSkillsPayload();
+    await saveProfile({ skills });
+    return 'dafz';
   }
 
   // 4. Nouveau compte vierge → afficher le choix une seule fois
@@ -418,16 +473,7 @@ async function loadProfile() {
   setIfDefined('lastElo',         data.last_elo);
   setIfDefined('currentElo',      data.current_elo);
 
-  // Personnage / cosmetique simple
-  if (data.character_timeline) {
-    localStorage.setItem('timelineId', data.character_timeline);
-    localStorage.setItem('characterTimeline', data.character_timeline);
-  }
-  if (data.character_appearance) {
-    localStorage.setItem('characterAppearance', JSON.stringify(data.character_appearance));
-  }
-
-  // Cosmetique legacy
+  // Cosmétique simple
   if (data.selected_skin)   localStorage.setItem('selectedSkin',    data.selected_skin);
   if (data.equipped_title)  localStorage.setItem('equippedTitleId', data.equipped_title);
   if (data.equipped_avatar) localStorage.setItem('equippedAvatarId', data.equipped_avatar);

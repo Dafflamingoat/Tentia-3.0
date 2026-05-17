@@ -166,7 +166,3 @@ $$ language plpgsql security definer;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
-
-
-alter table profiles add column if not exists character_appearance jsonb not null default '{}'::jsonb;
-alter table profiles add column if not exists character_timeline text not null default 'male';
